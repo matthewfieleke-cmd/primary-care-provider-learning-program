@@ -9102,6 +9102,9 @@ const playSound = async (type) => {
   }
 };
 function PCPLearningApp() {
+  const FIREBASE_CHAT_DB_URL = "https://primary-care-learning-program-default-rtdb.firebaseio.com";
+  const CHAT_MESSAGES_KEY = "pcp-chat-local";
+  const CHAT_NAME_KEY = "pcp-chat-name";
   const DEFAULT_PROGRESS = {
     answeredQuestions: {},
     incorrectQuestions: [],
@@ -9136,17 +9139,23 @@ function PCPLearningApp() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatName, setChatName] = useState("");
+  const [chatSyncMode, setChatSyncMode] = useState("local");
   const gameTimerRef = useRef(null);
   const gameScoreRef = useRef(0);
   const progressRef = useRef(null);
   const highScoreAtGameStartRef = useRef(0);
-    const saveTimeoutRef = useRef(null);
+  const saveTimeoutRef = useRef(null);
   const searchTimeoutRef = useRef(null);
+  const chatPollRef = useRef(null);
 
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+      if (chatPollRef.current) clearInterval(chatPollRef.current);
     };
   }, []);
 
@@ -9200,6 +9209,134 @@ useEffect(() => {
   const play = (type) => {
     if (soundEnabled) playSound(type);
   };
+  const getChatName = async () => {
+    try {
+      const stored = await window.storage.get(CHAT_NAME_KEY);
+      return stored && stored.value ? String(stored.value) : "";
+    } catch (e) {
+      return "";
+    }
+  };
+  const saveChatName = async (name) => {
+    try {
+      await window.storage.set(CHAT_NAME_KEY, String(name || "").trim());
+    } catch (e) {
+    }
+  };
+  const getLocalChatMessages = async () => {
+    try {
+      const stored = await window.storage.get(CHAT_MESSAGES_KEY);
+      if (!stored || !stored.value) return [];
+      const parsed = JSON.parse(stored.value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  };
+  const setLocalChatMessages = async (messages) => {
+    try {
+      await window.storage.set(CHAT_MESSAGES_KEY, JSON.stringify(messages.slice(-300)));
+    } catch (e) {
+    }
+  };
+  const fetchRemoteMessages = async () => {
+    const base = String(FIREBASE_CHAT_DB_URL || "").trim().replace(/\/+$/, "");
+    if (!base) return null;
+    const url = `${base}/pcp-chat/messages.json?orderBy=%22$key%22&limitToLast=300`;
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error("chat fetch failed");
+    const payload = await res.json();
+    if (!payload || typeof payload !== "object") return [];
+    return Object.values(payload).filter(Boolean).sort((a, b) => (a.ts || 0) - (b.ts || 0));
+  };
+  const loadChatMessages = async () => {
+    try {
+      const remote = await fetchRemoteMessages();
+      if (remote !== null) {
+        setChatSyncMode("shared");
+        setChatMessages(remote.slice(-300));
+        return;
+      }
+    } catch (e) {
+      setChatSyncMode("local");
+    }
+    const local = await getLocalChatMessages();
+    setChatMessages(local.slice(-300));
+  };
+  const postChatMessage = async (message) => {
+    const base = String(FIREBASE_CHAT_DB_URL || "").trim().replace(/\/+$/, "");
+    if (!base) return false;
+    const url = `${base}/pcp-chat/messages.json`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(message)
+    });
+    return !!res.ok;
+  };
+  const sendChatMessage = async () => {
+    const text = chatInput.trim();
+    if (!text) return;
+    const name = chatName.trim() || "Clinician";
+    const message = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      name,
+      text,
+      ts: Date.now()
+    };
+    setChatInput("");
+    play("click");
+    const sentRemote = await postChatMessage(message);
+    if (sentRemote) {
+      setChatSyncMode("shared");
+      await loadChatMessages();
+      return;
+    }
+    setChatSyncMode("local");
+    const local = await getLocalChatMessages();
+    const updated = [...local, message].slice(-300);
+    setChatMessages(updated);
+    await setLocalChatMessages(updated);
+  };
+  const copyChatSnapshot = async () => {
+    const recent = chatMessages.slice(-20);
+    const lines = recent.map((m) => {
+      const stamp = new Date(m.ts || Date.now()).toLocaleString();
+      return `${stamp} - ${m.name || "Clinician"}: ${m.text || ""}`;
+    });
+    const text = `Primary Care Provider Learning Program - Clinician Chat Snapshot\n${chatSyncMode === "shared" ? "Mode: Shared cloud chat" : "Mode: Local device chat"}\n\n${lines.join("\n") || "No messages yet."}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      alert("Chat snapshot copied to clipboard.");
+    } catch (e) {
+      alert("Could not copy snapshot on this device.");
+    }
+  };
+  useEffect(() => {
+    getChatName().then((name) => {
+      if (name) setChatName(name);
+    });
+  }, []);
+  useEffect(() => {
+    saveChatName(chatName);
+  }, [chatName]);
+  useEffect(() => {
+    if (currentView !== "chat") return;
+    let cancelled = false;
+    const tick = async () => {
+      if (cancelled) return;
+      await loadChatMessages();
+    };
+    tick();
+    chatPollRef.current = setInterval(tick, 4e3);
+    return () => {
+      cancelled = true;
+      if (chatPollRef.current) {
+        clearInterval(chatPollRef.current);
+        chatPollRef.current = null;
+      }
+    };
+  }, [currentView]);
   const recordAnswer = (questionId, categoryId, isCorrect) => {
     setProgress((prev) => {
       const updated = { ...prev };
@@ -10222,6 +10359,53 @@ useEffect(() => {
       marginBottom: "12px",
       borderLeft: `4px solid ${isCorrect ? "#10b981" : "#ef4444"}`
     }),
+    chatNotice: {
+      background: "rgba(245, 158, 11, 0.12)",
+      border: "1px solid rgba(245, 158, 11, 0.35)",
+      color: "#92400e",
+      borderRadius: "10px",
+      padding: "10px 12px",
+      marginBottom: "12px",
+      fontSize: "13px",
+      lineHeight: "1.4"
+    },
+    chatMessageList: {
+      maxHeight: effectiveMobile ? "360px" : "420px",
+      overflowY: "auto",
+      border: "1px solid rgba(15, 23, 42, 0.08)",
+      borderRadius: "12px",
+      background: "rgba(255,255,255,0.92)",
+      padding: "10px"
+    },
+    chatMessageItem: {
+      borderBottom: "1px solid rgba(148, 163, 184, 0.2)",
+      padding: "8px 4px"
+    },
+    chatInput: {
+      width: "100%",
+      border: "1px solid rgba(71, 85, 105, 0.3)",
+      borderRadius: "10px",
+      padding: "10px 12px",
+      fontSize: "14px",
+      outline: "none",
+      boxSizing: "border-box"
+    },
+    chatActions: {
+      display: "flex",
+      gap: "10px",
+      marginTop: "12px",
+      flexWrap: "wrap"
+    },
+    secondaryBtn: {
+      padding: "10px 14px",
+      borderRadius: "10px",
+      border: "1px solid rgba(71, 85, 105, 0.28)",
+      background: "white",
+      color: "#334155",
+      cursor: "pointer",
+      fontSize: "14px",
+      fontWeight: "600"
+    },
     progressBar: {
       width: "100%",
       height: "6px",
@@ -10644,6 +10828,34 @@ useEffect(() => {
       setCurrentView("category-questions");
     } : goHome }, selectedCategory ? "Back to Category" : "Return Home"));
   };
+  const renderChat = () => {
+    const modeText = chatSyncMode === "shared" ? "Shared cloud chat active" : "Local device chat only";
+    return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("button", { style: styles.backBtn, onClick: goHome }, "\u2190 Back to Home"), /* @__PURE__ */ React.createElement("div", { style: styles.card }, /* @__PURE__ */ React.createElement("h2", { style: { margin: "0 0 8px 0", color: "#1e293b" } }, "\u{1F5E3}\uFE0F Clinician Collaboration Chat"), /* @__PURE__ */ React.createElement("p", { style: { margin: "0 0 12px 0", color: "#64748b", fontSize: "14px" } }, modeText), /* @__PURE__ */ React.createElement("div", { style: styles.chatNotice }, "\u26A0\uFE0F Do not include patient identifiers or PHI. Keep messages educational and operational."), !String(FIREBASE_CHAT_DB_URL || "").trim() && /* @__PURE__ */ React.createElement("div", { style: { ...styles.chatNotice, background: "rgba(59, 130, 246, 0.08)", borderColor: "rgba(59, 130, 246, 0.3)", color: "#1e3a8a" } }, "Cloud sync is not configured. Set FIREBASE_CHAT_DB_URL in this file to enable organization-wide shared chat."), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: effectiveMobile ? "1fr" : "220px 1fr", gap: "10px", marginBottom: "12px" } }, /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        style: styles.chatInput,
+        value: chatName,
+        maxLength: 40,
+        placeholder: "Your display name",
+        onChange: (e) => setChatName(e.target.value)
+      }
+    ), /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        style: styles.chatInput,
+        value: chatInput,
+        maxLength: 600,
+        placeholder: "Type a message to colleagues...",
+        onChange: (e) => setChatInput(e.target.value),
+        onKeyDown: (e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            sendChatMessage();
+          }
+        }
+      }
+    )), /* @__PURE__ */ React.createElement("div", { style: styles.chatActions }, /* @__PURE__ */ React.createElement("button", { style: styles.nextBtn, onClick: sendChatMessage }, "Send Message"), /* @__PURE__ */ React.createElement("button", { style: styles.secondaryBtn, onClick: loadChatMessages }, "Refresh"), /* @__PURE__ */ React.createElement("button", { style: styles.secondaryBtn, onClick: copyChatSnapshot }, "Copy Snapshot")), /* @__PURE__ */ React.createElement("div", { style: styles.chatMessageList }, chatMessages.length === 0 ? /* @__PURE__ */ React.createElement("p", { style: { color: "#64748b", margin: "8px 4px" } }, "No messages yet. Start the conversation.") : chatMessages.slice(-120).map((m) => /* @__PURE__ */ React.createElement("div", { key: m.id || `${m.ts}-${m.name}`, style: styles.chatMessageItem }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", gap: "10px", marginBottom: "2px" } }, /* @__PURE__ */ React.createElement("strong", { style: { color: "#1e293b", fontSize: "13px" } }, m.name || "Clinician"), /* @__PURE__ */ React.createElement("span", { style: { color: "#94a3b8", fontSize: "12px", flexShrink: 0 } }, new Date(m.ts || Date.now()).toLocaleString())), /* @__PURE__ */ React.createElement("div", { style: { color: "#334155", fontSize: "14px", whiteSpace: "pre-wrap", wordBreak: "break-word" } }, m.text || ""))))));
+  };
   return /* @__PURE__ */ React.createElement("div", { style: styles.app }, /* @__PURE__ */ React.createElement("div", { style: styles.backgroundPattern }), showGameIntro && /* @__PURE__ */ React.createElement("div", { style: styles.gameIntroOverlay }, /* @__PURE__ */ React.createElement("div", { style: styles.gameIntroCard }, /* @__PURE__ */ React.createElement("div", { style: styles.gameIntroIcon }, "\u{1F3AE}"), /* @__PURE__ */ React.createElement("h1", { style: styles.gameIntroTitle }, "GAME MODE"), /* @__PURE__ */ React.createElement("p", { style: styles.gameIntroDesc }, "Test your knowledge under pressure! Answer as many questions as you can in 3 minutes."), /* @__PURE__ */ React.createElement("div", { style: styles.gameIntroFeature }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: "24px" } }, "\u23F1\uFE0F"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", null, "3 Minutes"), /* @__PURE__ */ React.createElement("p", { style: { fontSize: "12px", color: "#64748b", margin: 0 } }, "Race against the clock"))), /* @__PURE__ */ React.createElement("div", { style: styles.gameIntroFeature }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: "24px" } }, "\u{1F525}"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", null, "Streak Bonus"), /* @__PURE__ */ React.createElement("p", { style: { fontSize: "12px", color: "#64748b", margin: 0 } }, 'Build your streak - get "Heating Up!"'))), /* @__PURE__ */ React.createElement("div", { style: styles.gameIntroFeature }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: "24px" } }, "\u26A0\uFE0F"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", null, "Time Warnings"), /* @__PURE__ */ React.createElement("p", { style: { fontSize: "12px", color: "#64748b", margin: 0 } }, "1 minute and 10 second warnings"))), /* @__PURE__ */ React.createElement("div", { style: styles.gameIntroFeature }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: "24px" } }, "\u{1F3C6}"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", null, "Beat Your High Score"), /* @__PURE__ */ React.createElement("p", { style: { fontSize: "12px", color: "#64748b", margin: 0 } }, "Current: ", progress.gameHighScore, " points"))), /* @__PURE__ */ React.createElement(
     "button",
     {
@@ -10685,7 +10897,17 @@ useEffect(() => {
       onClick: () => setSoundEnabled(!soundEnabled)
     },
     soundEnabled ? "\u{1F50A}" : "\u{1F507}"
-  ))), currentView === "home" && renderHome(), currentView === "category-questions" && renderCategoryQuestions(), currentView === "quiz" && renderQuiz(), currentView === "category-review" && renderQuiz(), currentView === "game" && !gameEnded && renderGame(), currentView === "game" && gameEnded && renderGameResults(), currentView === "quiz-complete" && renderQuizComplete()), /* @__PURE__ */ React.createElement("style", null, `
+  ), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      style: styles.toggleBtn,
+      onClick: () => {
+        play("click");
+        setCurrentView("chat");
+      }
+    },
+    "\u{1F5E3}\uFE0F Chat"
+  ))), currentView === "home" && renderHome(), currentView === "category-questions" && renderCategoryQuestions(), currentView === "quiz" && renderQuiz(), currentView === "category-review" && renderQuiz(), currentView === "game" && !gameEnded && renderGame(), currentView === "game" && gameEnded && renderGameResults(), currentView === "quiz-complete" && renderQuizComplete(), currentView === "chat" && renderChat()), /* @__PURE__ */ React.createElement("style", null, `
         @keyframes pulse {
           0%, 100% { transform: translateX(-50%) scale(1); }
           50% { transform: translateX(-50%) scale(1.05); }
