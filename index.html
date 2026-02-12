@@ -9328,6 +9328,50 @@ useEffect(() => {
       console.log("Could not save progress");
     }
   };
+  const resetCategoryProgress = (categoryId) => {
+    const categoryName = getCategoryById(categoryId)?.name || "this category";
+    if (!window.confirm("Reset all progress for " + categoryName + "?\n\nThis will clear all answered questions, scores, bookmarks, and spaced review schedules for this category. This cannot be undone.")) return;
+    setProgress((prev) => {
+      const catQuestionIds = new Set(QUESTIONS.filter((q) => q.categoryId === categoryId).map((q) => q.id));
+      const newAnswered = {};
+      let removedCorrect = 0;
+      let removedTotal = 0;
+      Object.entries(prev.answeredQuestions || {}).forEach(([qId, isCorrect]) => {
+        if (catQuestionIds.has(parseInt(qId))) {
+          removedTotal++;
+          if (isCorrect) removedCorrect++;
+        } else {
+          newAnswered[qId] = isCorrect;
+        }
+      });
+      const newIncorrect = (prev.incorrectQuestions || []).filter((id) => !catQuestionIds.has(id));
+      const newSpacedReview = {};
+      Object.entries(prev.spacedReview || {}).forEach(([qId, val]) => {
+        if (!catQuestionIds.has(parseInt(qId))) newSpacedReview[qId] = val;
+      });
+      const newBookmarks = (prev.bookmarkedQuestions || []).filter((id) => !catQuestionIds.has(id));
+      const newCategoryProgress = { ...prev.categoryProgress || {} };
+      delete newCategoryProgress[categoryId];
+      const updated = {
+        ...prev,
+        answeredQuestions: newAnswered,
+        incorrectQuestions: newIncorrect,
+        spacedReview: newSpacedReview,
+        bookmarkedQuestions: newBookmarks,
+        categoryProgress: newCategoryProgress,
+        totalAttempted: Math.max(0, (prev.totalAttempted || 0) - removedTotal),
+        totalCorrect: Math.max(0, (prev.totalCorrect || 0) - removedCorrect)
+      };
+      saveProgress(updated);
+      return updated;
+    });
+  };
+  const resetAllProgress = () => {
+    if (!window.confirm("Reset ALL progress for the entire learning program?\n\nThis will clear every answered question, score, bookmark, spaced review schedule, and game high score across all categories. This cannot be undone.")) return;
+    const fresh = { ...DEFAULT_PROGRESS };
+    setProgress(fresh);
+    saveProgress(fresh);
+  };
   const play = (type) => {
     if (soundEnabled) playSound(type);
   };
@@ -10767,7 +10811,7 @@ useEffect(() => {
         fontWeight: "600"
       } }, correctPercent, "% \u2713")), /* @__PURE__ */ React.createElement("div", { style: styles.progressBar }, /* @__PURE__ */ React.createElement("div", { style: styles.progressFill(answeredPercent, cat.color) })))
     );
-  }))));
+  }))), answeredCount > 0 && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", marginTop: "32px", paddingTop: "24px", borderTop: "1px solid rgba(0,0,0,0.06)" } }, /* @__PURE__ */ React.createElement("button", { style: { background: "none", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#dc2626", padding: "10px 24px", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "500", transition: "all 0.15s ease" }, onClick: resetAllProgress, onMouseEnter: (e) => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.08)"; }, onMouseLeave: (e) => { e.currentTarget.style.background = "none"; } }, "\u{1F5D1}\uFE0F Reset All Progress")));
   const renderCategoryQuestions = () => {
     if (!selectedCategory) return null;
     const category = getCategoryById(selectedCategory);
@@ -10823,7 +10867,7 @@ useEffect(() => {
         firstUnansweredIdx + 1,
         ")"
       ) : null;
-    })())), /* @__PURE__ */ React.createElement("div", { style: styles.card }, /* @__PURE__ */ React.createElement("h3", { style: { margin: "0 0 16px 0", fontSize: "17px", color: "#1e293b" } }, "Questions (", categoryQuestions.length, ")"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: "8px" } }, categoryQuestions.map((q, idx) => {
+    })(), catAnswered.answered > 0 && /* @__PURE__ */ React.createElement("button", { style: { padding: "10px 20px", borderRadius: "10px", border: "1px solid rgba(239, 68, 68, 0.3)", background: "none", color: "#dc2626", cursor: "pointer", fontSize: "13px", fontWeight: "500", transition: "all 0.15s ease", marginLeft: "auto" }, onClick: (e) => { e.stopPropagation(); resetCategoryProgress(selectedCategory); }, onMouseEnter: (e) => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.08)"; }, onMouseLeave: (e) => { e.currentTarget.style.background = "none"; } }, "\u{1F5D1}\uFE0F Reset Category"))), /* @__PURE__ */ React.createElement("div", { style: styles.card }, /* @__PURE__ */ React.createElement("h3", { style: { margin: "0 0 16px 0", fontSize: "17px", color: "#1e293b" } }, "Questions (", categoryQuestions.length, ")"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: "8px" } }, categoryQuestions.map((q, idx) => {
       const wasAnswered = q.id in progress.answeredQuestions;
       const wasCorrect = progress.answeredQuestions[q.id];
       return /* @__PURE__ */ React.createElement(
@@ -10934,12 +10978,13 @@ useEffect(() => {
     const currentQuestion = quizQuestions[currentQuestionIndex];
     const category = getCategoryById(currentQuestion.categoryId);
     const streakStatus = getStreakStatus();
+    const gameQuestionImages = normalizeImageEntries(currentQuestion.questionImages || currentQuestion.questionImage, "Question image");
     return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: styles.gameTimer }, "\u23F1\uFE0F ", formatTime(gameTimeLeft)), /* @__PURE__ */ React.createElement("div", { style: styles.streakCounter }, streakStatus.text), warningShown.oneMin && /* @__PURE__ */ React.createElement("div", { style: styles.warningBanner }, "\u26A0\uFE0F 1 MINUTE LEFT!"), warningShown.tenSec && !warningShown.oneMin && /* @__PURE__ */ React.createElement("div", { style: styles.warningBanner }, "\u26A0\uFE0F 10 SECONDS!"), /* @__PURE__ */ React.createElement("div", { style: { marginTop: effectiveMobile ? "80px" : "60px" } }, /* @__PURE__ */ React.createElement("div", { style: {
       display: "flex",
       justifyContent: "space-between",
       marginBottom: "16px",
       padding: "0 8px"
-    } }, /* @__PURE__ */ React.createElement("span", { style: { color: "#059669", fontWeight: "600" } }, "Score: ", gameScore), /* @__PURE__ */ React.createElement("span", { style: { color: "#64748b" } }, "Question #", gameAnswers.length + 1)), /* @__PURE__ */ React.createElement("div", { style: styles.questionCard }, /* @__PURE__ */ React.createElement("span", { style: styles.categoryBadge(category.color) }, /* @__PURE__ */ React.createElement("span", { style: { display: "inline-flex", alignItems: "center", marginRight: "4px" } }, renderBadgeCategoryIcon(category.icon)), category.name), /* @__PURE__ */ React.createElement("p", { style: { ...styles.questionText, marginTop: "16px" } }, currentQuestion.question), (() => {
+    } }, /* @__PURE__ */ React.createElement("span", { style: { color: "#059669", fontWeight: "600" } }, "Score: ", gameScore), /* @__PURE__ */ React.createElement("span", { style: { color: "#64748b" } }, "Question #", gameAnswers.length + 1)), /* @__PURE__ */ React.createElement("div", { style: styles.questionCard }, /* @__PURE__ */ React.createElement("span", { style: styles.categoryBadge(category.color) }, /* @__PURE__ */ React.createElement("span", { style: { display: "inline-flex", alignItems: "center", marginRight: "4px" } }, renderBadgeCategoryIcon(category.icon)), category.name), gameQuestionImages.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { ...styles.quizImageGroup, marginTop: "12px" } }, gameQuestionImages.map((img, idx) => /* @__PURE__ */ React.createElement("figure", { key: `${currentQuestion.id}-gqimg-${idx}`, style: styles.quizImageCard }, /* @__PURE__ */ React.createElement("img", { src: img.src, alt: img.alt, style: styles.quizImage, loading: "lazy", decoding: "async" }), !!img.caption && /* @__PURE__ */ React.createElement("figcaption", { style: styles.quizImageCaption }, img.caption)))), /* @__PURE__ */ React.createElement("p", { style: { ...styles.questionText, marginTop: "16px" } }, currentQuestion.question), (() => {
       const shuffled = getShuffledOptions(currentQuestion);
       return /* @__PURE__ */ React.createElement("div", { style: styles.optionsContainer }, shuffled.options.map((option, idx) => /* @__PURE__ */ React.createElement(
         "button",
@@ -10977,6 +11022,8 @@ useEffect(() => {
     color: "#d97706"
   } }, "NEW HIGH SCORE!")), /* @__PURE__ */ React.createElement("h3", { style: { marginBottom: "16px", color: "#334155" } }, "Review Your Answers:"), /* @__PURE__ */ React.createElement("div", { style: styles.resultsContainer }, gameAnswers.map((answer, idx) => {
     const cat = getCategoryById(answer.question.categoryId);
+    const revQImgs = normalizeImageEntries(answer.question.questionImages || answer.question.questionImage, "Question image");
+    const revEImgs = normalizeImageEntries(answer.question.explanationImages || answer.question.explanationImage, "Explanation image");
     return /* @__PURE__ */ React.createElement("div", { key: idx, style: styles.resultItem(answer.isCorrect) }, /* @__PURE__ */ React.createElement("div", { style: {
       display: "flex",
       justifyContent: "space-between",
@@ -10984,7 +11031,7 @@ useEffect(() => {
     } }, /* @__PURE__ */ React.createElement("span", { style: styles.categoryBadge(cat.color) }, /* @__PURE__ */ React.createElement("span", { style: { display: "inline-flex", alignItems: "center", marginRight: "4px" } }, renderBadgeCategoryIcon(cat.icon)), cat.name), /* @__PURE__ */ React.createElement("span", { style: {
       color: answer.isCorrect ? "#10b981" : "#ef4444",
       fontWeight: "600"
-    } }, answer.isCorrect ? "\u2705 Correct" : "\u274C Incorrect")), /* @__PURE__ */ React.createElement("p", { style: { fontSize: "14px", marginBottom: "8px", color: "#334155" } }, answer.question.question), /* @__PURE__ */ React.createElement("p", { style: { fontSize: "12px", color: "#475569" } }, /* @__PURE__ */ React.createElement("strong", null, "Your answer:"), " ", (answer.userAnswerText || answer.question.options[answer.userAnswer]).replace(/^[A-D]\)\s*/, "")), !answer.isCorrect && /* @__PURE__ */ React.createElement("p", { style: { fontSize: "12px", color: "#059669" } }, /* @__PURE__ */ React.createElement("strong", null, "Correct answer:"), " ", (answer.correctAnswerText || answer.question.options[answer.question.correctAnswer]).replace(/^[A-D]\)\s*/, "")), /* @__PURE__ */ React.createElement("details", { style: { marginTop: "8px" } }, /* @__PURE__ */ React.createElement("summary", { style: { fontSize: "12px", color: "#2563eb", cursor: "pointer", fontWeight: 500 } }, "Show Explanation"), /* @__PURE__ */ React.createElement("div", { style: { marginTop: "8px" } }, /* @__PURE__ */ React.createElement("button", { onClick: () => toggleBookmark(answer.question.id), style: { display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 10px", marginTop: "0px", marginBottom: "8px", background: isBookmarked(answer.question.id) ? "rgba(234, 179, 8, 0.15)" : "rgba(0,0,0,0.04)", border: isBookmarked(answer.question.id) ? "1px solid rgba(234, 179, 8, 0.4)" : "1px solid rgba(0,0,0,0.08)", borderRadius: "8px", cursor: "pointer", fontSize: "12px", color: isBookmarked(answer.question.id) ? "#b45309" : "#64748b", fontWeight: isBookmarked(answer.question.id) ? 600 : 400 } }, isBookmarked(answer.question.id) ? "Bookmarked" : "\u{1F3F7}\uFE0F Bookmark"), /* @__PURE__ */ React.createElement(ExpandableText, { text: fixExplanationLetter(answer.question.explanation, answer.shuffledCorrectLetter) }))));
+    } }, answer.isCorrect ? "\u2705 Correct" : "\u274C Incorrect")), /* @__PURE__ */ React.createElement("p", { style: { fontSize: "14px", marginBottom: "8px", color: "#334155" } }, answer.question.question), revQImgs.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { ...styles.quizImageGroup, marginBottom: "10px" } }, revQImgs.map((img, imgIdx) => /* @__PURE__ */ React.createElement("figure", { key: `${answer.question.id}-grqimg-${imgIdx}`, style: styles.quizImageCard }, /* @__PURE__ */ React.createElement("img", { src: img.src, alt: img.alt, style: styles.quizImage, loading: "lazy", decoding: "async" }), !!img.caption && /* @__PURE__ */ React.createElement("figcaption", { style: styles.quizImageCaption }, img.caption)))), /* @__PURE__ */ React.createElement("p", { style: { fontSize: "12px", color: "#475569" } }, /* @__PURE__ */ React.createElement("strong", null, "Your answer:"), " ", (answer.userAnswerText || answer.question.options[answer.userAnswer]).replace(/^[A-D]\)\s*/, "")), !answer.isCorrect && /* @__PURE__ */ React.createElement("p", { style: { fontSize: "12px", color: "#059669" } }, /* @__PURE__ */ React.createElement("strong", null, "Correct answer:"), " ", (answer.correctAnswerText || answer.question.options[answer.question.correctAnswer]).replace(/^[A-D]\)\s*/, "")), /* @__PURE__ */ React.createElement("details", { style: { marginTop: "8px" } }, /* @__PURE__ */ React.createElement("summary", { style: { fontSize: "12px", color: "#2563eb", cursor: "pointer", fontWeight: 500 } }, "Show Explanation"), /* @__PURE__ */ React.createElement("div", { style: { marginTop: "8px" } }, /* @__PURE__  */ React.createElement("button", { onClick: () => toggleBookmark(answer.question.id), style: { display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 10px", marginTop: "0px", marginBottom: "8px", background: isBookmarked(answer.question.id) ? "rgba(234, 179, 8, 0.15)" : "rgba(0,0,0,0.04)", border: isBookmarked(answer.question.id) ? "1px solid rgba(234, 179, 8, 0.4)" : "1px solid rgba(0,0,0,0.08)", borderRadius: "8px", cursor: "pointer", fontSize: "12px", color: isBookmarked(answer.question.id) ? "#b45309" : "#64748b", fontWeight: isBookmarked(answer.question.id) ? 600 : 400 } }, isBookmarked(answer.question.id) ? "Bookmarked" : "\u{1F3F7}\uFE0F Bookmark"), revEImgs.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { ...styles.quizImageGroup, marginTop: "10px", marginBottom: "10px" } }, revEImgs.map((img, imgIdx) => /* @__PURE__ */ React.createElement("figure", { key: `${answer.question.id}-greimg-${imgIdx}`, style: styles.quizImageCard }, /* @__PURE__ */ React.createElement("img", { src: img.src, alt: img.alt, style: styles.quizImage, loading: "lazy", decoding: "async" }), !!img.caption && /* @__PURE__ */ React.createElement("figcaption", { style: styles.quizImageCaption }, img.caption)))), /* @__PURE__ */ React.createElement(ExpandableText, { text: fixExplanationLetter(answer.question.explanation, answer.shuffledCorrectLetter) }))));
   })), /* @__PURE__ */ React.createElement("button", { style: styles.nextBtn, onClick: goHome }, "Return Home"));
   const renderQuizComplete = () => {
     const correct = quizResults.filter((r) => r.isCorrect).length;
