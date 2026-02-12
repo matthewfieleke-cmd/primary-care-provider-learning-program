@@ -9957,7 +9957,7 @@ useEffect(() => {
     questionCard: {
       background: "rgba(255, 255, 255, 0.98)",
       borderRadius: "20px",
-      padding: effectiveMobile ? "20px" : "32px",
+      padding: effectiveMobile ? "16px" : "24px",
       border: "1px solid rgba(15, 23, 42, 0.08)",
       boxShadow: "0 10px 24px rgba(15, 23, 42, 0.07)"
     },
@@ -9965,12 +9965,12 @@ useEffect(() => {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: "20px",
+      marginBottom: "14px",
       flexWrap: "wrap",
-      gap: "12px"
+      gap: "10px"
     },
     questionProgress: {
-      fontSize: "14px",
+      fontSize: effectiveMobile ? "13px" : "14px",
       color: "#64748b"
     },
     categoryBadge: (color) => ({
@@ -9986,19 +9986,27 @@ useEffect(() => {
       lineHeight: 1
     }),
     questionText: {
-      fontSize: effectiveMobile ? "18px" : "22px",
-      lineHeight: "1.6",
-      marginBottom: "24px",
-      color: "#1e293b"
+      fontSize: effectiveMobile ? "21px" : "24px",
+      lineHeight: "1.55",
+      marginBottom: "16px",
+      color: "#0f172a",
+      fontWeight: "600"
+    },
+    questionTextCompact: {
+      fontSize: effectiveMobile ? "19px" : "21px",
+      lineHeight: "1.52",
+      marginBottom: "12px",
+      color: "#0f172a",
+      fontWeight: "600"
     },
     optionsContainer: {
       display: "flex",
       flexDirection: "column",
-      gap: "12px"
+      gap: "9px"
     },
     optionBtn: (isSelected, isCorrect, showResult) => {
-      let bg = "rgba(0,0,0,0.03)";
-      let border = "rgba(0,0,0,0.1)";
+      let bg = "rgba(148, 163, 184, 0.14)";
+      let border = "rgba(71, 85, 105, 0.35)";
       if (showResult) {
         if (isCorrect) {
           bg = "rgba(16, 185, 129, 0.15)";
@@ -10012,13 +10020,15 @@ useEffect(() => {
         border = "#475569";
       }
       return {
-        padding: effectiveMobile ? "14px 16px" : "16px 20px",
+        padding: effectiveMobile ? "14px 14px" : "14px 16px",
+        minHeight: effectiveMobile ? "50px" : "48px",
         borderRadius: "12px",
         border: `2px solid ${border}`,
         background: bg,
-        color: "#1e293b",
+        color: "#334155",
         cursor: showResult ? "default" : "pointer",
-        fontSize: effectiveMobile ? "14px" : "16px",
+        fontSize: effectiveMobile ? "15px" : "16px",
+        lineHeight: "1.4",
         textAlign: "left",
         transition: "all 0.2s"
       };
@@ -10043,27 +10053,29 @@ useEffect(() => {
     },
     nextBtn: {
       width: "100%",
-      padding: "16px",
+      padding: effectiveMobile ? "16px" : "15px",
+      minHeight: effectiveMobile ? "52px" : "48px",
       borderRadius: "12px",
       border: "none",
       background: "linear-gradient(135deg, #475569, #334155)",
       color: "white",
-      fontSize: "16px",
+      fontSize: effectiveMobile ? "17px" : "16px",
       fontWeight: "600",
       cursor: "pointer",
-      marginTop: "20px",
+      marginTop: effectiveMobile ? "16px" : "18px",
       transition: "transform 0.2s, box-shadow 0.2s",
       boxShadow: "0 4px 15px rgba(71, 85, 105, 0.25)"
     },
     backBtn: {
-      padding: "10px 20px",
+      padding: effectiveMobile ? "12px 16px" : "10px 20px",
+      minHeight: effectiveMobile ? "44px" : "40px",
       borderRadius: "8px",
       border: "2px solid rgba(0,0,0,0.15)",
       background: "transparent",
       color: "#475569",
       cursor: "pointer",
-      fontSize: "14px",
-      marginBottom: "20px",
+      fontSize: effectiveMobile ? "15px" : "14px",
+      marginBottom: effectiveMobile ? "14px" : "20px",
       display: "flex",
       alignItems: "center",
       gap: "8px"
