@@ -92,10 +92,37 @@ react-dom/cjs/react-dom-client.production.js:
 const { useState, useEffect, useCallback, useRef, useMemo } = React;
 if (!window.storage) {
   const mem = {};
+  const localOk = (() => {
+    try {
+      const testKey = "__pcp_storage_test__";
+      window.localStorage.setItem(testKey, "1");
+      window.localStorage.removeItem(testKey);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  })();
   window.storage = {
-    get: async (key) => ({ value: mem[key] ?? null }),
-    set: async (key, value) => { mem[key] = value; },
-    remove: async (key) => { delete mem[key]; }
+    get: async (key) => {
+      if (localOk) {
+        return { value: window.localStorage.getItem(key) };
+      }
+      return { value: mem[key] ?? null };
+    },
+    set: async (key, value) => {
+      if (localOk) {
+        window.localStorage.setItem(key, value);
+        return;
+      }
+      mem[key] = value;
+    },
+    remove: async (key) => {
+      if (localOk) {
+        window.localStorage.removeItem(key);
+        return;
+      }
+      delete mem[key];
+    }
   };
 }
 const FemaleIcon = ({ size = 24 }) => {
@@ -9075,6 +9102,17 @@ const playSound = async (type) => {
   }
 };
 function PCPLearningApp() {
+  const DEFAULT_PROGRESS = {
+    answeredQuestions: {},
+    incorrectQuestions: [],
+    categoryProgress: {},
+    totalCorrect: 0,
+    totalAttempted: 0,
+    gameHighScore: 0,
+    bookmarkedQuestions: [],
+    spacedReview: {}
+  };
+  const REVIEW_INTERVALS_MS = [24 * 60 * 60 * 1e3, 3 * 24 * 60 * 60 * 1e3, 7 * 24 * 60 * 60 * 1e3];
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [mobileMode, setMobileMode] = useState(false);
   const [currentView, setCurrentView] = useState("home");
@@ -9094,15 +9132,7 @@ function PCPLearningApp() {
   const [showGameIntro, setShowGameIntro] = useState(false);
   const [gameEnded, setGameEnded] = useState(false);
   const [warningShown, setWarningShown] = useState({ oneMin: false, tenSec: false });
-  const [progress, setProgress] = useState({
-    answeredQuestions: {},
-    incorrectQuestions: [],
-    categoryProgress: {},
-    totalCorrect: 0,
-    totalAttempted: 0,
-    gameHighScore: 0,
-    bookmarkedQuestions: []
-  });
+  const [progress, setProgress] = useState(DEFAULT_PROGRESS);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -9138,7 +9168,16 @@ useEffect(() => {
       try {
         const saved = await window.storage.get("pcp-progress");
         if (saved && saved.value) {
-          setProgress(JSON.parse(saved.value));
+          const parsed = JSON.parse(saved.value);
+          setProgress({
+            ...DEFAULT_PROGRESS,
+            ...parsed,
+            answeredQuestions: parsed?.answeredQuestions || {},
+            incorrectQuestions: Array.isArray(parsed?.incorrectQuestions) ? parsed.incorrectQuestions : [],
+            categoryProgress: parsed?.categoryProgress || {},
+            bookmarkedQuestions: Array.isArray(parsed?.bookmarkedQuestions) ? parsed.bookmarkedQuestions : [],
+            spacedReview: parsed?.spacedReview || {}
+          });
         }
       } catch (e) {
         console.log("No saved progress found");
@@ -9164,6 +9203,7 @@ useEffect(() => {
   const recordAnswer = (questionId, categoryId, isCorrect) => {
     setProgress((prev) => {
       const updated = { ...prev };
+      const now = Date.now();
       updated.answeredQuestions = { ...prev.answeredQuestions || {}, [questionId]: isCorrect };
       updated.totalAttempted = (prev.totalAttempted || 0) + 1;
       updated.totalCorrect = (prev.totalCorrect || 0) + (isCorrect ? 1 : 0);
@@ -9174,6 +9214,29 @@ useEffect(() => {
         incorrect.push(questionId);
       }
       updated.incorrectQuestions = incorrect;
+      const previousSchedule = prev.spacedReview && prev.spacedReview[questionId] ? prev.spacedReview[questionId] : null;
+      const nextSpacedReview = { ...prev.spacedReview || {} };
+      if (!isCorrect) {
+        nextSpacedReview[questionId] = {
+          step: 0,
+          lastResult: false,
+          lastReviewedAt: now,
+          nextReviewAt: now + REVIEW_INTERVALS_MS[0]
+        };
+      } else if (previousSchedule) {
+        const nextStep = Math.min((previousSchedule.step || 0) + 1, REVIEW_INTERVALS_MS.length - 1);
+        if ((previousSchedule.step || 0) >= REVIEW_INTERVALS_MS.length - 1) {
+          delete nextSpacedReview[questionId];
+        } else {
+          nextSpacedReview[questionId] = {
+            step: nextStep,
+            lastResult: true,
+            lastReviewedAt: now,
+            nextReviewAt: now + REVIEW_INTERVALS_MS[nextStep]
+          };
+        }
+      }
+      updated.spacedReview = nextSpacedReview;
       const prevCat = prev.categoryProgress && prev.categoryProgress[categoryId] ? prev.categoryProgress[categoryId] : { correct: 0, total: 0 };
       updated.categoryProgress = { ...prev.categoryProgress || {} };
       updated.categoryProgress[categoryId] = {
@@ -9424,6 +9487,50 @@ useEffect(() => {
     );
     if (incorrectQuestions.length === 0) return;
     resetQuizState(shuffleArray(incorrectQuestions), "quiz");
+  };
+  const spacedReviewSchedule = useMemo(() => {
+    const schedule = progress.spacedReview || {};
+    return Object.entries(schedule).map(([qId, item]) => {
+      const id = parseInt(qId, 10);
+      return { id, item };
+    }).filter(({ id, item }) => !!QUESTION_MAP[id] && item && typeof item.nextReviewAt === "number").sort((a, b) => a.item.nextReviewAt - b.item.nextReviewAt);
+  }, [progress.spacedReview]);
+  const dueReviewQuestionIds = useMemo(() => {
+    const now = Date.now();
+    return spacedReviewSchedule.filter(({ item }) => item.nextReviewAt <= now).map(({ id }) => id);
+  }, [spacedReviewSchedule]);
+  const dueReviewQuestions = useMemo(
+    () => dueReviewQuestionIds.map((id) => QUESTION_MAP[id]).filter(Boolean),
+    [dueReviewQuestionIds]
+  );
+  const upcomingReviewQuestionIds = useMemo(() => {
+    const now = Date.now();
+    return spacedReviewSchedule.filter(({ item }) => item.nextReviewAt > now).map(({ id }) => id);
+  }, [spacedReviewSchedule]);
+  const upcomingReviewQuestions = useMemo(
+    () => upcomingReviewQuestionIds.map((id) => QUESTION_MAP[id]).filter(Boolean),
+    [upcomingReviewQuestionIds]
+  );
+  const nextUpcomingDueText = useMemo(() => {
+    if (upcomingReviewQuestionIds.length === 0) return "No upcoming reviews";
+    const nextItem = progress.spacedReview?.[upcomingReviewQuestionIds[0]];
+    if (!nextItem || typeof nextItem.nextReviewAt !== "number") return "Upcoming reviews";
+    const msUntil = nextItem.nextReviewAt - Date.now();
+    if (msUntil <= 0) return "Due now";
+    if (msUntil < 24 * 60 * 60 * 1e3) return "Next due: later today";
+    if (msUntil < 48 * 60 * 60 * 1e3) return "Next due: tomorrow";
+    const days = Math.ceil(msUntil / (24 * 60 * 60 * 1e3));
+    return `Next due: ${days} days`;
+  }, [progress.spacedReview, upcomingReviewQuestionIds]);
+  const startDueReview = () => {
+    play("click");
+    if (dueReviewQuestions.length === 0) return;
+    resetQuizState(shuffleArray(dueReviewQuestions), "quiz");
+  };
+  const startUpcomingReview = () => {
+    play("click");
+    if (upcomingReviewQuestions.length === 0) return;
+    resetQuizState(shuffleArray(upcomingReviewQuestions), "quiz");
   };
   const toggleBookmark = (questionId) => {
     play("click");
@@ -10119,7 +10226,7 @@ useEffect(() => {
       transition: "width 0.5s ease"
     })
   }), [effectiveMobile]);
-  const renderHome = () => /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: styles.statsGrid }, /* @__PURE__ */ React.createElement("div", { style: styles.statCard }, /* @__PURE__ */ React.createElement("div", { style: styles.statValue }, answeredCount, "/", totalQuestions), /* @__PURE__ */ React.createElement("div", { style: styles.statLabel }, "Questions Seen")), /* @__PURE__ */ React.createElement("div", { style: styles.statCard }, /* @__PURE__ */ React.createElement("div", { style: styles.statValue }, correctRate, "%"), /* @__PURE__ */ React.createElement("div", { style: styles.statLabel }, "Accuracy")), /* @__PURE__ */ React.createElement("div", { style: styles.statCard }, /* @__PURE__ */ React.createElement("div", { style: styles.statValue }, progress.incorrectQuestions.length), /* @__PURE__ */ React.createElement("div", { style: styles.statLabel }, "To Review")), /* @__PURE__ */ React.createElement("div", { style: styles.statCard }, /* @__PURE__ */ React.createElement("div", { style: styles.statValue }, progress.gameHighScore), /* @__PURE__ */ React.createElement("div", { style: styles.statLabel }, "Game High Score")), /* @__PURE__ */ React.createElement("div", { style: styles.statCard }, /* @__PURE__ */ React.createElement("div", { style: styles.statValue }, progress.bookmarkedQuestions?.length || 0), /* @__PURE__ */ React.createElement("div", { style: styles.statLabel }, "Bookmarked"))), /* @__PURE__ */ React.createElement("div", { style: styles.searchContainer }, /* @__PURE__ */ React.createElement(
+  const renderHome = () => /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: styles.statsGrid }, /* @__PURE__ */ React.createElement("div", { style: styles.statCard }, /* @__PURE__ */ React.createElement("div", { style: styles.statValue }, answeredCount, "/", totalQuestions), /* @__PURE__ */ React.createElement("div", { style: styles.statLabel }, "Questions Seen")), /* @__PURE__ */ React.createElement("div", { style: styles.statCard }, /* @__PURE__ */ React.createElement("div", { style: styles.statValue }, correctRate, "%"), /* @__PURE__ */ React.createElement("div", { style: styles.statLabel }, "Accuracy")), /* @__PURE__ */ React.createElement("div", { style: styles.statCard }, /* @__PURE__ */ React.createElement("div", { style: styles.statValue }, dueReviewQuestions.length), /* @__PURE__ */ React.createElement("div", { style: styles.statLabel }, "Due Today")), /* @__PURE__ */ React.createElement("div", { style: styles.statCard }, /* @__PURE__ */ React.createElement("div", { style: styles.statValue }, progress.incorrectQuestions.length), /* @__PURE__ */ React.createElement("div", { style: styles.statLabel }, "To Review")), /* @__PURE__ */ React.createElement("div", { style: styles.statCard }, /* @__PURE__ */ React.createElement("div", { style: styles.statValue }, progress.gameHighScore), /* @__PURE__ */ React.createElement("div", { style: styles.statLabel }, "Game High Score")), /* @__PURE__ */ React.createElement("div", { style: styles.statCard }, /* @__PURE__ */ React.createElement("div", { style: styles.statValue }, progress.bookmarkedQuestions?.length || 0), /* @__PURE__ */ React.createElement("div", { style: styles.statLabel }, "Bookmarked"))), /* @__PURE__ */ React.createElement("div", { style: styles.searchContainer }, /* @__PURE__ */ React.createElement(
     "input",
     {
       type: "text",
@@ -10189,6 +10296,44 @@ useEffect(() => {
     /* @__PURE__ */ React.createElement("div", { style: styles.actionIcon }, "\u{1F3AE}"),
     /* @__PURE__ */ React.createElement("div", { style: styles.actionTitle }, "Game Mode"),
     /* @__PURE__ */ React.createElement("div", { style: styles.actionDesc }, "3 Minutes \u2022 Beat Your Score!")
+  ), /* @__PURE__ */ React.createElement(
+    "div",
+    {
+      style: {
+        ...styles.actionCard("#14b8a6"),
+        opacity: upcomingReviewQuestions.length === 0 ? 0.5 : 1,
+        cursor: upcomingReviewQuestions.length === 0 ? "not-allowed" : "pointer"
+      },
+      onClick: upcomingReviewQuestions.length > 0 ? startUpcomingReview : null,
+      onMouseEnter: (e) => {
+        if (upcomingReviewQuestions.length > 0) {
+          e.currentTarget.style.transform = "translateY(-4px)";
+        }
+      },
+      onMouseLeave: (e) => e.currentTarget.style.transform = "translateY(0)"
+    },
+    /* @__PURE__ */ React.createElement("div", { style: styles.actionIcon }, "\u{1F4C5}"),
+    /* @__PURE__ */ React.createElement("div", { style: styles.actionTitle }, "Upcoming Reviews"),
+    /* @__PURE__ */ React.createElement("div", { style: styles.actionDesc }, upcomingReviewQuestions.length, " Scheduled \u2022 ", nextUpcomingDueText)
+  ), /* @__PURE__ */ React.createElement(
+    "div",
+    {
+      style: {
+        ...styles.actionCard("#0ea5e9"),
+        opacity: dueReviewQuestions.length === 0 ? 0.5 : 1,
+        cursor: dueReviewQuestions.length === 0 ? "not-allowed" : "pointer"
+      },
+      onClick: dueReviewQuestions.length > 0 ? startDueReview : null,
+      onMouseEnter: (e) => {
+        if (dueReviewQuestions.length > 0) {
+          e.currentTarget.style.transform = "translateY(-4px)";
+        }
+      },
+      onMouseLeave: (e) => e.currentTarget.style.transform = "translateY(0)"
+    },
+    /* @__PURE__ */ React.createElement("div", { style: styles.actionIcon }, "\u23F0"),
+    /* @__PURE__ */ React.createElement("div", { style: styles.actionTitle }, "Due for Review"),
+    /* @__PURE__ */ React.createElement("div", { style: styles.actionDesc }, dueReviewQuestions.length, " Questions Due")
   ), /* @__PURE__ */ React.createElement(
     "div",
     {
