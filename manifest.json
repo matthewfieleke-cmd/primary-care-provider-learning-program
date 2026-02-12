@@ -1,0 +1,9 @@
+{
+  "name": "Primary Care Provider Learning Program",
+  "short_name": "PCP Learning",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#1e293b",
+  "description": "Clinical microlearning, quizzes, and rapid review for primary care providers."
+}

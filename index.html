@@ -4,6 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="color-scheme" content="light" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="PCP Learning" />
+  <link rel="manifest" href="manifest.json" />
   <title>Primary Care Provider Learning Program</title>
   <meta name="description" content="Primary care learning program: clinical microlearning, quizzes, and rapid review." />
   <style>
@@ -11191,6 +11198,17 @@ useEffect(() => {
 }
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(/* @__PURE__ */ React.createElement(PCPLearningApp, null));
+  </script>
+  <script>
+    // Register service worker for offline support and cache-busting
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js").then(function(reg) {
+        // Check for updates every time the page loads
+        reg.update();
+      }).catch(function() {
+        // SW registration failed — app still works, just no offline support
+      });
+    }
   </script>
 </body>
 </html>
