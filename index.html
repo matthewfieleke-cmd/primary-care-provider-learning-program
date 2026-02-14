@@ -9236,6 +9236,7 @@ function PCPLearningApp() {
   const CHAT_NAME_KEY = "pcp-chat-name";
   const CHAT_OWNER_SESSION_KEY = "pcp-chat-owner-session";
   const CHAT_OWNER_DELETE_CODE = "Puyt8_88";
+  const CHAT_ICON = "\u{1F464}\u{1F4AC}";
   const DEFAULT_PROGRESS = {
     answeredQuestions: {},
     incorrectQuestions: [],
@@ -11219,7 +11220,7 @@ useEffect(() => {
       /* @__PURE__ */ React.createElement(
         "div",
         { style: styles.card },
-        /* @__PURE__ */ React.createElement("h2", { style: { margin: "0 0 8px 0", color: "#1e293b" }, onClick: handleChatTitleSecretTap }, "\u{1F5E3}\uFE0F Clinician Collaboration Chat"),
+        /* @__PURE__ */ React.createElement("h2", { style: { margin: "0 0 8px 0", color: "#1e293b" }, onClick: handleChatTitleSecretTap }, CHAT_ICON, " Clinician Collaboration Chat"),
         /* @__PURE__ */ React.createElement("p", { style: { margin: "0 0 12px 0", color: "#64748b", fontSize: "14px" } }, modeText),
         /* @__PURE__ */ React.createElement("div", { style: styles.chatNotice }, "\u26A0\uFE0F Do not include patient identifiers or PHI. Keep messages educational and operational."),
         !String(FIREBASE_CHAT_DB_URL || "").trim() && /* @__PURE__ */ React.createElement("div", { style: { ...styles.chatNotice, background: "rgba(59, 130, 246, 0.08)", borderColor: "rgba(59, 130, 246, 0.3)", color: "#1e3a8a" } }, "Cloud sync is not configured. Set FIREBASE_CHAT_DB_URL in this file to enable organization-wide shared chat."),
@@ -11337,7 +11338,7 @@ useEffect(() => {
         setCurrentView("chat");
       }
     },
-    isMobile ? "\u{1F5E3}\uFE0F Chat" : "\u{1F4AC} Chat"
+    CHAT_ICON + " Chat"
   ))), currentView === "home" && renderHome(), currentView === "category-questions" && renderCategoryQuestions(), currentView === "quiz" && renderQuiz(), currentView === "category-review" && renderQuiz(), currentView === "game" && !gameEnded && renderGame(), currentView === "game" && gameEnded && renderGameResults(), currentView === "quiz-complete" && renderQuizComplete(), currentView === "chat" && renderChat()), /* @__PURE__ */ React.createElement("style", null, `
         @keyframes pulse {
           0%, 100% { transform: translateX(-50%) scale(1); }
