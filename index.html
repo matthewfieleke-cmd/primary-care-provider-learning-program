@@ -11337,7 +11337,7 @@ useEffect(() => {
         setCurrentView("chat");
       }
     },
-    "\u{1F5E3}\uFE0F Chat"
+    isMobile ? "\u{1F5E3}\uFE0F Chat" : "\u{1F4AC} Chat"
   ))), currentView === "home" && renderHome(), currentView === "category-questions" && renderCategoryQuestions(), currentView === "quiz" && renderQuiz(), currentView === "category-review" && renderQuiz(), currentView === "game" && !gameEnded && renderGame(), currentView === "game" && gameEnded && renderGameResults(), currentView === "quiz-complete" && renderQuizComplete(), currentView === "chat" && renderChat()), /* @__PURE__ */ React.createElement("style", null, `
         @keyframes pulse {
           0%, 100% { transform: translateX(-50%) scale(1); }
