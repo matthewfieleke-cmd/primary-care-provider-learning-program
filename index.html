@@ -9234,6 +9234,9 @@ function PCPLearningApp() {
   const FIREBASE_CHAT_DB_URL = "https://primary-care-learning-program-default-rtdb.firebaseio.com";
   const CHAT_MESSAGES_KEY = "pcp-chat-local";
   const CHAT_NAME_KEY = "pcp-chat-name";
+  const CHAT_OWNER_SESSION_KEY = "pcp-chat-owner-session";
+  const CHAT_OWNER_DELETE_CODE = "Puyt8_88";
+  const CHAT_ICON = "assets/chat-icon-clean.png";
   const DEFAULT_PROGRESS = {
     answeredQuestions: {},
     incorrectQuestions: [],
@@ -9272,6 +9275,7 @@ function PCPLearningApp() {
   const [chatInput, setChatInput] = useState("");
   const [chatName, setChatName] = useState("");
   const [chatSyncMode, setChatSyncMode] = useState("local");
+  const [chatOwnerMode, setChatOwnerMode] = useState(false);
   const gameTimerRef = useRef(null);
   const gameScoreRef = useRef(0);
   const progressRef = useRef(null);
@@ -9279,12 +9283,15 @@ function PCPLearningApp() {
   const saveTimeoutRef = useRef(null);
   const searchTimeoutRef = useRef(null);
   const chatPollRef = useRef(null);
+  const chatOwnerTapCountRef = useRef(0);
+  const chatOwnerTapResetRef = useRef(null);
 
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
       if (chatPollRef.current) clearInterval(chatPollRef.current);
+      if (chatOwnerTapResetRef.current) clearTimeout(chatOwnerTapResetRef.current);
     };
   }, []);
 
@@ -9396,6 +9403,72 @@ useEffect(() => {
     } catch (e) {
     }
   };
+  const getOwnerSessionEnabled = async () => {
+    try {
+      const stored = await window.storage.get(CHAT_OWNER_SESSION_KEY);
+      return !!(stored && String(stored.value || "") === "1");
+    } catch (e) {
+      return false;
+    }
+  };
+  const setOwnerSessionEnabled = async (enabled) => {
+    try {
+      if (enabled) {
+        await window.storage.set(CHAT_OWNER_SESSION_KEY, "1");
+      } else {
+        await window.storage.remove(CHAT_OWNER_SESSION_KEY);
+      }
+    } catch (e) {
+    }
+  };
+  const unlockOwnerMode = async (enteredCode) => {
+    const configuredCode = String(CHAT_OWNER_DELETE_CODE || "").trim();
+    if (!configuredCode) {
+      return false;
+    }
+    if (String(enteredCode || "").trim() !== configuredCode) {
+      alert("Access denied.");
+      return false;
+    }
+    setChatOwnerMode(true);
+    await setOwnerSessionEnabled(true);
+    return true;
+  };
+  const lockOwnerMode = async () => {
+    setChatOwnerMode(false);
+    await setOwnerSessionEnabled(false);
+  };
+  const promptOwnerModeAccess = async () => {
+    const configuredCode = String(CHAT_OWNER_DELETE_CODE || "").trim();
+    if (!configuredCode) return;
+    if (chatOwnerMode) {
+      await lockOwnerMode();
+      return;
+    }
+    const entered = window.prompt("Enter access code");
+    if (entered === null) return;
+    await unlockOwnerMode(entered);
+  };
+  const handleChatTitleSecretTap = () => {
+    chatOwnerTapCountRef.current += 1;
+    if (chatOwnerTapResetRef.current) clearTimeout(chatOwnerTapResetRef.current);
+    chatOwnerTapResetRef.current = setTimeout(() => {
+      chatOwnerTapCountRef.current = 0;
+      chatOwnerTapResetRef.current = null;
+    }, 2600);
+    if (chatOwnerTapCountRef.current >= 5) {
+      chatOwnerTapCountRef.current = 0;
+      if (chatOwnerTapResetRef.current) {
+        clearTimeout(chatOwnerTapResetRef.current);
+        chatOwnerTapResetRef.current = null;
+      }
+      promptOwnerModeAccess();
+    }
+  };
+  const getMessageIdentity = (message) => {
+    if (!message || typeof message !== "object") return "";
+    return message.id || message.remoteId || `${message.ts || ""}-${message.name || ""}-${message.text || ""}`;
+  };
   const getLocalChatMessages = async () => {
     try {
       const stored = await window.storage.get(CHAT_MESSAGES_KEY);
@@ -9420,7 +9493,13 @@ useEffect(() => {
     if (!res.ok) throw new Error("chat fetch failed");
     const payload = await res.json();
     if (!payload || typeof payload !== "object") return [];
-    return Object.values(payload).filter(Boolean).sort((a, b) => (a.ts || 0) - (b.ts || 0));
+    return Object.entries(payload).map(([remoteId, value]) => {
+      if (!value || typeof value !== "object") return null;
+      return {
+        ...value,
+        remoteId
+      };
+    }).filter(Boolean).sort((a, b) => (a.ts || 0) - (b.ts || 0));
   };
   const loadChatMessages = async () => {
     try {
@@ -9446,6 +9525,37 @@ useEffect(() => {
       body: JSON.stringify(message)
     });
     return !!res.ok;
+  };
+  const deleteRemoteChatMessage = async (remoteId) => {
+    const base = String(FIREBASE_CHAT_DB_URL || "").trim().replace(/\/+$/, "");
+    if (!base || !remoteId) return false;
+    const url = `${base}/pcp-chat/messages/${encodeURIComponent(remoteId)}.json`;
+    const res = await fetch(url, { method: "DELETE" });
+    return !!res.ok;
+  };
+  const deleteChatMessage = async (message) => {
+    if (!chatOwnerMode || !message) return;
+    const confirmed = window.confirm("Delete this chat message?");
+    if (!confirmed) return;
+    play("click");
+    if (chatSyncMode === "shared") {
+      if (!message.remoteId) {
+        alert("This cloud message cannot be deleted because no remote ID was found.");
+        return;
+      }
+      const removedRemote = await deleteRemoteChatMessage(message.remoteId);
+      if (!removedRemote) {
+        alert("Could not delete from shared cloud chat right now.");
+        return;
+      }
+      await loadChatMessages();
+      return;
+    }
+    const local = await getLocalChatMessages();
+    const targetId = getMessageIdentity(message);
+    const updated = local.filter((entry) => getMessageIdentity(entry) !== targetId).slice(-300);
+    setChatMessages(updated);
+    await setLocalChatMessages(updated);
   };
   const sendChatMessage = async () => {
     const text = chatInput.trim();
@@ -9485,6 +9595,16 @@ useEffect(() => {
       alert("Could not copy snapshot on this device.");
     }
   };
+  useEffect(() => {
+    const configuredCode = String(CHAT_OWNER_DELETE_CODE || "").trim();
+    if (!configuredCode) {
+      setChatOwnerMode(false);
+      return;
+    }
+    getOwnerSessionEnabled().then((enabled) => {
+      if (enabled) setChatOwnerMode(true);
+    });
+  }, []);
   useEffect(() => {
     getChatName().then((name) => {
       if (name) setChatName(name);
@@ -10165,6 +10285,31 @@ useEffect(() => {
       fontSize: "18px",
       transition: "all 0.2s"
     },
+    chatIconBtn: {
+      width: "40px",
+      height: "40px",
+      border: "none",
+      background: "transparent",
+      cursor: "pointer",
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 0,
+      transition: "all 0.2s"
+    },
+    chatButtonIcon: {
+      width: "40px",
+      height: "40px",
+      objectFit: "cover",
+      display: "block"
+    },
+    chatHeaderIcon: {
+      width: "34px",
+      height: "34px",
+      objectFit: "cover",
+      display: "block",
+      flexShrink: 0
+    },
     card: {
       background: "rgba(255, 255, 255, 0.98)",
       backdropFilter: "blur(10px)",
@@ -10616,6 +10761,16 @@ useEffect(() => {
       marginTop: "12px",
       flexWrap: "wrap"
     },
+    chatDeleteBtn: {
+      padding: "4px 8px",
+      borderRadius: "8px",
+      border: "1px solid rgba(239, 68, 68, 0.35)",
+      background: "rgba(239, 68, 68, 0.08)",
+      color: "#b91c1c",
+      cursor: "pointer",
+      fontSize: "12px",
+      fontWeight: "600"
+    },
     secondaryBtn: {
       padding: "10px 14px",
       borderRadius: "10px",
@@ -11053,7 +11208,7 @@ useEffect(() => {
       setCurrentView("category-questions");
     } : goHome }, selectedCategory ? "Back to Category" : "Return Home"));
   };
-  const renderChat = () => {
+  const renderChatLegacy = () => {
     const modeText = chatSyncMode === "shared" ? "Shared cloud chat active" : "Local device chat only";
     return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("button", { style: styles.backBtn, onClick: goHome }, "\u2190 Back to Home"), /* @__PURE__ */ React.createElement("div", { style: styles.card }, /* @__PURE__ */ React.createElement("h2", { style: { margin: "0 0 8px 0", color: "#1e293b" } }, "\u{1F5E3}\uFE0F Clinician Collaboration Chat"), /* @__PURE__ */ React.createElement("p", { style: { margin: "0 0 12px 0", color: "#64748b", fontSize: "14px" } }, modeText), /* @__PURE__ */ React.createElement("div", { style: styles.chatNotice }, "\u26A0\uFE0F Do not include patient identifiers or PHI. Keep messages educational and operational."), !String(FIREBASE_CHAT_DB_URL || "").trim() && /* @__PURE__ */ React.createElement("div", { style: { ...styles.chatNotice, background: "rgba(59, 130, 246, 0.08)", borderColor: "rgba(59, 130, 246, 0.3)", color: "#1e3a8a" } }, "Cloud sync is not configured. Set FIREBASE_CHAT_DB_URL in this file to enable organization-wide shared chat."), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: effectiveMobile ? "1fr" : "220px 1fr", gap: "10px", marginBottom: "12px" } }, /* @__PURE__ */ React.createElement(
       "input",
@@ -11080,6 +11235,83 @@ useEffect(() => {
         }
       }
     )), /* @__PURE__ */ React.createElement("div", { style: styles.chatActions }, /* @__PURE__ */ React.createElement("button", { style: styles.nextBtn, onClick: sendChatMessage }, "Send Message"), /* @__PURE__ */ React.createElement("button", { style: styles.secondaryBtn, onClick: loadChatMessages }, "Refresh"), /* @__PURE__ */ React.createElement("button", { style: styles.secondaryBtn, onClick: copyChatSnapshot }, "Copy Snapshot")), /* @__PURE__ */ React.createElement("div", { style: styles.chatMessageList }, chatMessages.length === 0 ? /* @__PURE__ */ React.createElement("p", { style: { color: "#64748b", margin: "8px 4px" } }, "No messages yet. Start the conversation.") : chatMessages.slice(-120).map((m) => /* @__PURE__ */ React.createElement("div", { key: m.id || `${m.ts}-${m.name}`, style: styles.chatMessageItem }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", gap: "10px", marginBottom: "2px" } }, /* @__PURE__ */ React.createElement("strong", { style: { color: "#1e293b", fontSize: "13px" } }, m.name || "Clinician"), /* @__PURE__ */ React.createElement("span", { style: { color: "#94a3b8", fontSize: "12px", flexShrink: 0 } }, new Date(m.ts || Date.now()).toLocaleString())), /* @__PURE__ */ React.createElement("div", { style: { color: "#334155", fontSize: "14px", whiteSpace: "pre-wrap", wordBreak: "break-word" } }, m.text || ""))))));
+  };
+  const renderChat = () => {
+    const modeText = chatSyncMode === "shared" ? "Shared cloud chat active" : "Local device chat only";
+    return /* @__PURE__ */ React.createElement(
+      React.Fragment,
+      null,
+      /* @__PURE__ */ React.createElement("button", { style: styles.backBtn, onClick: goHome }, "\u2190 Back to Home"),
+      /* @__PURE__ */ React.createElement(
+        "div",
+        { style: styles.card },
+        /* @__PURE__ */ React.createElement("h2", { style: { margin: "0 0 8px 0", color: "#1e293b", display: "inline-flex", alignItems: "center", gap: "8px" }, onClick: handleChatTitleSecretTap }, /* @__PURE__ */ React.createElement("img", { src: CHAT_ICON, alt: "", "aria-hidden": "true", style: styles.chatHeaderIcon }), "Clinician Collaboration Chat"),
+        /* @__PURE__ */ React.createElement("p", { style: { margin: "0 0 12px 0", color: "#64748b", fontSize: "14px" } }, modeText),
+        /* @__PURE__ */ React.createElement("div", { style: styles.chatNotice }, "\u26A0\uFE0F Do not include patient identifiers or PHI. Keep messages educational and operational."),
+        !String(FIREBASE_CHAT_DB_URL || "").trim() && /* @__PURE__ */ React.createElement("div", { style: { ...styles.chatNotice, background: "rgba(59, 130, 246, 0.08)", borderColor: "rgba(59, 130, 246, 0.3)", color: "#1e3a8a" } }, "Cloud sync is not configured. Set FIREBASE_CHAT_DB_URL in this file to enable organization-wide shared chat."),
+        /* @__PURE__ */ React.createElement(
+          "div",
+          { style: { display: "grid", gridTemplateColumns: effectiveMobile ? "1fr" : "220px 1fr", gap: "10px", marginBottom: "12px" } },
+          /* @__PURE__ */ React.createElement(
+            "input",
+            {
+              style: styles.chatInput,
+              value: chatName,
+              maxLength: 40,
+              placeholder: "Your display name",
+              onChange: (e) => setChatName(e.target.value)
+            }
+          ),
+          /* @__PURE__ */ React.createElement(
+            "input",
+            {
+              style: styles.chatInput,
+              value: chatInput,
+              maxLength: 600,
+              placeholder: "Type a message to colleagues...",
+              onChange: (e) => setChatInput(e.target.value),
+              onKeyDown: (e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  sendChatMessage();
+                }
+              }
+            }
+          )
+        ),
+        /* @__PURE__ */ React.createElement(
+          "div",
+          { style: styles.chatActions },
+          /* @__PURE__ */ React.createElement("button", { style: styles.nextBtn, onClick: sendChatMessage }, "Send Message"),
+          /* @__PURE__ */ React.createElement("button", { style: styles.secondaryBtn, onClick: loadChatMessages }, "Refresh"),
+          /* @__PURE__ */ React.createElement("button", { style: styles.secondaryBtn, onClick: copyChatSnapshot }, "Copy Snapshot")
+        ),
+        /* @__PURE__ */ React.createElement(
+          "div",
+          { style: styles.chatMessageList },
+          chatMessages.length === 0 ? /* @__PURE__ */ React.createElement("p", { style: { color: "#64748b", margin: "8px 4px" } }, "No messages yet. Start the conversation.") : chatMessages.slice(-120).map((m) => {
+            const messageKey = getMessageIdentity(m) || `${m.ts}-${m.name}`;
+            const canDeleteMessage = chatOwnerMode && (chatSyncMode !== "shared" || !!m.remoteId);
+            return /* @__PURE__ */ React.createElement(
+              "div",
+              { key: messageKey, style: styles.chatMessageItem },
+              /* @__PURE__ */ React.createElement(
+                "div",
+                { style: { display: "flex", justifyContent: "space-between", gap: "10px", marginBottom: "2px" } },
+                /* @__PURE__ */ React.createElement("strong", { style: { color: "#1e293b", fontSize: "13px" } }, m.name || "Clinician"),
+                /* @__PURE__ */ React.createElement(
+                  "div",
+                  { style: { display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 } },
+                  /* @__PURE__ */ React.createElement("span", { style: { color: "#94a3b8", fontSize: "12px" } }, new Date(m.ts || Date.now()).toLocaleString()),
+                  canDeleteMessage && /* @__PURE__ */ React.createElement("button", { style: styles.chatDeleteBtn, onClick: () => deleteChatMessage(m) }, "Delete")
+                )
+              ),
+              /* @__PURE__ */ React.createElement("div", { style: { color: "#334155", fontSize: "14px", whiteSpace: "pre-wrap", wordBreak: "break-word" } }, m.text || "")
+            );
+          })
+        )
+      )
+    );
   };
   return /* @__PURE__ */ React.createElement("div", { style: styles.app }, /* @__PURE__ */ React.createElement("div", { style: styles.backgroundPattern }), showGameIntro && /* @__PURE__ */ React.createElement("div", { style: styles.gameIntroOverlay }, /* @__PURE__ */ React.createElement("div", { style: styles.gameIntroCard }, /* @__PURE__ */ React.createElement("div", { style: styles.gameIntroIcon }, "\u{1F3AE}"), /* @__PURE__ */ React.createElement("h1", { style: styles.gameIntroTitle }, "GAME MODE"), /* @__PURE__ */ React.createElement("p", { style: styles.gameIntroDesc }, "Test your knowledge under pressure! Answer as many questions as you can in 3 minutes."), /* @__PURE__ */ React.createElement("div", { style: styles.gameIntroFeature }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: "24px" } }, "\u23F1\uFE0F"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", null, "3 Minutes"), /* @__PURE__ */ React.createElement("p", { style: { fontSize: "12px", color: "#64748b", margin: 0 } }, "Race against the clock"))), /* @__PURE__ */ React.createElement("div", { style: styles.gameIntroFeature }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: "24px" } }, "\u{1F525}"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", null, "Streak Bonus"), /* @__PURE__ */ React.createElement("p", { style: { fontSize: "12px", color: "#64748b", margin: 0 } }, 'Build your streak - get "Heating Up!"'))), /* @__PURE__ */ React.createElement("div", { style: styles.gameIntroFeature }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: "24px" } }, "\u26A0\uFE0F"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", null, "Time Warnings"), /* @__PURE__ */ React.createElement("p", { style: { fontSize: "12px", color: "#64748b", margin: 0 } }, "1 minute and 10 second warnings"))), /* @__PURE__ */ React.createElement("div", { style: styles.gameIntroFeature }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: "24px" } }, "\u{1F3C6}"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", null, "Beat Your High Score"), /* @__PURE__ */ React.createElement("p", { style: { fontSize: "12px", color: "#64748b", margin: 0 } }, "Current: ", progress.gameHighScore, " points"))), /* @__PURE__ */ React.createElement(
     "button",
@@ -11125,13 +11357,15 @@ useEffect(() => {
   ), /* @__PURE__ */ React.createElement(
     "button",
     {
-      style: styles.toggleBtn,
+      style: styles.chatIconBtn,
+      "aria-label": "Open Chat",
+      title: "Open Chat",
       onClick: () => {
         play("click");
         setCurrentView("chat");
       }
     },
-    "\u{1F5E3}\uFE0F Chat"
+    /* @__PURE__ */ React.createElement("img", { src: CHAT_ICON, alt: "", "aria-hidden": "true", style: styles.chatButtonIcon })
   ))), currentView === "home" && renderHome(), currentView === "category-questions" && renderCategoryQuestions(), currentView === "quiz" && renderQuiz(), currentView === "category-review" && renderQuiz(), currentView === "game" && !gameEnded && renderGame(), currentView === "game" && gameEnded && renderGameResults(), currentView === "quiz-complete" && renderQuizComplete(), currentView === "chat" && renderChat()), /* @__PURE__ */ React.createElement("style", null, `
         @keyframes pulse {
           0%, 100% { transform: translateX(-50%) scale(1); }
