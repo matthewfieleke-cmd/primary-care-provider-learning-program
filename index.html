@@ -9237,6 +9237,7 @@ function PCPLearningApp() {
   const CHAT_OWNER_SESSION_KEY = "pcp-chat-owner-session";
   const CHAT_OWNER_DELETE_CODE = "Puyt8_88";
   const CHAT_ICON = "assets/chat-icon-clean.png";
+  const CHAT_DELETE_DIRECTIVE_PREFIX = "__OWNER_DELETE__";
   const DEFAULT_PROGRESS = {
     answeredQuestions: {},
     incorrectQuestions: [],
@@ -9469,6 +9470,25 @@ useEffect(() => {
     if (!message || typeof message !== "object") return "";
     return message.id || message.remoteId || `${message.ts || ""}-${message.name || ""}-${message.text || ""}`;
   };
+  const parseDeleteDirective = (message) => {
+    const raw = String(message?.text || "");
+    if (!raw.startsWith(CHAT_DELETE_DIRECTIVE_PREFIX + "|")) return null;
+    const parts = raw.split("|");
+    return {
+      id: parts[1] || "",
+      remoteId: parts[2] || ""
+    };
+  };
+  const buildDeleteDirectiveMessage = (targetMessage) => {
+    const targetId = String(targetMessage?.id || "");
+    const targetRemoteId = String(targetMessage?.remoteId || "");
+    return {
+      id: `owner-delete-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      name: "System",
+      text: `${CHAT_DELETE_DIRECTIVE_PREFIX}|${targetId}|${targetRemoteId}`,
+      ts: Date.now()
+    };
+  };
   const getLocalChatMessages = async () => {
     try {
       const stored = await window.storage.get(CHAT_MESSAGES_KEY);
@@ -9493,13 +9513,27 @@ useEffect(() => {
     if (!res.ok) throw new Error("chat fetch failed");
     const payload = await res.json();
     if (!payload || typeof payload !== "object") return [];
-    return Object.entries(payload).map(([remoteId, value]) => {
+    const mapped = Object.entries(payload).map(([remoteId, value]) => {
       if (!value || typeof value !== "object") return null;
       return {
         ...value,
         remoteId
       };
-    }).filter(Boolean).sort((a, b) => (a.ts || 0) - (b.ts || 0));
+    }).filter(Boolean);
+    const deletedIds = new Set();
+    const deletedRemoteIds = new Set();
+    mapped.forEach((msg) => {
+      const directive = parseDeleteDirective(msg);
+      if (!directive) return;
+      if (directive.id) deletedIds.add(directive.id);
+      if (directive.remoteId) deletedRemoteIds.add(directive.remoteId);
+    });
+    return mapped.filter((msg) => {
+      if (parseDeleteDirective(msg)) return false;
+      if (msg.id && deletedIds.has(msg.id)) return false;
+      if (msg.remoteId && deletedRemoteIds.has(msg.remoteId)) return false;
+      return true;
+    }).sort((a, b) => (a.ts || 0) - (b.ts || 0));
   };
   const loadChatMessages = async () => {
     try {
@@ -9539,16 +9573,21 @@ useEffect(() => {
     if (!confirmed) return;
     play("click");
     if (chatSyncMode === "shared") {
-      if (!message.remoteId) {
-        alert("This cloud message cannot be deleted because no remote ID was found.");
+      let removedRemote = false;
+      if (message.remoteId) {
+        removedRemote = await deleteRemoteChatMessage(message.remoteId);
+      }
+      if (removedRemote) {
+        await loadChatMessages();
         return;
       }
-      const removedRemote = await deleteRemoteChatMessage(message.remoteId);
-      if (!removedRemote) {
-        alert("Could not delete from shared cloud chat right now.");
+      const directiveMessage = buildDeleteDirectiveMessage(message);
+      const sentDirective = await postChatMessage(directiveMessage);
+      if (sentDirective) {
+        await loadChatMessages();
         return;
       }
-      await loadChatMessages();
+      alert("Could not delete from shared cloud chat right now.");
       return;
     }
     const local = await getLocalChatMessages();
