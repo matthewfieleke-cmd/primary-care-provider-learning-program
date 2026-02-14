@@ -9275,7 +9275,6 @@ function PCPLearningApp() {
   const [chatName, setChatName] = useState("");
   const [chatSyncMode, setChatSyncMode] = useState("local");
   const [chatOwnerMode, setChatOwnerMode] = useState(false);
-  const [chatOwnerCodeInput, setChatOwnerCodeInput] = useState("");
   const gameTimerRef = useRef(null);
   const gameScoreRef = useRef(0);
   const progressRef = useRef(null);
@@ -9283,12 +9282,15 @@ function PCPLearningApp() {
   const saveTimeoutRef = useRef(null);
   const searchTimeoutRef = useRef(null);
   const chatPollRef = useRef(null);
+  const chatOwnerTapCountRef = useRef(0);
+  const chatOwnerTapResetRef = useRef(null);
 
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
       if (chatPollRef.current) clearInterval(chatPollRef.current);
+      if (chatOwnerTapResetRef.current) clearTimeout(chatOwnerTapResetRef.current);
     };
   }, []);
 
@@ -9418,24 +9420,49 @@ useEffect(() => {
     } catch (e) {
     }
   };
-  const unlockOwnerMode = async () => {
+  const unlockOwnerMode = async (enteredCode) => {
     const configuredCode = String(CHAT_OWNER_DELETE_CODE || "").trim();
     if (!configuredCode) {
-      alert("Owner deletion is not configured. Set CHAT_OWNER_DELETE_CODE in this file.");
-      return;
+      return false;
     }
-    if (chatOwnerCodeInput !== configuredCode) {
-      alert("Incorrect owner code.");
-      return;
+    if (String(enteredCode || "").trim() !== configuredCode) {
+      alert("Access denied.");
+      return false;
     }
-    setChatOwnerCodeInput("");
     setChatOwnerMode(true);
     await setOwnerSessionEnabled(true);
+    return true;
   };
   const lockOwnerMode = async () => {
     setChatOwnerMode(false);
-    setChatOwnerCodeInput("");
     await setOwnerSessionEnabled(false);
+  };
+  const promptOwnerModeAccess = async () => {
+    const configuredCode = String(CHAT_OWNER_DELETE_CODE || "").trim();
+    if (!configuredCode) return;
+    if (chatOwnerMode) {
+      await lockOwnerMode();
+      return;
+    }
+    const entered = window.prompt("Enter access code");
+    if (entered === null) return;
+    await unlockOwnerMode(entered);
+  };
+  const handleChatTitleSecretTap = () => {
+    chatOwnerTapCountRef.current += 1;
+    if (chatOwnerTapResetRef.current) clearTimeout(chatOwnerTapResetRef.current);
+    chatOwnerTapResetRef.current = setTimeout(() => {
+      chatOwnerTapCountRef.current = 0;
+      chatOwnerTapResetRef.current = null;
+    }, 2600);
+    if (chatOwnerTapCountRef.current >= 5) {
+      chatOwnerTapCountRef.current = 0;
+      if (chatOwnerTapResetRef.current) {
+        clearTimeout(chatOwnerTapResetRef.current);
+        chatOwnerTapResetRef.current = null;
+      }
+      promptOwnerModeAccess();
+    }
   };
   const getMessageIdentity = (message) => {
     if (!message || typeof message !== "object") return "";
@@ -10708,25 +10735,6 @@ useEffect(() => {
       marginTop: "12px",
       flexWrap: "wrap"
     },
-    chatOwnerControls: {
-      display: "flex",
-      gap: "8px",
-      marginTop: "12px",
-      marginBottom: "12px",
-      flexWrap: "wrap",
-      alignItems: "center"
-    },
-    chatOwnerBadge: {
-      display: "inline-flex",
-      alignItems: "center",
-      padding: "8px 10px",
-      borderRadius: "999px",
-      fontSize: "12px",
-      fontWeight: "700",
-      color: "#92400e",
-      background: "rgba(245, 158, 11, 0.15)",
-      border: "1px solid rgba(245, 158, 11, 0.35)"
-    },
     chatDeleteBtn: {
       padding: "4px 8px",
       borderRadius: "8px",
@@ -11204,7 +11212,6 @@ useEffect(() => {
   };
   const renderChat = () => {
     const modeText = chatSyncMode === "shared" ? "Shared cloud chat active" : "Local device chat only";
-    const ownerDeleteConfigured = String(CHAT_OWNER_DELETE_CODE || "").trim().length > 0;
     return /* @__PURE__ */ React.createElement(
       React.Fragment,
       null,
@@ -11212,7 +11219,7 @@ useEffect(() => {
       /* @__PURE__ */ React.createElement(
         "div",
         { style: styles.card },
-        /* @__PURE__ */ React.createElement("h2", { style: { margin: "0 0 8px 0", color: "#1e293b" } }, "\u{1F5E3}\uFE0F Clinician Collaboration Chat"),
+        /* @__PURE__ */ React.createElement("h2", { style: { margin: "0 0 8px 0", color: "#1e293b" }, onClick: handleChatTitleSecretTap }, "\u{1F5E3}\uFE0F Clinician Collaboration Chat"),
         /* @__PURE__ */ React.createElement("p", { style: { margin: "0 0 12px 0", color: "#64748b", fontSize: "14px" } }, modeText),
         /* @__PURE__ */ React.createElement("div", { style: styles.chatNotice }, "\u26A0\uFE0F Do not include patient identifiers or PHI. Keep messages educational and operational."),
         !String(FIREBASE_CHAT_DB_URL || "").trim() && /* @__PURE__ */ React.createElement("div", { style: { ...styles.chatNotice, background: "rgba(59, 130, 246, 0.08)", borderColor: "rgba(59, 130, 246, 0.3)", color: "#1e3a8a" } }, "Cloud sync is not configured. Set FIREBASE_CHAT_DB_URL in this file to enable organization-wide shared chat."),
@@ -11252,48 +11259,6 @@ useEffect(() => {
           /* @__PURE__ */ React.createElement("button", { style: styles.nextBtn, onClick: sendChatMessage }, "Send Message"),
           /* @__PURE__ */ React.createElement("button", { style: styles.secondaryBtn, onClick: loadChatMessages }, "Refresh"),
           /* @__PURE__ */ React.createElement("button", { style: styles.secondaryBtn, onClick: copyChatSnapshot }, "Copy Snapshot")
-        ),
-        ownerDeleteConfigured ? /* @__PURE__ */ React.createElement(
-          "div",
-          { style: styles.chatOwnerControls },
-          chatOwnerMode ? /* @__PURE__ */ React.createElement(
-            React.Fragment,
-            null,
-            /* @__PURE__ */ React.createElement("span", { style: styles.chatOwnerBadge }, "Owner mode enabled"),
-            /* @__PURE__ */ React.createElement("button", { style: styles.secondaryBtn, onClick: lockOwnerMode }, "Lock Owner Mode")
-          ) : /* @__PURE__ */ React.createElement(
-            React.Fragment,
-            null,
-            /* @__PURE__ */ React.createElement(
-              "input",
-              {
-                type: "password",
-                style: { ...styles.chatInput, maxWidth: effectiveMobile ? "100%" : "240px" },
-                value: chatOwnerCodeInput,
-                maxLength: 120,
-                placeholder: "Owner delete code",
-                onChange: (e) => setChatOwnerCodeInput(e.target.value),
-                onKeyDown: (e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    unlockOwnerMode();
-                  }
-                }
-              }
-            ),
-            /* @__PURE__ */ React.createElement("button", { style: styles.secondaryBtn, onClick: unlockOwnerMode }, "Enable Owner Mode")
-          )
-        ) : /* @__PURE__ */ React.createElement(
-          "div",
-          {
-            style: {
-              ...styles.chatNotice,
-              background: "rgba(71, 85, 105, 0.08)",
-              borderColor: "rgba(71, 85, 105, 0.22)",
-              color: "#334155"
-            }
-          },
-          "Owner deletion is disabled. Set CHAT_OWNER_DELETE_CODE in this file to enable owner-only deletes."
         ),
         /* @__PURE__ */ React.createElement(
           "div",
