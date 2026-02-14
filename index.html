@@ -10288,38 +10288,27 @@ useEffect(() => {
     chatIconBtn: {
       width: "40px",
       height: "40px",
-      borderRadius: "50%",
-      border: "1px solid rgba(15, 23, 42, 0.12)",
-      background: "rgba(255,255,255,0.9)",
+      border: "none",
+      background: "transparent",
       cursor: "pointer",
       display: "inline-flex",
       alignItems: "center",
       justifyContent: "center",
       padding: 0,
-      overflow: "hidden",
       transition: "all 0.2s"
     },
     chatButtonIcon: {
-      width: "100%",
-      height: "100%",
+      width: "40px",
+      height: "40px",
       objectFit: "cover",
-      transform: "scale(1.25)"
-    },
-    chatHeaderIconWrap: {
-      width: "28px",
-      height: "28px",
-      borderRadius: "50%",
-      overflow: "hidden",
-      display: "inline-flex",
-      alignItems: "center",
-      justifyContent: "center",
-      flexShrink: 0
+      display: "block"
     },
     chatHeaderIcon: {
-      width: "100%",
-      height: "100%",
+      width: "30px",
+      height: "30px",
       objectFit: "cover",
-      transform: "scale(1.18)"
+      display: "block",
+      flexShrink: 0
     },
     card: {
       background: "rgba(255, 255, 255, 0.98)",
@@ -11256,7 +11245,7 @@ useEffect(() => {
       /* @__PURE__ */ React.createElement(
         "div",
         { style: styles.card },
-        /* @__PURE__ */ React.createElement("h2", { style: { margin: "0 0 8px 0", color: "#1e293b", display: "inline-flex", alignItems: "center", gap: "8px" }, onClick: handleChatTitleSecretTap }, /* @__PURE__ */ React.createElement("span", { style: styles.chatHeaderIconWrap }, /* @__PURE__ */ React.createElement("img", { src: CHAT_ICON, alt: "", "aria-hidden": "true", style: styles.chatHeaderIcon })), "Clinician Collaboration Chat"),
+        /* @__PURE__ */ React.createElement("h2", { style: { margin: "0 0 8px 0", color: "#1e293b", display: "inline-flex", alignItems: "center", gap: "8px" }, onClick: handleChatTitleSecretTap }, /* @__PURE__ */ React.createElement("img", { src: CHAT_ICON, alt: "", "aria-hidden": "true", style: styles.chatHeaderIcon }), "Clinician Collaboration Chat"),
         /* @__PURE__ */ React.createElement("p", { style: { margin: "0 0 12px 0", color: "#64748b", fontSize: "14px" } }, modeText),
         /* @__PURE__ */ React.createElement("div", { style: styles.chatNotice }, "\u26A0\uFE0F Do not include patient identifiers or PHI. Keep messages educational and operational."),
         !String(FIREBASE_CHAT_DB_URL || "").trim() && /* @__PURE__ */ React.createElement("div", { style: { ...styles.chatNotice, background: "rgba(59, 130, 246, 0.08)", borderColor: "rgba(59, 130, 246, 0.3)", color: "#1e3a8a" } }, "Cloud sync is not configured. Set FIREBASE_CHAT_DB_URL in this file to enable organization-wide shared chat."),
