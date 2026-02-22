@@ -9321,6 +9321,8 @@ function PCPLearningApp() {
   const handsFreeRef = useRef({ active: false, phase: "idle" });
   const recognitionRef = useRef(null);
   const micPermissionPrimedRef = useRef(false);
+  const ttsKeepAliveRef = useRef(null);
+  const wakeLockRef = useRef(null);
   const handleAnswerRef = useRef(null);
   const nextQuestionRef = useRef(null);
   const getShuffledOptionsRef = useRef(null);
@@ -9460,13 +9462,18 @@ useEffect(() => {
       (v) => /Google UK English Male/i.test(v.name),
       (v) => /Google US English/i.test(v.name) && /male/i.test(v.name),
       (v) => /Microsoft Guy Online/i.test(v.name),
+      (v) => /Microsoft David Online/i.test(v.name),
+      (v) => /Microsoft Mark Online/i.test(v.name),
       (v) => /Microsoft David/i.test(v.name),
       (v) => /Microsoft Mark/i.test(v.name),
       (v) => /Microsoft Guy/i.test(v.name),
+      (v) => /Daniel/i.test(v.name) && v.lang.startsWith("en") && /premium|enhanced/i.test(v.name),
+      (v) => /Aaron/i.test(v.name) && v.lang.startsWith("en") && /premium|enhanced/i.test(v.name),
       (v) => /Daniel/i.test(v.name) && v.lang.startsWith("en"),
+      (v) => /Aaron/i.test(v.name) && v.lang.startsWith("en-US"),
       (v) => /James/i.test(v.name) && v.lang.startsWith("en"),
       (v) => /\bmale\b/i.test(v.name) && v.lang.startsWith("en"),
-      (v) => /Aaron|David|Guy|Mark|Tom|Fred|Alex|Rishi|Oliver|Thomas|Gordon|Lee/i.test(v.name) && v.lang.startsWith("en"),
+      (v) => /David|Guy|Mark|Tom|Fred|Alex|Rishi|Oliver|Thomas|Gordon|Lee/i.test(v.name) && v.lang.startsWith("en"),
       (v) => v.lang.startsWith("en-GB") && !femaleNames.test(v.name),
       (v) => v.lang.startsWith("en-US") && !femaleNames.test(v.name),
       (v) => v.lang.startsWith("en") && !femaleNames.test(v.name),
@@ -9481,6 +9488,7 @@ useEffect(() => {
   };
 
   const stopSpeaking = useCallback(() => {
+    if (ttsKeepAliveRef.current) { clearInterval(ttsKeepAliveRef.current); ttsKeepAliveRef.current = null; }
     window.speechSynthesis.cancel();
     speechUtterRef.current = null;
     setIsSpeaking(false);
@@ -9498,7 +9506,6 @@ useEffect(() => {
       [/\bUSPSTF\b/gi, "U S P S T F"],
       [/\bCDC\b/gi, "C D C"],
       [/\bIDSA\b/gi, "I D S A"],
-      [/\bGOLD\b/gi, "gold"],
       [/\bKDIGO\b/gi, "K D I G O"],
       [/\bAOM\b/gi, "acute otitis media"],
       [/\bOM\b/gi, "otitis media"],
@@ -9640,7 +9647,72 @@ useEffect(() => {
       [/\bSpO2\b/g, "oxygen saturation"],
       [/\bFEV1\b/gi, "F E V 1"],
       [/\bFVC\b/gi, "F V C"],
-      [/\bAPAP\b/gi, "acetaminophen"]
+      [/\bAPAP\b/gi, "acetaminophen"],
+      [/\bSBP\b/gi, "systolic blood pressure"],
+      [/\bDBP\b/gi, "diastolic blood pressure"],
+      [/\bBP\b/g, "blood pressure"],
+      [/\bHR\b/g, "heart rate"],
+      [/\bRR\b/g, "respiratory rate"],
+      [/\bBMI\b/gi, "B M I"],
+      [/\bICU\b/gi, "I C U"],
+      [/\bSOB\b/gi, "shortness of breath"],
+      [/\bDOE\b/gi, "dyspnea on exertion"],
+      [/\bJVD\b/gi, "jugular venous distension"],
+      [/\bROM\b/gi, "range of motion"],
+      [/\bADL\b/gi, "activities of daily living"],
+      [/\bPRN\b/gi, "as needed"],
+      [/\bBID\b/gi, "twice daily"],
+      [/\bTID\b/gi, "three times daily"],
+      [/\bQID\b/gi, "four times daily"],
+      [/\bQHS\b/gi, "at bedtime"],
+      [/\bQD\b/gi, "once daily"],
+      [/\bPO\b/g, "by mouth"],
+      [/\bIV\b/g, "I V"],
+      [/\bIM\b/g, "intramuscular"],
+      [/\bSC\b/g, "subcutaneous"],
+      [/\bSQ\b/g, "subcutaneous"],
+      [/\bWBC\b/gi, "white blood cell count"],
+      [/\bRBC\b/gi, "red blood cell count"],
+      [/\bHGB\b/gi, "hemoglobin"],
+      [/\bHCT\b/gi, "hematocrit"],
+      [/\bMCV\b/gi, "M C V"],
+      [/\bPLT\b/gi, "platelet count"],
+      [/\bANA\b/gi, "A N A"],
+      [/\bRF\b/g, "rheumatoid factor"],
+      [/\bPCR\b/gi, "P C R"],
+      [/\bAED\b/gi, "A E D"],
+      [/\bACE\b/gi, "A C E"],
+      [/\bGFR\b/gi, "glomerular filtration rate"],
+      [/\bEF\b/g, "ejection fraction"],
+      [/\bLVEF\b/gi, "left ventricular ejection fraction"],
+      [/\bPMH\b/gi, "past medical history"],
+      [/\bHPI\b/gi, "history of present illness"],
+      [/\bROS\b/gi, "review of systems"],
+      [/\bNPO\b/gi, "nothing by mouth"],
+      [/\bOTC\b/gi, "over the counter"],
+      [/\bRUQ\b/gi, "right upper quadrant"],
+      [/\bLUQ\b/gi, "left upper quadrant"],
+      [/\bRLQ\b/gi, "right lower quadrant"],
+      [/\bLLQ\b/gi, "left lower quadrant"],
+      [/\bENT\b/gi, "ear nose and throat"],
+      [/\bDMARD\b/gi, "D M A R D"],
+      [/\bTNF\b/gi, "T N F"],
+      [/\bPFT\b/gi, "pulmonary function test"],
+      [/\bDTAP\b/gi, "D T A P"],
+      [/\bMMR\b/gi, "M M R"],
+      [/\bIPV\b/gi, "I P V"],
+      [/\bHEP\s*[AB]\b/gi, (m) => m.replace(/HEP\s*/i, "hepatitis ")],
+      [/\bPPD\b/gi, "P P D"],
+      [/\bIGRA\b/gi, "I G R A"],
+      [/\bFOBT\b/gi, "fecal occult blood test"],
+      [/\bFIT\b/gi, "fecal immunochemical test"],
+      [/\bDEXA\b/gi, "D E X A"],
+      [/\bLDL-C\b/gi, "L D L cholesterol"],
+      [/\bTLC\b/gi, "therapeutic lifestyle changes"],
+      [/\bCPAP\b/gi, "C P A P"],
+      [/\bBILEVEL\b/gi, "bilevel"],
+      [/\bBIPAP\b/gi, "bi-pap"],
+      [/\bABI\b/gi, "ankle brachial index"]
     ];
     let normalized = String(text);
     for (const [pattern, replacement] of replacements) {
@@ -9653,6 +9725,7 @@ useEffect(() => {
       .replace(/(\d+)\s*-\s*(\d+)/g, "$1 to $2")
       .replace(/(\d+)\s*\/\s*(\d+)\s*mmHg\b/gi, "$1 over $2 millimeters of mercury")
       .replace(/\bmmHg\b/gi, "millimeters of mercury")
+      .replace(/(\d{2,3})\s*\/\s*(\d{2,3})/g, "$1 over $2")
       .replace(/\bmg\/kg\/day\b/gi, "milligrams per kilogram per day")
       .replace(/\bmcg\/kg\/min\b/gi, "micrograms per kilogram per minute")
       .replace(/\bmg\/dL\b/gi, "milligrams per deciliter")
@@ -9667,17 +9740,22 @@ useEffect(() => {
       .replace(/\b°\s*F\b/g, "degrees Fahrenheit")
       .replace(/\b°\s*C\b/g, "degrees Celsius")
       .replace(/\b\d+\s*%\b/g, (m) => m.replace("%", " percent"));
-    // Fallback: spell unseen short all-caps acronyms for clearer TTS pronunciation.
-    normalized = normalized.replace(/\b([A-Z]{2,5}\d?)\b/g, (match, token) => {
+    normalized = normalized.replace(/\b([A-Z]{3,5}\d?)\b/g, (match, token) => {
       if (/^\d+$/.test(token)) return match;
-      if (token === "GOLD") return "gold";
+      if (/[AEIOU]/.test(token)) return token.toLowerCase();
       return token.split("").join(" ");
     });
     return normalized;
   }, []);
 
   const buildSpeechText = useCallback((text) => {
-    const plain = String(text || "").replace(/\n+/g, ". ").replace(/\s{2,}/g, " ").replace(/---/g, "").trim();
+    let plain = String(text || "").replace(/\n+/g, ". ").replace(/\s{2,}/g, " ").replace(/---/g, "").trim();
+    plain = plain
+      .replace(/[•●▪►–—]/g, ".")
+      .replace(/CORRECT:\s*([A-D])\)\s*/gi, "Correct answer, $1. ")
+      .replace(/KEY\s+LEARNING\s+POINTS?:?/gi, "Key learning points.")
+      .replace(/\.\s*\./g, ".")
+      .replace(/,\s*,/g, ",");
     return normalizeMedicalSpeechText(plain);
   }, [normalizeMedicalSpeechText]);
 
@@ -9712,22 +9790,37 @@ useEffect(() => {
     if (!text || !window.speechSynthesis) return;
     if (isSpeaking) { stopSpeaking(); return; }
 
+    window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(buildSpeechText(text));
     const voice = pickMaleVoice();
     if (voice) utter.voice = voice;
-    utter.rate = 1;
-    utter.pitch = 0.92;
+    utter.rate = 1.0;
+    utter.pitch = 1.0;
     utter.volume = 1;
-    utter.onend = () => { speechUtterRef.current = null; setIsSpeaking(false); };
-    utter.onerror = () => { speechUtterRef.current = null; setIsSpeaking(false); };
+    const cleanupKeepAlive = () => {
+      if (ttsKeepAliveRef.current) { clearInterval(ttsKeepAliveRef.current); ttsKeepAliveRef.current = null; }
+    };
+    utter.onend = () => { cleanupKeepAlive(); speechUtterRef.current = null; setIsSpeaking(false); };
+    utter.onerror = () => { cleanupKeepAlive(); speechUtterRef.current = null; setIsSpeaking(false); };
 
     speechUtterRef.current = utter;
     setIsSpeaking(true);
+    if (ttsKeepAliveRef.current) clearInterval(ttsKeepAliveRef.current);
+    ttsKeepAliveRef.current = setInterval(() => {
+      if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+        window.speechSynthesis.pause();
+        window.speechSynthesis.resume();
+      }
+    }, 10000);
     window.speechSynthesis.speak(utter);
   }, [isSpeaking, stopSpeaking, buildSpeechText]);
 
   useEffect(() => {
-    return () => { window.speechSynthesis.cancel(); };
+    return () => {
+      window.speechSynthesis.cancel();
+      if (ttsKeepAliveRef.current) { clearInterval(ttsKeepAliveRef.current); ttsKeepAliveRef.current = null; }
+      if (wakeLockRef.current) { try { wakeLockRef.current.release(); } catch(e) {} wakeLockRef.current = null; }
+    };
   }, []);
 
   useEffect(() => {
@@ -9737,14 +9830,38 @@ useEffect(() => {
   const speakAndWait = useCallback((text) => {
     return new Promise((resolve) => {
       if (!text || !window.speechSynthesis) { resolve(); return; }
-      const utter = new SpeechSynthesisUtterance(buildSpeechText(text));
+      window.speechSynthesis.cancel();
+      const builtText = buildSpeechText(text);
+      const utter = new SpeechSynthesisUtterance(builtText);
       const voice = pickMaleVoice();
       if (voice) utter.voice = voice;
-      utter.rate = 1;
-      utter.pitch = 0.92;
+      utter.rate = 1.0;
+      utter.pitch = 1.0;
       utter.volume = 1;
-      utter.onend = () => resolve();
-      utter.onerror = () => resolve();
+      let resolved = false;
+      let keepAlive = null;
+      let safetyTimer = null;
+      const done = () => {
+        if (resolved) return;
+        resolved = true;
+        if (keepAlive) { clearInterval(keepAlive); keepAlive = null; }
+        if (safetyTimer) { clearTimeout(safetyTimer); safetyTimer = null; }
+        resolve();
+      };
+      utter.onend = done;
+      utter.onerror = done;
+      keepAlive = setInterval(() => {
+        if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+          window.speechSynthesis.pause();
+          window.speechSynthesis.resume();
+        } else if (!window.speechSynthesis.speaking && !resolved) {
+          done();
+        }
+      }, 10000);
+      const safetyMs = Math.max(30000, builtText.length * 120);
+      safetyTimer = setTimeout(() => {
+        if (!resolved) { window.speechSynthesis.cancel(); done(); }
+      }, safetyMs);
       window.speechSynthesis.speak(utter);
     });
   }, [buildSpeechText]);
@@ -9764,8 +9881,22 @@ useEffect(() => {
 
   const listenForAnswer = useCallback(() => {
     return new Promise((resolve) => {
-      const rec = recognitionRef.current || initRecognition();
-      if (!rec) { resolve(null); return; }
+      if (recognitionRef.current) {
+        try { recognitionRef.current.abort(); } catch(e) {}
+        recognitionRef.current.onresult = null;
+        recognitionRef.current.onend = null;
+        recognitionRef.current.onerror = null;
+        recognitionRef.current.onspeechend = null;
+      }
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRec) { resolve(null); return; }
+      const rec = new SpeechRec();
+      rec.lang = "en-US";
+      rec.interimResults = false;
+      rec.maxAlternatives = 5;
+      rec.continuous = false;
+      recognitionRef.current = rec;
+
       setIsListening(true);
       setHandsFreePhase("listening");
       handsFreeRef.current.phase = "listening";
@@ -9778,7 +9909,7 @@ useEffect(() => {
         rec.onresult = null;
         rec.onend = null;
         rec.onerror = null;
-        rec.onspeechend = null;
+        try { rec.stop(); } catch(e) {}
         resolve(idx);
       };
 
@@ -9793,10 +9924,13 @@ useEffect(() => {
           }
         }
       };
-      rec.onspeechend = () => { try { rec.stop(); } catch(e) {} };
       rec.onend = () => {
         if (!answered && handsFreeRef.current.active) {
-          try { rec.start(); } catch(e) { finish(null); }
+          setTimeout(() => {
+            if (!answered && handsFreeRef.current.active) {
+              try { rec.start(); } catch(e) { finish(null); }
+            }
+          }, 150);
         } else if (!answered) {
           finish(null);
         }
@@ -9811,15 +9945,13 @@ useEffect(() => {
           finish(null);
           return;
         }
-        if (e.error === "no-speech" && handsFreeRef.current.active) {
-          try { rec.start(); } catch(err) { finish(null); }
-        } else if (e.error !== "aborted") {
+        if (e.error !== "aborted" && e.error !== "no-speech") {
           finish(null);
         }
       };
       try { rec.start(); } catch(e) { finish(null); }
     });
-  }, [initRecognition]);
+  }, []);
 
   const runHandsFreeQuestion = useCallback(async (question, questionIndex, totalQuestions) => {
     if (!handsFreeRef.current.active) return;
@@ -9841,6 +9973,9 @@ useEffect(() => {
     if (!handsFreeRef.current.active) return;
 
     await speakAndWait("What is your answer?");
+    if (!handsFreeRef.current.active) return;
+
+    await new Promise((r) => setTimeout(r, 350));
     if (!handsFreeRef.current.active) return;
 
     const answerIdx = await listenForAnswer();
@@ -9886,6 +10021,11 @@ useEffect(() => {
       alert("Microphone access is required for Hands-Free Mode. Please allow access in your browser settings.");
       return;
     }
+    try {
+      if (navigator.wakeLock) {
+        wakeLockRef.current = await navigator.wakeLock.request("screen");
+      }
+    } catch(e) {}
     setHandsFreeMode(true);
     handsFreeRef.current.active = true;
     handsFreeRef.current.phase = "idle";
@@ -9898,6 +10038,7 @@ useEffect(() => {
     setHandsFreeMode(false);
     setHandsFreePhase("idle");
     setIsListening(false);
+    if (ttsKeepAliveRef.current) { clearInterval(ttsKeepAliveRef.current); ttsKeepAliveRef.current = null; }
     window.speechSynthesis.cancel();
     if (recognitionRef.current) {
       try { recognitionRef.current.abort(); } catch(e) {}
@@ -9905,7 +10046,10 @@ useEffect(() => {
       recognitionRef.current.onend = null;
       recognitionRef.current.onerror = null;
       recognitionRef.current.onspeechend = null;
-      recognitionRef.current = null;
+    }
+    if (wakeLockRef.current) {
+      try { wakeLockRef.current.release(); } catch(e) {}
+      wakeLockRef.current = null;
     }
   }, []);
 
