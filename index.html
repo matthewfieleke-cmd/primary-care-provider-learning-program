@@ -9234,6 +9234,10 @@ function PCPLearningApp() {
   const FIREBASE_CHAT_DB_URL = "https://primary-care-learning-program-default-rtdb.firebaseio.com";
   const CHAT_MESSAGES_KEY = "pcp-chat-local";
   const CHAT_NAME_KEY = "pcp-chat-name";
+  const CHAT_OWNER_SESSION_KEY = "pcp-chat-owner-session";
+  const CHAT_OWNER_DELETE_CODE = "Puyt8_88";
+  const CHAT_ICON = "assets/Gemini_Generated_Image_afw5k2afw5k2afw5.png";
+  const CHAT_DELETE_DIRECTIVE_PREFIX = "__OWNER_DELETE__";
   const DEFAULT_PROGRESS = {
     answeredQuestions: {},
     incorrectQuestions: [],
@@ -9272,6 +9276,17 @@ function PCPLearningApp() {
   const [chatInput, setChatInput] = useState("");
   const [chatName, setChatName] = useState("");
   const [chatSyncMode, setChatSyncMode] = useState("local");
+  const [chatOwnerMode, setChatOwnerMode] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [handsFreeMode, setHandsFreeMode] = useState(false);
+  const [handsFreePhase, setHandsFreePhase] = useState("idle");
+  const [isListening, setIsListening] = useState(false);
+  const speechUtterRef = useRef(null);
+  const handsFreeRef = useRef({ active: false, phase: "idle" });
+  const recognitionRef = useRef(null);
+  const handleAnswerRef = useRef(null);
+  const nextQuestionRef = useRef(null);
+  const getShuffledOptionsRef = useRef(null);
   const gameTimerRef = useRef(null);
   const gameScoreRef = useRef(0);
   const progressRef = useRef(null);
@@ -9279,12 +9294,15 @@ function PCPLearningApp() {
   const saveTimeoutRef = useRef(null);
   const searchTimeoutRef = useRef(null);
   const chatPollRef = useRef(null);
+  const chatOwnerTapCountRef = useRef(0);
+  const chatOwnerTapResetRef = useRef(null);
 
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
       if (chatPollRef.current) clearInterval(chatPollRef.current);
+      if (chatOwnerTapResetRef.current) clearTimeout(chatOwnerTapResetRef.current);
     };
   }, []);
 
@@ -9382,6 +9400,251 @@ useEffect(() => {
   const play = (type) => {
     if (soundEnabled) playSound(type);
   };
+
+  const cachedVoiceRef = useRef(null);
+  const voicesLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (!window.speechSynthesis) return;
+    const load = () => { voicesLoadedRef.current = true; };
+    window.speechSynthesis.addEventListener("voiceschanged", load);
+    if (window.speechSynthesis.getVoices().length) load();
+    return () => window.speechSynthesis.removeEventListener("voiceschanged", load);
+  }, []);
+
+  const pickMaleVoice = () => {
+    if (cachedVoiceRef.current) return cachedVoiceRef.current;
+    const synth = window.speechSynthesis;
+    const voices = synth.getVoices();
+    if (!voices.length) return null;
+
+    const femaleNames = /female|woman|fiona|kate|serena|moira|tessa|samantha|victoria|zoe|susan|karen|allison|ava|nicky|siri.*female/i;
+    const ranked = [
+      (v) => /Google UK English Male/i.test(v.name),
+      (v) => /Google US English/i.test(v.name) && /male/i.test(v.name),
+      (v) => /Microsoft Guy Online/i.test(v.name),
+      (v) => /Microsoft David/i.test(v.name),
+      (v) => /Microsoft Mark/i.test(v.name),
+      (v) => /Microsoft Guy/i.test(v.name),
+      (v) => /Daniel/i.test(v.name) && v.lang.startsWith("en"),
+      (v) => /James/i.test(v.name) && v.lang.startsWith("en"),
+      (v) => /\bmale\b/i.test(v.name) && v.lang.startsWith("en"),
+      (v) => /Aaron|David|Guy|Mark|Tom|Fred|Alex|Rishi|Oliver|Thomas|Gordon|Lee/i.test(v.name) && v.lang.startsWith("en"),
+      (v) => v.lang.startsWith("en-GB") && !femaleNames.test(v.name),
+      (v) => v.lang.startsWith("en-US") && !femaleNames.test(v.name),
+      (v) => v.lang.startsWith("en") && !femaleNames.test(v.name),
+    ];
+    for (const test of ranked) {
+      const match = voices.find(test);
+      if (match) { cachedVoiceRef.current = match; return match; }
+    }
+    const fallback = voices.find((v) => v.lang.startsWith("en")) || voices[0];
+    cachedVoiceRef.current = fallback;
+    return fallback;
+  };
+
+  const stopSpeaking = useCallback(() => {
+    window.speechSynthesis.cancel();
+    speechUtterRef.current = null;
+    setIsSpeaking(false);
+  }, []);
+
+  const readAloud = useCallback((text) => {
+    if (!text || !window.speechSynthesis) return;
+    if (isSpeaking) { stopSpeaking(); return; }
+
+    const plain = text.replace(/\n+/g, ". ").replace(/\s{2,}/g, " ").replace(/---/g, "").trim();
+    const utter = new SpeechSynthesisUtterance(plain);
+    const voice = pickMaleVoice();
+    if (voice) utter.voice = voice;
+    utter.rate = 1.15;
+    utter.pitch = 0.92;
+    utter.volume = 1;
+    utter.onend = () => { speechUtterRef.current = null; setIsSpeaking(false); };
+    utter.onerror = () => { speechUtterRef.current = null; setIsSpeaking(false); };
+
+    speechUtterRef.current = utter;
+    setIsSpeaking(true);
+    window.speechSynthesis.speak(utter);
+  }, [isSpeaking, stopSpeaking]);
+
+  useEffect(() => {
+    return () => { window.speechSynthesis.cancel(); };
+  }, []);
+
+  useEffect(() => {
+    if (!showExplanation && isSpeaking && !handsFreeRef.current.active) stopSpeaking();
+  }, [showExplanation, isSpeaking, stopSpeaking]);
+
+  const speakAndWait = useCallback((text) => {
+    return new Promise((resolve) => {
+      if (!text || !window.speechSynthesis) { resolve(); return; }
+      const plain = text.replace(/\n+/g, ". ").replace(/\s{2,}/g, " ").replace(/---/g, "").trim();
+      const utter = new SpeechSynthesisUtterance(plain);
+      const voice = pickMaleVoice();
+      if (voice) utter.voice = voice;
+      utter.rate = 1.15;
+      utter.pitch = 0.92;
+      utter.volume = 1;
+      utter.onend = () => resolve();
+      utter.onerror = () => resolve();
+      window.speechSynthesis.speak(utter);
+    });
+  }, []);
+
+  const listenForAnswer = useCallback(() => {
+    return new Promise((resolve) => {
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRec) { resolve(null); return; }
+      const rec = new SpeechRec();
+      rec.lang = "en-US";
+      rec.interimResults = false;
+      rec.maxAlternatives = 5;
+      rec.continuous = false;
+      recognitionRef.current = rec;
+      setIsListening(true);
+      setHandsFreePhase("listening");
+      handsFreeRef.current.phase = "listening";
+
+      let answered = false;
+      const finish = (idx) => {
+        if (answered) return;
+        answered = true;
+        setIsListening(false);
+        recognitionRef.current = null;
+        resolve(idx);
+      };
+
+      rec.onresult = (e) => {
+        for (let i = 0; i < e.results.length; i++) {
+          for (let j = 0; j < e.results[i].length; j++) {
+            const t = e.results[i][j].transcript.trim().toUpperCase();
+            if (/\bA\b|ALPHA|OPTION A|ANSWER A|FIRST/.test(t)) { finish(0); return; }
+            if (/\bB\b|BRAVO|OPTION B|ANSWER B|SECOND/.test(t)) { finish(1); return; }
+            if (/\bC\b|CHARLIE|OPTION C|ANSWER C|THIRD/.test(t)) { finish(2); return; }
+            if (/\bD\b|DELTA|OPTION D|ANSWER D|FOURTH/.test(t)) { finish(3); return; }
+          }
+        }
+      };
+      rec.onspeechend = () => { try { rec.stop(); } catch(e) {} };
+      rec.onend = () => {
+        if (!answered && handsFreeRef.current.active) {
+          try { rec.start(); } catch(e) { finish(null); }
+        } else if (!answered) {
+          finish(null);
+        }
+      };
+      rec.onerror = (e) => {
+        if (e.error === "no-speech" && handsFreeRef.current.active) {
+          try { rec.start(); } catch(err) { finish(null); }
+        } else if (e.error !== "aborted") {
+          finish(null);
+        }
+      };
+      try { rec.start(); } catch(e) { finish(null); }
+    });
+  }, []);
+
+  const runHandsFreeQuestion = useCallback(async (question, questionIndex, totalQuestions) => {
+    if (!handsFreeRef.current.active) return;
+    const shuffled = getShuffledOptionsRef.current ? getShuffledOptionsRef.current(question) : { options: question.options || [], correctIndex: question.correctAnswer || 0 };
+
+    setHandsFreePhase("reading-question");
+    handsFreeRef.current.phase = "reading-question";
+    await speakAndWait(`Question ${questionIndex + 1} of ${totalQuestions}. ${question.question}`);
+    if (!handsFreeRef.current.active) return;
+
+    setHandsFreePhase("reading-options");
+    handsFreeRef.current.phase = "reading-options";
+    for (let i = 0; i < shuffled.options.length; i++) {
+      if (!handsFreeRef.current.active) return;
+      const letter = String.fromCharCode(65 + i);
+      const optionText = shuffled.options[i].replace(/^[A-D]\)\s*/, "");
+      await speakAndWait(`${letter}. ${optionText}`);
+    }
+    if (!handsFreeRef.current.active) return;
+
+    await speakAndWait("What is your answer?");
+    if (!handsFreeRef.current.active) return;
+
+    const answerIdx = await listenForAnswer();
+    if (!handsFreeRef.current.active || answerIdx === null) return;
+
+    if (handleAnswerRef.current) handleAnswerRef.current(answerIdx);
+    const isCorrect = answerIdx === shuffled.correctIndex;
+
+    setHandsFreePhase("reading-result");
+    handsFreeRef.current.phase = "reading-result";
+    if (isCorrect) {
+      await speakAndWait("Correct!");
+    } else {
+      const correctLetter = String.fromCharCode(65 + shuffled.correctIndex);
+      const correctText = shuffled.options[shuffled.correctIndex].replace(/^[A-D]\)\s*/, "");
+      await speakAndWait(`Incorrect. The correct answer is ${correctLetter}, ${correctText}.`);
+    }
+    if (!handsFreeRef.current.active) return;
+
+    setHandsFreePhase("reading-explanation");
+    handsFreeRef.current.phase = "reading-explanation";
+    const cLetter = String.fromCharCode(65 + shuffled.correctIndex);
+    const correctedExplanation = (question.explanation || "").replace(/^CORRECT:\s*[A-D]\b/, `CORRECT: ${cLetter}`);
+    await speakAndWait(correctedExplanation);
+    if (!handsFreeRef.current.active) return;
+
+    setHandsFreePhase("advancing");
+    handsFreeRef.current.phase = "advancing";
+    await new Promise((r) => setTimeout(r, 800));
+    if (!handsFreeRef.current.active) return;
+
+    if (nextQuestionRef.current) nextQuestionRef.current();
+  }, [speakAndWait, listenForAnswer]);
+
+  const startHandsFree = useCallback(() => {
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRec) {
+      alert("Your browser does not support speech recognition. Please use Chrome or Edge.");
+      return;
+    }
+    setHandsFreeMode(true);
+    handsFreeRef.current.active = true;
+    handsFreeRef.current.phase = "idle";
+    setHandsFreePhase("idle");
+  }, []);
+
+  const stopHandsFree = useCallback(() => {
+    handsFreeRef.current.active = false;
+    handsFreeRef.current.phase = "idle";
+    setHandsFreeMode(false);
+    setHandsFreePhase("idle");
+    setIsListening(false);
+    window.speechSynthesis.cancel();
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch(e) {}
+      recognitionRef.current = null;
+    }
+  }, []);
+
+  const runHandsFreeRef = useRef(null);
+  runHandsFreeRef.current = runHandsFreeQuestion;
+
+  useEffect(() => {
+    if (handsFreeMode && !showExplanation && handsFreeRef.current.phase === "idle") {
+      const question = quizQuestions[currentQuestionIndex];
+      if (question) {
+        const timer = setTimeout(() => {
+          if (runHandsFreeRef.current) runHandsFreeRef.current(question, currentQuestionIndex, quizQuestions.length);
+        }, 400);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [handsFreeMode, currentQuestionIndex, showExplanation, quizQuestions]);
+
+  useEffect(() => {
+    if (currentView !== "quiz" && currentView !== "category-review") {
+      if (handsFreeMode) stopHandsFree();
+    }
+  }, [currentView, handsFreeMode, stopHandsFree]);
+
   const getChatName = async () => {
     try {
       const stored = await window.storage.get(CHAT_NAME_KEY);
@@ -9395,6 +9658,91 @@ useEffect(() => {
       await window.storage.set(CHAT_NAME_KEY, String(name || "").trim());
     } catch (e) {
     }
+  };
+  const getOwnerSessionEnabled = async () => {
+    try {
+      const stored = await window.storage.get(CHAT_OWNER_SESSION_KEY);
+      return !!(stored && String(stored.value || "") === "1");
+    } catch (e) {
+      return false;
+    }
+  };
+  const setOwnerSessionEnabled = async (enabled) => {
+    try {
+      if (enabled) {
+        await window.storage.set(CHAT_OWNER_SESSION_KEY, "1");
+      } else {
+        await window.storage.remove(CHAT_OWNER_SESSION_KEY);
+      }
+    } catch (e) {
+    }
+  };
+  const unlockOwnerMode = async (enteredCode) => {
+    const configuredCode = String(CHAT_OWNER_DELETE_CODE || "").trim();
+    if (!configuredCode) {
+      return false;
+    }
+    if (String(enteredCode || "").trim() !== configuredCode) {
+      alert("Access denied.");
+      return false;
+    }
+    setChatOwnerMode(true);
+    await setOwnerSessionEnabled(true);
+    return true;
+  };
+  const lockOwnerMode = async () => {
+    setChatOwnerMode(false);
+    await setOwnerSessionEnabled(false);
+  };
+  const promptOwnerModeAccess = async () => {
+    const configuredCode = String(CHAT_OWNER_DELETE_CODE || "").trim();
+    if (!configuredCode) return;
+    if (chatOwnerMode) {
+      await lockOwnerMode();
+      return;
+    }
+    const entered = window.prompt("Enter access code");
+    if (entered === null) return;
+    await unlockOwnerMode(entered);
+  };
+  const handleChatTitleSecretTap = () => {
+    chatOwnerTapCountRef.current += 1;
+    if (chatOwnerTapResetRef.current) clearTimeout(chatOwnerTapResetRef.current);
+    chatOwnerTapResetRef.current = setTimeout(() => {
+      chatOwnerTapCountRef.current = 0;
+      chatOwnerTapResetRef.current = null;
+    }, 2600);
+    if (chatOwnerTapCountRef.current >= 5) {
+      chatOwnerTapCountRef.current = 0;
+      if (chatOwnerTapResetRef.current) {
+        clearTimeout(chatOwnerTapResetRef.current);
+        chatOwnerTapResetRef.current = null;
+      }
+      promptOwnerModeAccess();
+    }
+  };
+  const getMessageIdentity = (message) => {
+    if (!message || typeof message !== "object") return "";
+    return message.id || message.remoteId || `${message.ts || ""}-${message.name || ""}-${message.text || ""}`;
+  };
+  const parseDeleteDirective = (message) => {
+    const raw = String(message?.text || "");
+    if (!raw.startsWith(CHAT_DELETE_DIRECTIVE_PREFIX + "|")) return null;
+    const parts = raw.split("|");
+    return {
+      id: parts[1] || "",
+      remoteId: parts[2] || ""
+    };
+  };
+  const buildDeleteDirectiveMessage = (targetMessage) => {
+    const targetId = String(targetMessage?.id || "");
+    const targetRemoteId = String(targetMessage?.remoteId || "");
+    return {
+      id: `owner-delete-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      name: "System",
+      text: `${CHAT_DELETE_DIRECTIVE_PREFIX}|${targetId}|${targetRemoteId}`,
+      ts: Date.now()
+    };
   };
   const getLocalChatMessages = async () => {
     try {
@@ -9420,7 +9768,27 @@ useEffect(() => {
     if (!res.ok) throw new Error("chat fetch failed");
     const payload = await res.json();
     if (!payload || typeof payload !== "object") return [];
-    return Object.values(payload).filter(Boolean).sort((a, b) => (a.ts || 0) - (b.ts || 0));
+    const mapped = Object.entries(payload).map(([remoteId, value]) => {
+      if (!value || typeof value !== "object") return null;
+      return {
+        ...value,
+        remoteId
+      };
+    }).filter(Boolean);
+    const deletedIds = new Set();
+    const deletedRemoteIds = new Set();
+    mapped.forEach((msg) => {
+      const directive = parseDeleteDirective(msg);
+      if (!directive) return;
+      if (directive.id) deletedIds.add(directive.id);
+      if (directive.remoteId) deletedRemoteIds.add(directive.remoteId);
+    });
+    return mapped.filter((msg) => {
+      if (parseDeleteDirective(msg)) return false;
+      if (msg.id && deletedIds.has(msg.id)) return false;
+      if (msg.remoteId && deletedRemoteIds.has(msg.remoteId)) return false;
+      return true;
+    }).sort((a, b) => (a.ts || 0) - (b.ts || 0));
   };
   const loadChatMessages = async () => {
     try {
@@ -9446,6 +9814,42 @@ useEffect(() => {
       body: JSON.stringify(message)
     });
     return !!res.ok;
+  };
+  const deleteRemoteChatMessage = async (remoteId) => {
+    const base = String(FIREBASE_CHAT_DB_URL || "").trim().replace(/\/+$/, "");
+    if (!base || !remoteId) return false;
+    const url = `${base}/pcp-chat/messages/${encodeURIComponent(remoteId)}.json`;
+    const res = await fetch(url, { method: "DELETE" });
+    return !!res.ok;
+  };
+  const deleteChatMessage = async (message) => {
+    if (!chatOwnerMode || !message) return;
+    const confirmed = window.confirm("Delete this chat message?");
+    if (!confirmed) return;
+    play("click");
+    if (chatSyncMode === "shared") {
+      let removedRemote = false;
+      if (message.remoteId) {
+        removedRemote = await deleteRemoteChatMessage(message.remoteId);
+      }
+      if (removedRemote) {
+        await loadChatMessages();
+        return;
+      }
+      const directiveMessage = buildDeleteDirectiveMessage(message);
+      const sentDirective = await postChatMessage(directiveMessage);
+      if (sentDirective) {
+        await loadChatMessages();
+        return;
+      }
+      alert("Could not delete from shared cloud chat right now.");
+      return;
+    }
+    const local = await getLocalChatMessages();
+    const targetId = getMessageIdentity(message);
+    const updated = local.filter((entry) => getMessageIdentity(entry) !== targetId).slice(-300);
+    setChatMessages(updated);
+    await setLocalChatMessages(updated);
   };
   const sendChatMessage = async () => {
     const text = chatInput.trim();
@@ -9485,6 +9889,16 @@ useEffect(() => {
       alert("Could not copy snapshot on this device.");
     }
   };
+  useEffect(() => {
+    const configuredCode = String(CHAT_OWNER_DELETE_CODE || "").trim();
+    if (!configuredCode) {
+      setChatOwnerMode(false);
+      return;
+    }
+    getOwnerSessionEnabled().then((enabled) => {
+      if (enabled) setChatOwnerMode(true);
+    });
+  }, []);
   useEffect(() => {
     getChatName().then((name) => {
       if (name) setChatName(name);
@@ -9598,6 +10012,7 @@ useEffect(() => {
     shuffledOptionsRef.current[cacheKey] = result;
     return result;
   }, [currentQuestionIndex]);
+  getShuffledOptionsRef.current = getShuffledOptions;
   const fixExplanationLetter = (text, correctLetter) => {
     if (!text || !correctLetter) return text;
     return text.replace(/^CORRECT:\s*[A-D]\b/, `CORRECT: ${correctLetter}`);
@@ -9696,14 +10111,21 @@ useEffect(() => {
   };
   const nextQuestion = () => {
     play("heartbeat");
+    if (handsFreeRef.current.active) {
+      handsFreeRef.current.phase = "idle";
+      setHandsFreePhase("idle");
+    }
     if (currentQuestionIndex < quizQuestions.length - 1) {
       setCurrentQuestionIndex((prev) => prev + 1);
       setSelectedAnswer(null);
       setShowExplanation(false);
     } else {
+      if (handsFreeMode) stopHandsFree();
       setCurrentView("quiz-complete");
     }
   };
+  handleAnswerRef.current = handleAnswer;
+  nextQuestionRef.current = nextQuestion;
   const initiateGameMode = () => {
     play("click");
     setShowGameIntro(true);
@@ -10165,6 +10587,46 @@ useEffect(() => {
       fontSize: "18px",
       transition: "all 0.2s"
     },
+    chatIconBtn: {
+      width: "48px",
+      height: "48px",
+      border: "none",
+      background: "transparent",
+      cursor: "pointer",
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 0,
+      overflow: "hidden",
+      borderRadius: "12px",
+      transition: "all 0.2s"
+    },
+    chatButtonIcon: {
+      width: "64px",
+      height: "64px",
+      objectFit: "cover",
+      objectPosition: "center",
+      display: "block",
+      borderRadius: 0
+    },
+    chatHeaderIconWrap: {
+      width: "44px",
+      height: "44px",
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      overflow: "hidden",
+      borderRadius: "12px",
+      flexShrink: 0
+    },
+    chatHeaderIconImg: {
+      width: "58px",
+      height: "58px",
+      objectFit: "cover",
+      objectPosition: "center",
+      display: "block",
+      borderRadius: 0
+    },
     card: {
       background: "rgba(255, 255, 255, 0.98)",
       backdropFilter: "blur(10px)",
@@ -10616,6 +11078,16 @@ useEffect(() => {
       marginTop: "12px",
       flexWrap: "wrap"
     },
+    chatDeleteBtn: {
+      padding: "4px 8px",
+      borderRadius: "8px",
+      border: "1px solid rgba(239, 68, 68, 0.35)",
+      background: "rgba(239, 68, 68, 0.08)",
+      color: "#b91c1c",
+      cursor: "pointer",
+      fontSize: "12px",
+      fontWeight: "600"
+    },
     secondaryBtn: {
       padding: "10px 14px",
       borderRadius: "10px",
@@ -10935,7 +11407,30 @@ useEffect(() => {
     return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("button", { style: styles.backBtn, onClick: currentView === "category-review" ? () => {
       play("click");
       setCurrentView("category-questions");
-    } : goHome }, "\u2190 ", currentView === "category-review" ? "Back to Questions" : "Back to Home"), /* @__PURE__ */ React.createElement("div", { style: styles.questionCard }, /* @__PURE__ */ React.createElement("div", { style: styles.questionHeader }, /* @__PURE__ */ React.createElement("span", { style: styles.questionProgress }, "Question ", currentQuestionIndex + 1, " of ", quizQuestions.length), /* @__PURE__ */ React.createElement("span", { style: styles.categoryBadge(category.color) }, /* @__PURE__ */ React.createElement("span", { style: { display: "inline-flex", alignItems: "center", marginRight: "4px" } }, renderBadgeCategoryIcon(category.icon)), category.name)), /* @__PURE__ */ React.createElement("div", { style: styles.progressBar }, /* @__PURE__ */ React.createElement("div", { style: styles.progressFill(
+    } : goHome }, "\u2190 ", currentView === "category-review" ? "Back to Questions" : "Back to Home"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "flex-end", marginBottom: "8px", gap: "8px" } }, handsFreeMode && handsFreePhase === "listening" && /* @__PURE__ */ React.createElement("span", { style: {
+      display: "inline-flex", alignItems: "center", gap: "6px",
+      padding: "4px 12px", borderRadius: "16px", fontSize: "13px", fontWeight: 600,
+      background: "rgba(239, 68, 68, 0.1)", color: "#dc2626",
+      border: "1px solid rgba(239, 68, 68, 0.3)",
+      animation: "pulse 1.5s ease-in-out infinite"
+    } }, "\u{1F3A4} Listening..."),
+    handsFreeMode && handsFreePhase !== "listening" && handsFreePhase !== "idle" && /* @__PURE__ */ React.createElement("span", { style: {
+      display: "inline-flex", alignItems: "center", gap: "6px",
+      padding: "4px 12px", borderRadius: "16px", fontSize: "13px", fontWeight: 500,
+      background: "rgba(37, 99, 235, 0.08)", color: "#1d4ed8",
+      border: "1px solid rgba(37, 99, 235, 0.2)"
+    } }, "\u{1F50A} Speaking..."),
+    /* @__PURE__ */ React.createElement("button", {
+      onClick: handsFreeMode ? stopHandsFree : startHandsFree,
+      style: {
+        display: "inline-flex", alignItems: "center", gap: "6px",
+        padding: "8px 14px", borderRadius: "10px", cursor: "pointer",
+        fontSize: "13px", fontWeight: 600, border: "none",
+        background: handsFreeMode ? "linear-gradient(135deg, #dc2626, #b91c1c)" : "linear-gradient(135deg, #2563eb, #1d4ed8)",
+        color: "white", transition: "all 0.2s",
+        boxShadow: handsFreeMode ? "0 2px 8px rgba(220, 38, 38, 0.3)" : "0 2px 8px rgba(37, 99, 235, 0.3)"
+      }
+    }, handsFreeMode ? "\u23F9 Stop Hands-Free" : "\u{1F3A7} Hands-Free Mode")), /* @__PURE__ */ React.createElement("div", { style: styles.questionCard }, /* @__PURE__ */ React.createElement("div", { style: styles.questionHeader }, /* @__PURE__ */ React.createElement("span", { style: styles.questionProgress }, "Question ", currentQuestionIndex + 1, " of ", quizQuestions.length), /* @__PURE__ */ React.createElement("span", { style: styles.categoryBadge(category.color) }, /* @__PURE__ */ React.createElement("span", { style: { display: "inline-flex", alignItems: "center", marginRight: "4px" } }, renderBadgeCategoryIcon(category.icon)), category.name)), /* @__PURE__ */ React.createElement("div", { style: styles.progressBar }, /* @__PURE__ */ React.createElement("div", { style: styles.progressFill(
       (currentQuestionIndex + 1) / quizQuestions.length * 100
     ) })), questionImages.length > 0 && /* @__PURE__ */ React.createElement("div", { style: styles.quizImageGroup }, questionImages.map((img, idx) => /* @__PURE__ */ React.createElement("figure", { key: `${currentQuestion.id}-qimg-${idx}`, style: styles.quizImageCard }, /* @__PURE__ */ React.createElement("img", { src: img.src, alt: img.alt, style: styles.quizImage, loading: "lazy", decoding: "async" }), !!img.caption && /* @__PURE__ */ React.createElement("figcaption", { style: styles.quizImageCaption }, img.caption)))), /* @__PURE__ */ React.createElement("p", { style: showExplanation ? styles.questionTextCompact : styles.questionText }, currentQuestion.question), (() => {
       const shuffled = getShuffledOptions(currentQuestion);
@@ -10978,6 +11473,29 @@ useEffect(() => {
         }
       },
       isBookmarked(currentQuestion.id) ? "Bookmarked" : "\u{1F3F7}\uFE0F Bookmark"
+    ), window.speechSynthesis && /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        onClick: () => readAloud(fixExplanationLetter(currentQuestion.explanation, String.fromCharCode(65 + getShuffledOptions(currentQuestion).correctIndex))),
+        "aria-label": isSpeaking ? "Stop reading" : "Read aloud",
+        style: {
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "6px",
+          padding: "6px 12px",
+          marginBottom: "12px",
+          marginLeft: "8px",
+          background: isSpeaking ? "rgba(37, 99, 235, 0.12)" : "rgba(0,0,0,0.04)",
+          border: isSpeaking ? "1px solid rgba(37, 99, 235, 0.35)" : "1px solid rgba(0,0,0,0.08)",
+          borderRadius: "8px",
+          cursor: "pointer",
+          fontSize: "13px",
+          color: isSpeaking ? "#1d4ed8" : "#64748b",
+          fontWeight: isSpeaking ? 600 : 400,
+          transition: "all 0.2s ease"
+        }
+      },
+      isSpeaking ? "\u{1F50A} Stop" : "\u{1F50A} Read Aloud"
     ), /* @__PURE__ */ React.createElement(ExpandableText, { text: fixExplanationLetter(currentQuestion.explanation, String.fromCharCode(65 + getShuffledOptions(currentQuestion).correctIndex)) })), showExplanation && /* @__PURE__ */ React.createElement("button", { style: styles.nextBtn, onClick: nextQuestion }, currentQuestionIndex < quizQuestions.length - 1 ? "Next Question \u2192" : "View Results")));
   };
   const renderGame = () => {
@@ -11053,7 +11571,7 @@ useEffect(() => {
       setCurrentView("category-questions");
     } : goHome }, selectedCategory ? "Back to Category" : "Return Home"));
   };
-  const renderChat = () => {
+  const renderChatLegacy = () => {
     const modeText = chatSyncMode === "shared" ? "Shared cloud chat active" : "Local device chat only";
     return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("button", { style: styles.backBtn, onClick: goHome }, "\u2190 Back to Home"), /* @__PURE__ */ React.createElement("div", { style: styles.card }, /* @__PURE__ */ React.createElement("h2", { style: { margin: "0 0 8px 0", color: "#1e293b" } }, "\u{1F5E3}\uFE0F Clinician Collaboration Chat"), /* @__PURE__ */ React.createElement("p", { style: { margin: "0 0 12px 0", color: "#64748b", fontSize: "14px" } }, modeText), /* @__PURE__ */ React.createElement("div", { style: styles.chatNotice }, "\u26A0\uFE0F Do not include patient identifiers or PHI. Keep messages educational and operational."), !String(FIREBASE_CHAT_DB_URL || "").trim() && /* @__PURE__ */ React.createElement("div", { style: { ...styles.chatNotice, background: "rgba(59, 130, 246, 0.08)", borderColor: "rgba(59, 130, 246, 0.3)", color: "#1e3a8a" } }, "Cloud sync is not configured. Set FIREBASE_CHAT_DB_URL in this file to enable organization-wide shared chat."), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: effectiveMobile ? "1fr" : "220px 1fr", gap: "10px", marginBottom: "12px" } }, /* @__PURE__ */ React.createElement(
       "input",
@@ -11080,6 +11598,83 @@ useEffect(() => {
         }
       }
     )), /* @__PURE__ */ React.createElement("div", { style: styles.chatActions }, /* @__PURE__ */ React.createElement("button", { style: styles.nextBtn, onClick: sendChatMessage }, "Send Message"), /* @__PURE__ */ React.createElement("button", { style: styles.secondaryBtn, onClick: loadChatMessages }, "Refresh"), /* @__PURE__ */ React.createElement("button", { style: styles.secondaryBtn, onClick: copyChatSnapshot }, "Copy Snapshot")), /* @__PURE__ */ React.createElement("div", { style: styles.chatMessageList }, chatMessages.length === 0 ? /* @__PURE__ */ React.createElement("p", { style: { color: "#64748b", margin: "8px 4px" } }, "No messages yet. Start the conversation.") : chatMessages.slice(-120).map((m) => /* @__PURE__ */ React.createElement("div", { key: m.id || `${m.ts}-${m.name}`, style: styles.chatMessageItem }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", gap: "10px", marginBottom: "2px" } }, /* @__PURE__ */ React.createElement("strong", { style: { color: "#1e293b", fontSize: "13px" } }, m.name || "Clinician"), /* @__PURE__ */ React.createElement("span", { style: { color: "#94a3b8", fontSize: "12px", flexShrink: 0 } }, new Date(m.ts || Date.now()).toLocaleString())), /* @__PURE__ */ React.createElement("div", { style: { color: "#334155", fontSize: "14px", whiteSpace: "pre-wrap", wordBreak: "break-word" } }, m.text || ""))))));
+  };
+  const renderChat = () => {
+    const modeText = chatSyncMode === "shared" ? "Shared cloud chat active" : "Local device chat only";
+    return /* @__PURE__ */ React.createElement(
+      React.Fragment,
+      null,
+      /* @__PURE__ */ React.createElement("button", { style: styles.backBtn, onClick: goHome }, "\u2190 Back to Home"),
+      /* @__PURE__ */ React.createElement(
+        "div",
+        { style: styles.card },
+        /* @__PURE__ */ React.createElement("h2", { style: { margin: "0 0 8px 0", color: "#1e293b", display: "inline-flex", alignItems: "center", gap: "8px" }, onClick: handleChatTitleSecretTap }, /* @__PURE__ */ React.createElement("span", { style: styles.chatHeaderIconWrap }, /* @__PURE__ */ React.createElement("img", { src: CHAT_ICON, alt: "", "aria-hidden": "true", style: styles.chatHeaderIconImg })), "Clinician Collaboration Chat"),
+        /* @__PURE__ */ React.createElement("p", { style: { margin: "0 0 12px 0", color: "#64748b", fontSize: "14px" } }, modeText),
+        /* @__PURE__ */ React.createElement("div", { style: styles.chatNotice }, "\u26A0\uFE0F Do not include patient identifiers or PHI. Keep messages educational and operational."),
+        !String(FIREBASE_CHAT_DB_URL || "").trim() && /* @__PURE__ */ React.createElement("div", { style: { ...styles.chatNotice, background: "rgba(59, 130, 246, 0.08)", borderColor: "rgba(59, 130, 246, 0.3)", color: "#1e3a8a" } }, "Cloud sync is not configured. Set FIREBASE_CHAT_DB_URL in this file to enable organization-wide shared chat."),
+        /* @__PURE__ */ React.createElement(
+          "div",
+          { style: { display: "grid", gridTemplateColumns: effectiveMobile ? "1fr" : "220px 1fr", gap: "10px", marginBottom: "12px" } },
+          /* @__PURE__ */ React.createElement(
+            "input",
+            {
+              style: styles.chatInput,
+              value: chatName,
+              maxLength: 40,
+              placeholder: "Your display name",
+              onChange: (e) => setChatName(e.target.value)
+            }
+          ),
+          /* @__PURE__ */ React.createElement(
+            "input",
+            {
+              style: styles.chatInput,
+              value: chatInput,
+              maxLength: 600,
+              placeholder: "Type a message to colleagues...",
+              onChange: (e) => setChatInput(e.target.value),
+              onKeyDown: (e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  sendChatMessage();
+                }
+              }
+            }
+          )
+        ),
+        /* @__PURE__ */ React.createElement(
+          "div",
+          { style: styles.chatActions },
+          /* @__PURE__ */ React.createElement("button", { style: styles.nextBtn, onClick: sendChatMessage }, "Send Message"),
+          /* @__PURE__ */ React.createElement("button", { style: styles.secondaryBtn, onClick: loadChatMessages }, "Refresh"),
+          /* @__PURE__ */ React.createElement("button", { style: styles.secondaryBtn, onClick: copyChatSnapshot }, "Copy Snapshot")
+        ),
+        /* @__PURE__ */ React.createElement(
+          "div",
+          { style: styles.chatMessageList },
+          chatMessages.length === 0 ? /* @__PURE__ */ React.createElement("p", { style: { color: "#64748b", margin: "8px 4px" } }, "No messages yet. Start the conversation.") : chatMessages.slice(-120).map((m) => {
+            const messageKey = getMessageIdentity(m) || `${m.ts}-${m.name}`;
+            const canDeleteMessage = chatOwnerMode && (chatSyncMode !== "shared" || !!m.remoteId);
+            return /* @__PURE__ */ React.createElement(
+              "div",
+              { key: messageKey, style: styles.chatMessageItem },
+              /* @__PURE__ */ React.createElement(
+                "div",
+                { style: { display: "flex", justifyContent: "space-between", gap: "10px", marginBottom: "2px" } },
+                /* @__PURE__ */ React.createElement("strong", { style: { color: "#1e293b", fontSize: "13px" } }, m.name || "Clinician"),
+                /* @__PURE__ */ React.createElement(
+                  "div",
+                  { style: { display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 } },
+                  /* @__PURE__ */ React.createElement("span", { style: { color: "#94a3b8", fontSize: "12px" } }, new Date(m.ts || Date.now()).toLocaleString()),
+                  canDeleteMessage && /* @__PURE__ */ React.createElement("button", { style: styles.chatDeleteBtn, onClick: () => deleteChatMessage(m) }, "Delete")
+                )
+              ),
+              /* @__PURE__ */ React.createElement("div", { style: { color: "#334155", fontSize: "14px", whiteSpace: "pre-wrap", wordBreak: "break-word" } }, m.text || "")
+            );
+          })
+        )
+      )
+    );
   };
   return /* @__PURE__ */ React.createElement("div", { style: styles.app }, /* @__PURE__ */ React.createElement("div", { style: styles.backgroundPattern }), showGameIntro && /* @__PURE__ */ React.createElement("div", { style: styles.gameIntroOverlay }, /* @__PURE__ */ React.createElement("div", { style: styles.gameIntroCard }, /* @__PURE__ */ React.createElement("div", { style: styles.gameIntroIcon }, "\u{1F3AE}"), /* @__PURE__ */ React.createElement("h1", { style: styles.gameIntroTitle }, "GAME MODE"), /* @__PURE__ */ React.createElement("p", { style: styles.gameIntroDesc }, "Test your knowledge under pressure! Answer as many questions as you can in 3 minutes."), /* @__PURE__ */ React.createElement("div", { style: styles.gameIntroFeature }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: "24px" } }, "\u23F1\uFE0F"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", null, "3 Minutes"), /* @__PURE__ */ React.createElement("p", { style: { fontSize: "12px", color: "#64748b", margin: 0 } }, "Race against the clock"))), /* @__PURE__ */ React.createElement("div", { style: styles.gameIntroFeature }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: "24px" } }, "\u{1F525}"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", null, "Streak Bonus"), /* @__PURE__ */ React.createElement("p", { style: { fontSize: "12px", color: "#64748b", margin: 0 } }, 'Build your streak - get "Heating Up!"'))), /* @__PURE__ */ React.createElement("div", { style: styles.gameIntroFeature }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: "24px" } }, "\u26A0\uFE0F"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", null, "Time Warnings"), /* @__PURE__ */ React.createElement("p", { style: { fontSize: "12px", color: "#64748b", margin: 0 } }, "1 minute and 10 second warnings"))), /* @__PURE__ */ React.createElement("div", { style: styles.gameIntroFeature }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: "24px" } }, "\u{1F3C6}"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", null, "Beat Your High Score"), /* @__PURE__ */ React.createElement("p", { style: { fontSize: "12px", color: "#64748b", margin: 0 } }, "Current: ", progress.gameHighScore, " points"))), /* @__PURE__ */ React.createElement(
     "button",
@@ -11125,13 +11720,15 @@ useEffect(() => {
   ), /* @__PURE__ */ React.createElement(
     "button",
     {
-      style: styles.toggleBtn,
+      style: styles.chatIconBtn,
+      "aria-label": "Open Chat",
+      title: "Open Chat",
       onClick: () => {
         play("click");
         setCurrentView("chat");
       }
     },
-    "\u{1F5E3}\uFE0F Chat"
+    /* @__PURE__ */ React.createElement("img", { src: CHAT_ICON, alt: "", "aria-hidden": "true", style: styles.chatButtonIcon })
   ))), currentView === "home" && renderHome(), currentView === "category-questions" && renderCategoryQuestions(), currentView === "quiz" && renderQuiz(), currentView === "category-review" && renderQuiz(), currentView === "game" && !gameEnded && renderGame(), currentView === "game" && gameEnded && renderGameResults(), currentView === "quiz-complete" && renderQuizComplete(), currentView === "chat" && renderChat()), /* @__PURE__ */ React.createElement("style", null, `
         @keyframes pulse {
           0%, 100% { transform: translateX(-50%) scale(1); }
