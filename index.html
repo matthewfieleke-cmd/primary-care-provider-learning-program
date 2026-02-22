@@ -140,7 +140,28 @@ const FemaleIcon = ({ size = 24 }) => {
     /* @__PURE__ */ React.createElement("line", { x1: "24", y1: "49", x2: "40", y2: "49", stroke: "#1a1a2e", strokeWidth: "2.5", strokeLinecap: "round" })
   );
 };
-const GeriatricsWizardIcon = ({ size = 24 }) => /* @__PURE__ */ React.createElement("img", { src: "IMG_0058.png", alt: "", style: { width: size, height: size, objectFit: "contain", display: "block" } });
+const GeriatricsWizardIcon = ({ size = 24 }) => {
+  const useCategoryBackdrop = size >= 42;
+  if (!useCategoryBackdrop) {
+    return /* @__PURE__ */ React.createElement("img", { src: "IMG_0058.png", alt: "", style: { width: size, height: size, objectFit: "contain", display: "block" } });
+  }
+  return /* @__PURE__ */ React.createElement(
+    "span",
+    {
+      style: {
+        width: size,
+        height: size,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: "10px",
+        background: "#D1D5DB",
+        overflow: "hidden"
+      }
+    },
+    /* @__PURE__ */ React.createElement("img", { src: "IMG_0058.png", alt: "", style: { width: "100%", height: "100%", objectFit: "contain", display: "block", mixBlendMode: "multiply" } })
+  );
+};
 const PancreasIcon = ({ size = 24 }) => /* @__PURE__ */ React.createElement(
   "img",
   {
