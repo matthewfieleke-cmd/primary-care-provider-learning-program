@@ -9492,16 +9492,23 @@ useEffect(() => {
     });
   }, []);
 
+  const initRecognition = useCallback(() => {
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRec) return null;
+    if (recognitionRef.current) return recognitionRef.current;
+    const rec = new SpeechRec();
+    rec.lang = "en-US";
+    rec.interimResults = false;
+    rec.maxAlternatives = 5;
+    rec.continuous = false;
+    recognitionRef.current = rec;
+    return rec;
+  }, []);
+
   const listenForAnswer = useCallback(() => {
     return new Promise((resolve) => {
-      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRec) { resolve(null); return; }
-      const rec = new SpeechRec();
-      rec.lang = "en-US";
-      rec.interimResults = false;
-      rec.maxAlternatives = 5;
-      rec.continuous = false;
-      recognitionRef.current = rec;
+      const rec = recognitionRef.current || initRecognition();
+      if (!rec) { resolve(null); return; }
       setIsListening(true);
       setHandsFreePhase("listening");
       handsFreeRef.current.phase = "listening";
@@ -9511,7 +9518,10 @@ useEffect(() => {
         if (answered) return;
         answered = true;
         setIsListening(false);
-        recognitionRef.current = null;
+        rec.onresult = null;
+        rec.onend = null;
+        rec.onerror = null;
+        rec.onspeechend = null;
         resolve(idx);
       };
 
@@ -9543,7 +9553,7 @@ useEffect(() => {
       };
       try { rec.start(); } catch(e) { finish(null); }
     });
-  }, []);
+  }, [initRecognition]);
 
   const runHandsFreeQuestion = useCallback(async (question, questionIndex, totalQuestions) => {
     if (!handsFreeRef.current.active) return;
@@ -9600,8 +9610,8 @@ useEffect(() => {
   }, [speakAndWait, listenForAnswer]);
 
   const startHandsFree = useCallback(() => {
-    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRec) {
+    const rec = initRecognition();
+    if (!rec) {
       alert("Your browser does not support speech recognition. Please use Chrome or Edge.");
       return;
     }
@@ -9609,7 +9619,7 @@ useEffect(() => {
     handsFreeRef.current.active = true;
     handsFreeRef.current.phase = "idle";
     setHandsFreePhase("idle");
-  }, []);
+  }, [initRecognition]);
 
   const stopHandsFree = useCallback(() => {
     handsFreeRef.current.active = false;
@@ -9620,6 +9630,10 @@ useEffect(() => {
     window.speechSynthesis.cancel();
     if (recognitionRef.current) {
       try { recognitionRef.current.abort(); } catch(e) {}
+      recognitionRef.current.onresult = null;
+      recognitionRef.current.onend = null;
+      recognitionRef.current.onerror = null;
+      recognitionRef.current.onspeechend = null;
       recognitionRef.current = null;
     }
   }, []);
