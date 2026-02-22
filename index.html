@@ -141,7 +141,7 @@ const FemaleIcon = ({ size = 24 }) => {
   );
 };
 const GeriatricsWizardIcon = ({ size = 24 }) => {
-  const useCategoryBackdrop = size >= 42;
+  const useCategoryBackdrop = size >= 42 || size <= 18;
   if (!useCategoryBackdrop) {
     return /* @__PURE__ */ React.createElement("img", { src: "IMG_0058.png", alt: "", style: { width: size, height: size, objectFit: "contain", display: "block" } });
   }
@@ -154,8 +154,8 @@ const GeriatricsWizardIcon = ({ size = 24 }) => {
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        borderRadius: "10px",
-        background: "#D1D5DB",
+        borderRadius: size <= 18 ? "4px" : "10px",
+        background: "#E5E7EB",
         overflow: "hidden"
       }
     },
