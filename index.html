@@ -9284,6 +9284,7 @@ function PCPLearningApp() {
   const speechUtterRef = useRef(null);
   const handsFreeRef = useRef({ active: false, phase: "idle" });
   const recognitionRef = useRef(null);
+  const micPermissionPrimedRef = useRef(false);
   const handleAnswerRef = useRef(null);
   const nextQuestionRef = useRef(null);
   const getShuffledOptionsRef = useRef(null);
@@ -9449,15 +9450,236 @@ useEffect(() => {
     setIsSpeaking(false);
   }, []);
 
+  const normalizeMedicalSpeechText = useCallback((text) => {
+    if (!text) return "";
+    const replacements = [
+      [/\bACC\/AHA\b/gi, "A C C A H A"],
+      [/\bAHA\/ACC\b/gi, "A H A A C C"],
+      [/\bASCVD\b/gi, "atherosclerotic cardiovascular disease"],
+      [/\bAAP\b/gi, "A A P"],
+      [/\bACG\b/gi, "A C G"],
+      [/\bADA\b/gi, "A D A"],
+      [/\bUSPSTF\b/gi, "U S P S T F"],
+      [/\bCDC\b/gi, "C D C"],
+      [/\bIDSA\b/gi, "I D S A"],
+      [/\bGOLD\b/gi, "gold"],
+      [/\bKDIGO\b/gi, "K D I G O"],
+      [/\bAOM\b/gi, "acute otitis media"],
+      [/\bOM\b/gi, "otitis media"],
+      [/\bAOE\b/gi, "acute otitis externa"],
+      [/\bTM\b/g, "tympanic membrane"],
+      [/\bmIU\/L\b/g, "milli international units per liter"],
+      [/\bURI\b/gi, "upper respiratory infection"],
+      [/\bLRTI\b/gi, "lower respiratory tract infection"],
+      [/\bPNA\b/gi, "pneumonia"],
+      [/\bCAP\b/gi, "community acquired pneumonia"],
+      [/\bHAP\b/gi, "hospital acquired pneumonia"],
+      [/\bCOPD\b/gi, "C O P D"],
+      [/\bOSA\b/gi, "obstructive sleep apnea"],
+      [/\bCHF\b/gi, "congestive heart failure"],
+      [/\bHFPEF\b/gi, "heart failure with preserved ejection fraction"],
+      [/\bHFREF\b/gi, "heart failure with reduced ejection fraction"],
+      [/\bCAD\b/gi, "coronary artery disease"],
+      [/\bACS\b/gi, "acute coronary syndrome"],
+      [/\bMI\b/gi, "myocardial infarction"],
+      [/\bNSTEMI\b/gi, "N S T E M I"],
+      [/\bSTEMI\b/gi, "S T E M I"],
+      [/\bAFIB\b/gi, "atrial fibrillation"],
+      [/\bVT\b/gi, "ventricular tachycardia"],
+      [/\bVF\b/gi, "ventricular fibrillation"],
+      [/\bHTN\b/gi, "hypertension"],
+      [/\bHLD\b/gi, "hyperlipidemia"],
+      [/\bDVT\b/gi, "deep vein thrombosis"],
+      [/\bVTE\b/gi, "venous thromboembolism"],
+      [/\bPE\b/gi, "pulmonary embolism"],
+      [/\bTIA\b/gi, "transient ischemic attack"],
+      [/\bCVA\b/gi, "cerebrovascular accident"],
+      [/\bICH\b/gi, "intracerebral hemorrhage"],
+      [/\bSAH\b/gi, "subarachnoid hemorrhage"],
+      [/\bAAA\b/gi, "abdominal aortic aneurysm"],
+      [/\bPAD\b/gi, "peripheral artery disease"],
+      [/\bPVD\b/gi, "peripheral vascular disease"],
+      [/\bCKD\b/gi, "chronic kidney disease"],
+      [/\bAKI\b/gi, "acute kidney injury"],
+      [/\bESRD\b/gi, "end stage renal disease"],
+      [/\bEGFR\b/gi, "E G F R"],
+      [/\bBUN\b/gi, "B U N"],
+      [/\bCREATININE\b/gi, "creatinine"],
+      [/\bDKA\b/gi, "diabetic ketoacidosis"],
+      [/\bHHS\b/gi, "hyperosmolar hyperglycemic state"],
+      [/\bA1C\b/gi, "A 1 C"],
+      [/\bHBA1C\b/gi, "hemoglobin A 1 C"],
+      [/\bT1DM\b/gi, "type 1 diabetes mellitus"],
+      [/\bT2DM\b/gi, "type 2 diabetes mellitus"],
+      [/\bDMT2\b/gi, "diabetes mellitus type 2"],
+      [/\bTSH\b/gi, "T S H"],
+      [/\bT4\b/g, "T 4"],
+      [/\bT3\b/g, "T 3"],
+      [/\bPTH\b/gi, "P T H"],
+      [/\bGERD\b/gi, "gastroesophageal reflux disease"],
+      [/\bIBS\b/gi, "irritable bowel syndrome"],
+      [/\bIBD\b/gi, "inflammatory bowel disease"],
+      [/\bUC\b/gi, "ulcerative colitis"],
+      [/\bPUD\b/gi, "peptic ulcer disease"],
+      [/\bGI\b/gi, "G I"],
+      [/\bGU\b/gi, "genitourinary"],
+      [/\bUTI\b/gi, "urinary tract infection"],
+      [/\bPID\b/gi, "pelvic inflammatory disease"],
+      [/\bPCOS\b/gi, "polycystic ovary syndrome"],
+      [/\bBPH\b/gi, "benign prostatic hyperplasia"],
+      [/\bLUTS\b/gi, "lower urinary tract symptoms"],
+      [/\bED\b/gi, "erectile dysfunction"],
+      [/\bRA\b/gi, "rheumatoid arthritis"],
+      [/\bOA\b/gi, "osteoarthritis"],
+      [/\bACL\b/gi, "anterior cruciate ligament"],
+      [/\bPCL\b/gi, "posterior cruciate ligament"],
+      [/\bMCL\b/gi, "medial collateral ligament"],
+      [/\bLCL\b/gi, "lateral collateral ligament"],
+      [/\bIT\s+BAND\b/gi, "iliotibial band"],
+      [/\bSLE\b/gi, "systemic lupus erythematosus"],
+      [/\bPMR\b/gi, "polymyalgia rheumatica"],
+      [/\bGCA\b/gi, "giant cell arteritis"],
+      [/\bNMS\b/gi, "neuroleptic malignant syndrome"],
+      [/\bMDD\b/gi, "major depressive disorder"],
+      [/\bGAD\b/gi, "generalized anxiety disorder"],
+      [/\bPTSD\b/gi, "post traumatic stress disorder"],
+      [/\bADHD\b/gi, "attention deficit hyperactivity disorder"],
+      [/\bSSRI\b/gi, "S S R I"],
+      [/\bSNRI\b/gi, "S N R I"],
+      [/\bMAOI\b/gi, "M A O I"],
+      [/\bTCA\b/gi, "T C A"],
+      [/\bNSAID\b/gi, "N S A I D"],
+      [/\bPPI\b/gi, "P P I"],
+      [/\bH2\b/g, "H 2"],
+      [/\bACEI\b/gi, "A C E inhibitor"],
+      [/\bACE-I\b/gi, "A C E inhibitor"],
+      [/\bARB\b/gi, "A R B"],
+      [/\bCCB\b/gi, "C C B"],
+      [/\bBB\b/gi, "beta blocker"],
+      [/\bDOAC\b/gi, "D O A C"],
+      [/\bNOAC\b/gi, "N O A C"],
+      [/\bSGLT2\b/gi, "S G L T 2"],
+      [/\bGLP-?1\b/gi, "G L P 1"],
+      [/\bCBC\b/gi, "C B C"],
+      [/\bCMP\b/gi, "C M P"],
+      [/\bBMP\b/gi, "B M P"],
+      [/\bLFTS?\b/gi, "liver function tests"],
+      [/\bAST\b/gi, "A S T"],
+      [/\bALT\b/gi, "A L T"],
+      [/\bALP\b/gi, "A L P"],
+      [/\bINR\b/gi, "I N R"],
+      [/\bPTT\b/gi, "P T T"],
+      [/\bPT\b/gi, "P T"],
+      [/\bCRP\b/gi, "C R P"],
+      [/\bESR\b/gi, "E S R"],
+      [/\bLDL\b/gi, "L D L"],
+      [/\bHDL\b/gi, "H D L"],
+      [/\bTG\b/gi, "triglycerides"],
+      [/\bPSA\b/gi, "P S A"],
+      [/\bECG\b/gi, "E C G"],
+      [/\bEKG\b/gi, "E K G"],
+      [/\bCXR\b/gi, "chest X ray"],
+      [/\bCT\b/gi, "C T"],
+      [/\bMRI\b/gi, "M R I"],
+      [/\bUS\b/g, "ultrasound"],
+      [/\bMRSA\b/gi, "M R S A"],
+      [/\bMSSA\b/gi, "M S S A"],
+      [/\bRSV\b/gi, "R S V"],
+      [/\bHIV\b/gi, "H I V"],
+      [/\bHPV\b/gi, "H P V"],
+      [/\bHSV\b/gi, "H S V"],
+      [/\bHBV\b/gi, "H B V"],
+      [/\bHCV\b/gi, "H C V"],
+      [/\bSTI\b/gi, "sexually transmitted infection"],
+      [/\bSTD\b/gi, "sexually transmitted disease"],
+      [/\bTB\b/gi, "tuberculosis"],
+      [/\bH\.\s*PYLORI\b/gi, "Helicobacter pylori"],
+      [/\bMALT\b/gi, "M A L T"],
+      [/\bC\.\s*DIFF\b/gi, "C diff"],
+      [/\bLDH\b/gi, "L D H"],
+      [/\bBNP\b/gi, "B N P"],
+      [/\bNT-?PROBNP\b/gi, "N T pro B N P"],
+      [/\bABG\b/gi, "A B G"],
+      [/\bVBG\b/gi, "V B G"],
+      [/\bSpO2\b/g, "oxygen saturation"],
+      [/\bFEV1\b/gi, "F E V 1"],
+      [/\bFVC\b/gi, "F V C"],
+      [/\bAPAP\b/gi, "acetaminophen"]
+    ];
+    let normalized = String(text);
+    for (const [pattern, replacement] of replacements) {
+      normalized = normalized.replace(pattern, replacement);
+    }
+    // Final polish for clinical narration: normalize units, ranges, and symbols.
+    normalized = normalized
+      .replace(/(\d+)\s*-\s*(\d+)\s*%/g, "$1 to $2 percent")
+      .replace(/(\d+)\s*-\s*(\d+)\s*(year|week|day|month)s?\b/gi, "$1 to $2 $3")
+      .replace(/(\d+)\s*-\s*(\d+)/g, "$1 to $2")
+      .replace(/(\d+)\s*\/\s*(\d+)\s*mmHg\b/gi, "$1 over $2 millimeters of mercury")
+      .replace(/\bmmHg\b/gi, "millimeters of mercury")
+      .replace(/\bmg\/kg\/day\b/gi, "milligrams per kilogram per day")
+      .replace(/\bmcg\/kg\/min\b/gi, "micrograms per kilogram per minute")
+      .replace(/\bmg\/dL\b/gi, "milligrams per deciliter")
+      .replace(/\bng\/mL\b/gi, "nanograms per milliliter")
+      .replace(/\bIU\/L\b/gi, "international units per liter")
+      .replace(/\bmEq\/L\b/gi, "milliequivalents per liter")
+      .replace(/\bmmol\/L\b/gi, "millimoles per liter")
+      .replace(/\bbeats\/min\b/gi, "beats per minute")
+      .replace(/\bbpm\b/g, "beats per minute")
+      .replace(/\bkg\/m2\b/gi, "kilograms per square meter")
+      .replace(/\bcmH2O\b/gi, "centimeters of water")
+      .replace(/\b°\s*F\b/g, "degrees Fahrenheit")
+      .replace(/\b°\s*C\b/g, "degrees Celsius")
+      .replace(/\b\d+\s*%\b/g, (m) => m.replace("%", " percent"));
+    // Fallback: spell unseen short all-caps acronyms for clearer TTS pronunciation.
+    normalized = normalized.replace(/\b([A-Z]{2,5}\d?)\b/g, (match, token) => {
+      if (/^\d+$/.test(token)) return match;
+      if (token === "GOLD") return "gold";
+      return token.split("").join(" ");
+    });
+    return normalized;
+  }, []);
+
+  const buildSpeechText = useCallback((text) => {
+    const plain = String(text || "").replace(/\n+/g, ". ").replace(/\s{2,}/g, " ").replace(/---/g, "").trim();
+    return normalizeMedicalSpeechText(plain);
+  }, [normalizeMedicalSpeechText]);
+
+  const ensureMicPermission = useCallback(async () => {
+    if (micPermissionPrimedRef.current) return true;
+    const hasMediaDevices = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    if (!hasMediaDevices) {
+      micPermissionPrimedRef.current = true;
+      return true;
+    }
+    try {
+      if (navigator.permissions && navigator.permissions.query) {
+        const status = await navigator.permissions.query({ name: "microphone" });
+        if (status && status.state === "granted") {
+          micPermissionPrimedRef.current = true;
+          return true;
+        }
+      }
+    } catch (e) {
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((track) => track.stop());
+      micPermissionPrimedRef.current = true;
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }, []);
+
   const readAloud = useCallback((text) => {
     if (!text || !window.speechSynthesis) return;
     if (isSpeaking) { stopSpeaking(); return; }
 
-    const plain = text.replace(/\n+/g, ". ").replace(/\s{2,}/g, " ").replace(/---/g, "").trim();
-    const utter = new SpeechSynthesisUtterance(plain);
+    const utter = new SpeechSynthesisUtterance(buildSpeechText(text));
     const voice = pickMaleVoice();
     if (voice) utter.voice = voice;
-    utter.rate = 1.15;
+    utter.rate = 1;
     utter.pitch = 0.92;
     utter.volume = 1;
     utter.onend = () => { speechUtterRef.current = null; setIsSpeaking(false); };
@@ -9466,7 +9688,7 @@ useEffect(() => {
     speechUtterRef.current = utter;
     setIsSpeaking(true);
     window.speechSynthesis.speak(utter);
-  }, [isSpeaking, stopSpeaking]);
+  }, [isSpeaking, stopSpeaking, buildSpeechText]);
 
   useEffect(() => {
     return () => { window.speechSynthesis.cancel(); };
@@ -9479,18 +9701,17 @@ useEffect(() => {
   const speakAndWait = useCallback((text) => {
     return new Promise((resolve) => {
       if (!text || !window.speechSynthesis) { resolve(); return; }
-      const plain = text.replace(/\n+/g, ". ").replace(/\s{2,}/g, " ").replace(/---/g, "").trim();
-      const utter = new SpeechSynthesisUtterance(plain);
+      const utter = new SpeechSynthesisUtterance(buildSpeechText(text));
       const voice = pickMaleVoice();
       if (voice) utter.voice = voice;
-      utter.rate = 1.15;
+      utter.rate = 1;
       utter.pitch = 0.92;
       utter.volume = 1;
       utter.onend = () => resolve();
       utter.onerror = () => resolve();
       window.speechSynthesis.speak(utter);
     });
-  }, []);
+  }, [buildSpeechText]);
 
   const initRecognition = useCallback(() => {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -9545,6 +9766,15 @@ useEffect(() => {
         }
       };
       rec.onerror = (e) => {
+        if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+          setHandsFreeMode(false);
+          setHandsFreePhase("idle");
+          handsFreeRef.current.active = false;
+          setIsListening(false);
+          alert("Microphone access is required for Hands-Free Mode. Please allow access and try again.");
+          finish(null);
+          return;
+        }
         if (e.error === "no-speech" && handsFreeRef.current.active) {
           try { rec.start(); } catch(err) { finish(null); }
         } else if (e.error !== "aborted") {
@@ -9609,17 +9839,22 @@ useEffect(() => {
     if (nextQuestionRef.current) nextQuestionRef.current();
   }, [speakAndWait, listenForAnswer]);
 
-  const startHandsFree = useCallback(() => {
+  const startHandsFree = useCallback(async () => {
     const rec = initRecognition();
     if (!rec) {
       alert("Your browser does not support speech recognition. Please use Chrome or Edge.");
+      return;
+    }
+    const hasMicPermission = await ensureMicPermission();
+    if (!hasMicPermission) {
+      alert("Microphone access is required for Hands-Free Mode. Please allow access in your browser settings.");
       return;
     }
     setHandsFreeMode(true);
     handsFreeRef.current.active = true;
     handsFreeRef.current.phase = "idle";
     setHandsFreePhase("idle");
-  }, [initRecognition]);
+  }, [initRecognition, ensureMicPermission]);
 
   const stopHandsFree = useCallback(() => {
     handsFreeRef.current.active = false;
