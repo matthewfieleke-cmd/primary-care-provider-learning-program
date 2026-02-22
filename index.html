@@ -140,7 +140,21 @@ const FemaleIcon = ({ size = 24 }) => {
     /* @__PURE__ */ React.createElement("line", { x1: "24", y1: "49", x2: "40", y2: "49", stroke: "#1a1a2e", strokeWidth: "2.5", strokeLinecap: "round" })
   );
 };
-const ClassicCaneIcon = ({ size = 24 }) => /* @__PURE__ */ React.createElement("svg", { width: size, height: size, viewBox: "0 0 64 64", fill: "none" }, /* @__PURE__ */ React.createElement("path", { d: "M44 10C35 10 30 15 30 22C30 29 35 34 41 34", stroke: "#6E4A2D", strokeWidth: "5", strokeLinecap: "round", strokeLinejoin: "round" }), /* @__PURE__ */ React.createElement("line", { x1: "41", y1: "34", x2: "41", y2: "56", stroke: "#8B5A2B", strokeWidth: "5", strokeLinecap: "round" }), /* @__PURE__ */ React.createElement("line", { x1: "36", y1: "56", x2: "46", y2: "56", stroke: "#2E2E2E", strokeWidth: "3.5", strokeLinecap: "round" }), /* @__PURE__ */ React.createElement("circle", { cx: "44", cy: "10", r: "2.2", fill: "#A97442" }));
+const ClassicCaneIcon = ({ size = 24 }) => {
+  const s = size > 20 ? Math.round(size * 1.08) : size;
+  return /* @__PURE__ */ React.createElement(
+    "svg",
+    { width: s, height: s, viewBox: "0 0 64 64", fill: "none", xmlns: "http://www.w3.org/2000/svg" },
+    /* @__PURE__ */ React.createElement("path", { d: "M22 21C22 12.2 29 7 38 7C46.2 7 52 11.9 52 18.8C52 24.5 48 29.3 42.2 30.7C40.4 31.1 38.8 29.8 38.8 28.1C38.8 26.5 40.1 25.2 41.7 24.8C45 23.9 47 21.7 47 18.9C47 15.2 43.4 12.5 38.3 12.5C32.6 12.5 27.5 16.2 27.5 21.1V23.2C27.5 25.2 25.9 26.8 23.9 26.8C21.9 26.8 20.3 25.2 20.3 23.2V21Z", fill: "#BDA182", stroke: "#7A5A42", strokeWidth: "1.2" }),
+    /* @__PURE__ */ React.createElement("rect", { x: "28.7", y: "26.4", width: "10.6", height: "4.8", rx: "2.2", fill: "#9E7B5F", stroke: "#6F513D", strokeWidth: "1" }),
+    /* @__PURE__ */ React.createElement("rect", { x: "29.6", y: "31", width: "8.8", height: "24.5", rx: "4.4", fill: "#B68A8B", stroke: "#7C5C5D", strokeWidth: "1.1" }),
+    /* @__PURE__ */ React.createElement("path", { d: "M31.3 34.5H36.7M31.3 40H36.7M31.3 45.5H36.7M31.3 51H36.7", stroke: "#E7D9D0", strokeWidth: "1.2", strokeLinecap: "round", opacity: "0.9" }),
+    /* @__PURE__ */ React.createElement("circle", { cx: "34", cy: "37.2", r: "1.1", fill: "#8E6364" }),
+    /* @__PURE__ */ React.createElement("circle", { cx: "34", cy: "42.7", r: "1.1", fill: "#8E6364" }),
+    /* @__PURE__ */ React.createElement("circle", { cx: "34", cy: "48.2", r: "1.1", fill: "#8E6364" }),
+    /* @__PURE__ */ React.createElement("rect", { x: "29.2", y: "54.6", width: "9.6", height: "6.1", rx: "2.3", fill: "#242424" })
+  );
+};
 const PancreasIcon = ({ size = 24 }) => /* @__PURE__ */ React.createElement(
   "img",
   {
@@ -10603,7 +10617,7 @@ useEffect(() => {
         neuro: 1.85,       // Neurology
         cardio: 1.5,       // Cardiovascular
         pancreas: 1.35,    // Endocrine (moderate boost)
-        cane: 1.25         // Geriatrics
+        cane: 1.35         // Geriatrics
       };
       const mult = multipliers[icon];
       if (mult) size = Math.round(size * mult);
@@ -10650,7 +10664,7 @@ useEffect(() => {
       lotion: 1.05,
       kidneys: 1.05,
       hema: 1.05,
-      cane: 1.10
+      cane: 1.20
     };
     const scale = scaleMap[icon] || 1;
     const inner = renderCategoryIcon(icon, baseSize);
