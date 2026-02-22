@@ -11209,6 +11209,21 @@ useEffect(() => {
       gap: "6px",
       lineHeight: 1
     }),
+    categoryBadgeLarge: (color) => ({
+      background: `${color}14`,
+      color,
+      padding: effectiveMobile ? "12px 18px" : "14px 24px",
+      borderRadius: "16px",
+      fontSize: effectiveMobile ? "15px" : "16px",
+      fontWeight: "700",
+      display: "inline-flex",
+      alignItems: "center",
+      gap: effectiveMobile ? "12px" : "14px",
+      lineHeight: 1,
+      border: `2px solid ${color}35`,
+      letterSpacing: "0.02em",
+      boxShadow: `0 2px 8px ${color}18`
+    }),
     questionText: {
       fontSize: effectiveMobile ? "21px" : "24px",
       lineHeight: "1.55",
@@ -11863,7 +11878,7 @@ useEffect(() => {
         color: "white", transition: "all 0.2s",
         boxShadow: handsFreeMode ? "0 2px 8px rgba(220, 38, 38, 0.3)" : "0 2px 8px rgba(37, 99, 235, 0.3)"
       }
-    }, handsFreeMode ? "\u23F9 Stop Hands-Free" : "\u{1F3A7} Hands-Free Mode")), /* @__PURE__ */ React.createElement("div", { style: styles.questionCard }, /* @__PURE__ */ React.createElement("div", { style: styles.questionHeader }, /* @__PURE__ */ React.createElement("span", { style: styles.questionProgress }, "Question ", currentQuestionIndex + 1, " of ", quizQuestions.length), /* @__PURE__ */ React.createElement("span", { style: styles.categoryBadge(category.color) }, /* @__PURE__ */ React.createElement("span", { style: { display: "inline-flex", alignItems: "center", marginRight: "4px" } }, renderBadgeCategoryIcon(category.icon)), category.name)), /* @__PURE__ */ React.createElement("div", { style: styles.progressBar }, /* @__PURE__ */ React.createElement("div", { style: styles.progressFill(
+    }, handsFreeMode ? "\u23F9 Stop Hands-Free" : "\u{1F3A7} Hands-Free Mode")), /* @__PURE__ */ React.createElement("div", { style: styles.questionCard }, /* @__PURE__ */ React.createElement("div", { style: styles.questionHeader }, /* @__PURE__ */ React.createElement("span", { style: styles.questionProgress }, "Question ", currentQuestionIndex + 1, " of ", quizQuestions.length), /* @__PURE__ */ React.createElement("span", { style: styles.categoryBadgeLarge(category.color) }, /* @__PURE__ */ React.createElement("span", { style: { display: "inline-flex", alignItems: "center", transform: "scale(2.0)", transformOrigin: "center" } }, renderBadgeCategoryIcon(category.icon)), category.name)), /* @__PURE__ */ React.createElement("div", { style: styles.progressBar }, /* @__PURE__ */ React.createElement("div", { style: styles.progressFill(
       (currentQuestionIndex + 1) / quizQuestions.length * 100
     ) })), questionImages.length > 0 && /* @__PURE__ */ React.createElement("div", { style: styles.quizImageGroup }, questionImages.map((img, idx) => /* @__PURE__ */ React.createElement("figure", { key: `${currentQuestion.id}-qimg-${idx}`, style: styles.quizImageCard }, /* @__PURE__ */ React.createElement("img", { src: img.src, alt: img.alt, style: styles.quizImage, loading: "lazy", decoding: "async" }), !!img.caption && /* @__PURE__ */ React.createElement("figcaption", { style: styles.quizImageCaption }, img.caption)))), /* @__PURE__ */ React.createElement("p", { style: showExplanation ? styles.questionTextCompact : styles.questionText }, currentQuestion.question), (() => {
       const shuffled = getShuffledOptions(currentQuestion);
@@ -11942,7 +11957,7 @@ useEffect(() => {
       justifyContent: "space-between",
       marginBottom: "16px",
       padding: "0 8px"
-    } }, /* @__PURE__ */ React.createElement("span", { style: { color: "#059669", fontWeight: "600" } }, "Score: ", gameScore), /* @__PURE__ */ React.createElement("span", { style: { color: "#64748b" } }, "Question #", gameAnswers.length + 1)), /* @__PURE__ */ React.createElement("div", { style: styles.questionCard }, /* @__PURE__ */ React.createElement("span", { style: styles.categoryBadge(category.color) }, /* @__PURE__ */ React.createElement("span", { style: { display: "inline-flex", alignItems: "center", marginRight: "4px" } }, renderBadgeCategoryIcon(category.icon)), category.name), gameQuestionImages.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { ...styles.quizImageGroup, marginTop: "12px" } }, gameQuestionImages.map((img, idx) => /* @__PURE__ */ React.createElement("figure", { key: `${currentQuestion.id}-gqimg-${idx}`, style: styles.quizImageCard }, /* @__PURE__ */ React.createElement("img", { src: img.src, alt: img.alt, style: styles.quizImage, loading: "lazy", decoding: "async" }), !!img.caption && /* @__PURE__ */ React.createElement("figcaption", { style: styles.quizImageCaption }, img.caption)))), /* @__PURE__ */ React.createElement("p", { style: { ...styles.questionText, marginTop: "16px" } }, currentQuestion.question), (() => {
+    } }, /* @__PURE__ */ React.createElement("span", { style: { color: "#059669", fontWeight: "600" } }, "Score: ", gameScore), /* @__PURE__ */ React.createElement("span", { style: { color: "#64748b" } }, "Question #", gameAnswers.length + 1)), /* @__PURE__ */ React.createElement("div", { style: styles.questionCard }, /* @__PURE__ */ React.createElement("span", { style: styles.categoryBadgeLarge(category.color) }, /* @__PURE__ */ React.createElement("span", { style: { display: "inline-flex", alignItems: "center", transform: "scale(2.0)", transformOrigin: "center" } }, renderBadgeCategoryIcon(category.icon)), category.name), gameQuestionImages.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { ...styles.quizImageGroup, marginTop: "12px" } }, gameQuestionImages.map((img, idx) => /* @__PURE__ */ React.createElement("figure", { key: `${currentQuestion.id}-gqimg-${idx}`, style: styles.quizImageCard }, /* @__PURE__ */ React.createElement("img", { src: img.src, alt: img.alt, style: styles.quizImage, loading: "lazy", decoding: "async" }), !!img.caption && /* @__PURE__ */ React.createElement("figcaption", { style: styles.quizImageCaption }, img.caption)))), /* @__PURE__ */ React.createElement("p", { style: { ...styles.questionText, marginTop: "16px" } }, currentQuestion.question), (() => {
       const shuffled = getShuffledOptions(currentQuestion);
       return /* @__PURE__ */ React.createElement("div", { style: styles.optionsContainer }, shuffled.options.map((option, idx) => /* @__PURE__ */ React.createElement(
         "button",
