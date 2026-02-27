@@ -1,7 +1,7 @@
 // Service Worker — network-first with offline fallback
 // Ensures users always get the latest version when online.
 
-const CACHE_NAME = "pcp-learning-v1";
+const CACHE_NAME = "pcp-learning-v2";
 const OFFLINE_URLS = ["index.html", "/"];
 
 // Install: pre-cache the shell so the app works offline

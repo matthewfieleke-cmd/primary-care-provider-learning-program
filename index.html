@@ -11645,7 +11645,7 @@ useEffect(() => {
       transition: "width 0.5s ease"
     })
   }), [effectiveMobile]);
-  const renderHome = () => /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: styles.statsGrid }, /* @__PURE__ */ React.createElement("div", { style: styles.statCard }, /* @__PURE__ */ React.createElement("div", { style: styles.statValue }, answeredCount, "/", totalQuestions), /* @__PURE__ */ React.createElement("div", { style: styles.statLabel }, "Questions Seen")), /* @__PURE__ */ React.createElement("div", { style: styles.statCard }, /* @__PURE__ */ React.createElement("div", { style: styles.statValue }, correctRate, "%"), /* @__PURE__ */ React.createElement("div", { style: styles.statLabel }, "Accuracy")), /* @__PURE__ */ React.createElement("div", { style: styles.statCard }, /* @__PURE__ */ React.createElement("div", { style: styles.statValue }, dueReviewQuestions.length), /* @__PURE__ */ React.createElement("div", { style: styles.statLabel }, "Due Today")), /* @__PURE__ */ React.createElement("div", { style: styles.statCard }, /* @__PURE__ */ React.createElement("div", { style: styles.statValue }, progress.incorrectQuestions.length), /* @__PURE__ */ React.createElement("div", { style: styles.statLabel }, "To Review")), /* @__PURE__ */ React.createElement("div", { style: styles.statCard }, /* @__PURE__ */ React.createElement("div", { style: styles.statValue }, progress.gameHighScore), /* @__PURE__ */ React.createElement("div", { style: styles.statLabel }, "Game High Score")), /* @__PURE__ */ React.createElement("div", { style: styles.statCard }, /* @__PURE__ */ React.createElement("div", { style: styles.statValue }, progress.bookmarkedQuestions?.length || 0), /* @__PURE__ */ React.createElement("div", { style: styles.statLabel }, "Bookmarked"))), /* @__PURE__ */ React.createElement("div", { style: styles.searchContainer }, /* @__PURE__ */ React.createElement(
+  const renderHome = () => /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: styles.statsGrid }, /* @__PURE__ */ React.createElement("div", { style: styles.statCard }, /* @__PURE__ */ React.createElement("div", { style: styles.statValue }, answeredCount, "/", totalQuestions), /* @__PURE__ */ React.createElement("div", { style: styles.statLabel }, "Questions Seen")), /* @__PURE__ */ React.createElement("div", { style: styles.statCard }, /* @__PURE__ */ React.createElement("div", { style: styles.statValue }, correctRate, "%"), /* @__PURE__ */ React.createElement("div", { style: styles.statLabel }, "Accuracy")), /* @__PURE__ */ React.createElement("div", { style: styles.statCard }, /* @__PURE__ */ React.createElement("div", { style: styles.statValue }, progress.gameHighScore), /* @__PURE__ */ React.createElement("div", { style: styles.statLabel }, "Game High Score"))), /* @__PURE__ */ React.createElement("div", { style: styles.searchContainer }, /* @__PURE__ */ React.createElement(
     "input",
     {
       type: "text",
@@ -11686,24 +11686,24 @@ useEffect(() => {
     "div",
     {
       style: styles.actionCard("#475569"),
-      onClick: () => startQuiz(25),
+      onClick: () => startQuiz(3),
       onMouseEnter: (e) => e.currentTarget.style.transform = "translateY(-4px)",
       onMouseLeave: (e) => e.currentTarget.style.transform = "translateY(0)"
     },
     /* @__PURE__ */ React.createElement("div", { style: styles.actionIcon }, "\u{1F4DD}"),
-    /* @__PURE__ */ React.createElement("div", { style: styles.actionTitle }, "Quick Quiz"),
-    /* @__PURE__ */ React.createElement("div", { style: styles.actionDesc }, "25 Random Questions")
+    /* @__PURE__ */ React.createElement("div", { style: styles.actionTitle }, "3 Random Questions"),
+    /* @__PURE__ */ React.createElement("div", { style: styles.actionDesc }, "Quick Practice")
   ), /* @__PURE__ */ React.createElement(
     "div",
     {
       style: styles.actionCard("#334155"),
-      onClick: () => startQuiz(50),
+      onClick: () => startQuiz(10),
       onMouseEnter: (e) => e.currentTarget.style.transform = "translateY(-4px)",
       onMouseLeave: (e) => e.currentTarget.style.transform = "translateY(0)"
     },
     /* @__PURE__ */ React.createElement("div", { style: styles.actionIcon }, "\u{1F4DA}"),
-    /* @__PURE__ */ React.createElement("div", { style: styles.actionTitle }, "Full Quiz"),
-    /* @__PURE__ */ React.createElement("div", { style: styles.actionDesc }, "50 Random Questions")
+    /* @__PURE__ */ React.createElement("div", { style: styles.actionTitle }, "10 Random Questions"),
+    /* @__PURE__ */ React.createElement("div", { style: styles.actionDesc }, "Full Practice Session")
   ), /* @__PURE__ */ React.createElement(
     "div",
     {
@@ -11715,42 +11715,6 @@ useEffect(() => {
     /* @__PURE__ */ React.createElement("div", { style: styles.actionIcon }, "\u{1F3AE}"),
     /* @__PURE__ */ React.createElement("div", { style: styles.actionTitle }, "Game Mode"),
     /* @__PURE__ */ React.createElement("div", { style: styles.actionDesc }, "3 Minutes \u2022 Beat Your Score!")
-  ), /* @__PURE__ */ React.createElement(
-    "div",
-    {
-      style: {...styles.actionCard("#14b8a6"),
-        opacity: upcomingReviewQuestions.length === 0 ? 0.5: 1,
-        cursor: upcomingReviewQuestions.length === 0 ? "not-allowed": "pointer"
-      },
-      onClick: upcomingReviewQuestions.length > 0 ? startUpcomingReview: null,
-      onMouseEnter: (e) => {
-        if (upcomingReviewQuestions.length > 0) {
-          e.currentTarget.style.transform = "translateY(-4px)";
-        }
-      },
-      onMouseLeave: (e) => e.currentTarget.style.transform = "translateY(0)"
-    },
-    /* @__PURE__ */ React.createElement("div", { style: styles.actionIcon }, "\u{1F4C5}"),
-    /* @__PURE__ */ React.createElement("div", { style: styles.actionTitle }, "Upcoming Reviews"),
-    /* @__PURE__ */ React.createElement("div", { style: styles.actionDesc }, upcomingReviewQuestions.length, " Scheduled \u2022 ", nextUpcomingDueText)
-  ), /* @__PURE__ */ React.createElement(
-    "div",
-    {
-      style: {...styles.actionCard("#0ea5e9"),
-        opacity: dueReviewQuestions.length === 0 ? 0.5: 1,
-        cursor: dueReviewQuestions.length === 0 ? "not-allowed": "pointer"
-      },
-      onClick: dueReviewQuestions.length > 0 ? startDueReview: null,
-      onMouseEnter: (e) => {
-        if (dueReviewQuestions.length > 0) {
-          e.currentTarget.style.transform = "translateY(-4px)";
-        }
-      },
-      onMouseLeave: (e) => e.currentTarget.style.transform = "translateY(0)"
-    },
-    /* @__PURE__ */ React.createElement("div", { style: styles.actionIcon }, "\u23F0"),
-    /* @__PURE__ */ React.createElement("div", { style: styles.actionTitle }, "Due for Review"),
-    /* @__PURE__ */ React.createElement("div", { style: styles.actionDesc }, dueReviewQuestions.length, " Questions Due")
   ), /* @__PURE__ */ React.createElement(
     "div",
     {
