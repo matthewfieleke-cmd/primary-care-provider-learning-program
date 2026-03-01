@@ -10648,7 +10648,8 @@ useEffect(() => {
   getShuffledOptionsRef.current = getShuffledOptions;
   const fixExplanationLetter = (text, correctLetter) => {
     if (!text || !correctLetter) return text;
-    return text.replace(/^CORRECT:\s*[A-D]\b/, `CORRECT: ${correctLetter}`);
+    // Match "CORRECT: X" at start of string (expanded) or after newline, and "- CORRECT: X" (bullet lines)
+    return text.replace(/(^|\n)(-\s*)?(CORRECT:\s*)[A-D]\b/g, (_, prefix, bullet, label) => (prefix || "") + (bullet || "") + (label || "CORRECT: ") + correctLetter);
   };
   const countWords = (text) => String(text || "").trim().split(/\s+/).filter(Boolean).length;
   const toSentences = (text) => {
