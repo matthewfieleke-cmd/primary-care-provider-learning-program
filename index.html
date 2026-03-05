@@ -9977,12 +9977,13 @@ function PCPLearningApp() {
   const chatPollRef = useRef(null);
   const chatOwnerTapCountRef = useRef(0);
   const chatOwnerTapResetRef = useRef(null);
-  const categoryCarouselRef = useRef(null);
-  const actionCarouselRef = useRef(null);
-  const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
-  const [activeActionIndex, setActiveActionIndex] = useState(0);
-  const [categoryWheelPosition, setCategoryWheelPosition] = useState(0);
-  const [actionWheelPosition, setActionWheelPosition] = useState(0);
+  const highScoreAtGameStartRef = useRef(0);
+  const catContainerRef = useRef(null);
+  const actContainerRef = useRef(null);
+  const catWheelRef = useRef({ pos: 0, vel: 0, drag: null, anim: null });
+  const actWheelRef = useRef({ pos: 0, vel: 0, drag: null, anim: null });
+  const [catWheelPos, setCatWheelPos] = useState(0);
+  const [actWheelPos, setActWheelPos] = useState(0);
 
   useEffect(() => {
     return () => {
@@ -9990,6 +9991,8 @@ function PCPLearningApp() {
       if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
       if (chatPollRef.current) clearInterval(chatPollRef.current);
       if (chatOwnerTapResetRef.current) clearTimeout(chatOwnerTapResetRef.current);
+      if (catWheelRef.current.anim) cancelAnimationFrame(catWheelRef.current.anim);
+      if (actWheelRef.current.anim) cancelAnimationFrame(actWheelRef.current.anim);
     };
   }, []);
 
@@ -11970,6 +11973,7 @@ useEffect(() => {
   const gameSeenIdsRef = useRef(/* @__PURE__ */ new Set());
   const startGame = () => {
     gameSeenIdsRef.current = /* @__PURE__ */ new Set();
+    highScoreAtGameStartRef.current = progress.gameHighScore || 0;
     setGameMode(true);
     setGameTimeLeft(120);
     setGameScore(0);
@@ -12308,63 +12312,90 @@ useEffect(() => {
     return counts;
   }, [progress.answeredQuestions]);
   const hasAnyProgress = answeredCount > 0;
-  const getWheelState = useCallback((container, selector) => {
-    if (!container) return null;
-    const cards = Array.from(container.querySelectorAll(selector));
-    if (!cards.length) return null;
-    const viewportRect = container.getBoundingClientRect();
-    const viewportCenter = viewportRect.left + viewportRect.width / 2;
-    let nearestIndex = 0;
-    let nearestDistance = Number.POSITIVE_INFINITY;
-    const centers = cards.map((card, idx) => {
-      const rect = card.getBoundingClientRect();
-      const center = rect.left + rect.width / 2;
-      const distance = Math.abs(center - viewportCenter);
-      if (distance < nearestDistance) {
-        nearestDistance = distance;
-        nearestIndex = idx;
+  const makeWheelHandlers = useCallback((wd, setPos) => {
+    const onDown = (e) => {
+      if (wd.anim) { cancelAnimationFrame(wd.anim); wd.anim = null; }
+      wd.vel = 0;
+      const cx = e.touches ? e.touches[0].clientX : e.clientX;
+      const cw = e.currentTarget ? e.currentTarget.clientWidth : 375;
+      wd.drag = { sx: cx, sp: wd.pos, lx: cx, lt: performance.now(), cw: cw };
+      if (e.pointerId != null && e.currentTarget) {
+        try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
       }
-      return center;
-    });
-    let indexFloat = nearestIndex;
-    if (nearestIndex < centers.length - 1 && centers[nearestIndex + 1] !== centers[nearestIndex]) {
-      const t = (viewportCenter - centers[nearestIndex]) / (centers[nearestIndex + 1] - centers[nearestIndex]);
-      indexFloat = nearestIndex + Math.max(0, Math.min(1, t));
-    } else if (nearestIndex > 0 && centers[nearestIndex] !== centers[nearestIndex - 1]) {
-      const t = (viewportCenter - centers[nearestIndex]) / (centers[nearestIndex] - centers[nearestIndex - 1]);
-      indexFloat = nearestIndex + Math.max(-1, Math.min(0, t));
-    }
-    return { cards, nearestIndex, indexFloat };
+    };
+    const onMove = (e) => {
+      if (!wd.drag) return;
+      const cx = e.touches ? e.touches[0].clientX : e.clientX;
+      const pxPerItem = wd.drag.cw * 0.36;
+      wd.pos = wd.drag.sp - (cx - wd.drag.sx) / pxPerItem;
+      setPos(wd.pos);
+      const now = performance.now();
+      const dt = now - wd.drag.lt;
+      if (dt > 5) {
+        wd.vel = (wd.drag.lx - cx) / pxPerItem / (dt / 16.67);
+        wd.drag.lx = cx;
+        wd.drag.lt = now;
+      }
+    };
+    const onUp = (e) => {
+      if (!wd.drag) return;
+      if (e && e.pointerId != null && e.currentTarget) {
+        try { e.currentTarget.releasePointerCapture(e.pointerId); } catch (_) {}
+      }
+      wd.drag = null;
+      wd.vel = Math.max(-2.5, Math.min(2.5, wd.vel));
+      const tick = () => {
+        wd.vel *= 0.94;
+        wd.pos += wd.vel;
+        if (Math.abs(wd.vel) < 0.005) {
+          const t = Math.round(wd.pos);
+          const ease = () => {
+            const d = t - wd.pos;
+            if (Math.abs(d) < 0.002) { wd.pos = t; setPos(t); return; }
+            wd.pos += d * 0.14;
+            setPos(wd.pos);
+            wd.anim = requestAnimationFrame(ease);
+          };
+          ease();
+          return;
+        }
+        setPos(wd.pos);
+        wd.anim = requestAnimationFrame(tick);
+      };
+      wd.anim = requestAnimationFrame(tick);
+    };
+    return { onDown, onMove, onUp };
   }, []);
-  const updateCategoryWheelState = useCallback(() => {
-    const state = getWheelState(categoryCarouselRef.current, "[data-category-card='true']");
-    if (!state) return;
-    setActiveCategoryIndex(state.nearestIndex);
-    setCategoryWheelPosition(state.indexFloat);
-  }, [getWheelState]);
-  const updateActionWheelState = useCallback(() => {
-    const state = getWheelState(actionCarouselRef.current, "[data-action-card='true']");
-    if (!state) return;
-    setActiveActionIndex(state.nearestIndex);
-    setActionWheelPosition(state.indexFloat);
-  }, [getWheelState]);
-  const settleWheelToCenter = useCallback((container, selector) => {
-    const state = getWheelState(container, selector);
-    if (!state) return;
-    const target = state.cards[state.nearestIndex];
-    if (target) target.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-  }, [getWheelState]);
-  useEffect(() => {
-    if (!effectiveMobile || currentView !== "home") return;
-    const settleCategory = () => settleWheelToCenter(categoryCarouselRef.current, "[data-category-card='true']");
-    const settleAction = () => settleWheelToCenter(actionCarouselRef.current, "[data-action-card='true']");
-    requestAnimationFrame(() => {
-      settleAction();
-      settleCategory();
-      updateActionWheelState();
-      updateCategoryWheelState();
-    });
-  }, [effectiveMobile, currentView, settleWheelToCenter, updateActionWheelState, updateCategoryWheelState]);
+  const catHandlers = useMemo(() => makeWheelHandlers(catWheelRef.current, setCatWheelPos), [makeWheelHandlers]);
+  const actHandlers = useMemo(() => makeWheelHandlers(actWheelRef.current, setActWheelPos), [makeWheelHandlers]);
+  const renderInfiniteWheel = useCallback((items, wheelPos, heightPx, renderCard, handlers, containerRef) => {
+    const n = items.length;
+    if (n === 0) return null;
+    const half = 3;
+    const cInt = Math.round(wheelPos);
+    const els = [];
+    for (let o = -half; o <= half; o++) {
+      const rawIdx = cInt + o;
+      const idx = ((rawIdx % n) + n) % n;
+      const dist = rawIdx - wheelPos;
+      const absDist = Math.abs(dist);
+      els.push(renderCard(items[idx], idx, dist, absDist, rawIdx));
+    }
+    const centeredIdx = ((Math.round(wheelPos) % n) + n) % n;
+    return /* @__PURE__ */ React.createElement(React.Fragment, null,
+      /* @__PURE__ */ React.createElement("div", {
+        ref: containerRef,
+        style: { position: "relative", overflow: "hidden", height: heightPx + "px", perspective: "1000px", touchAction: "pan-y", userSelect: "none", WebkitUserSelect: "none", cursor: "grab" },
+        onPointerDown: handlers.onDown,
+        onPointerMove: handlers.onMove,
+        onPointerUp: handlers.onUp,
+        onPointerCancel: handlers.onUp
+      }, els),
+      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center", gap: "5px", marginTop: "10px" } }, items.map((_, i) =>
+        /* @__PURE__ */ React.createElement("span", { key: i, style: { width: i === centeredIdx ? "16px" : "6px", height: "6px", borderRadius: "999px", background: i === centeredIdx ? "#334155" : "rgba(100, 116, 139, 0.35)", transition: "all 0.2s ease" } })
+      ))
+    );
+  }, []);
   const styles = useMemo(() => ({
     app: {
       minHeight: "100vh",
@@ -12590,8 +12621,8 @@ useEffect(() => {
     quickActionsCard: {
       background: "rgba(255, 255, 255, 0.98)",
       borderRadius: effectiveMobile ? "12px": "14px",
-      padding: effectiveMobile ? "12px 10px 14px": "12px 14px",
-      marginBottom: effectiveMobile ? "8px": "16px",
+      padding: effectiveMobile ? "14px 6px 16px": "12px 14px",
+      marginBottom: effectiveMobile ? "0": "16px",
       border: "1px solid rgba(15, 23, 42, 0.08)",
       boxShadow: "0 8px 20px rgba(15, 23, 42, 0.06)"
     },
@@ -12627,90 +12658,17 @@ useEffect(() => {
       color: "#64748b",
       lineHeight: 1.15
     },
-    wheelViewport: {
-      overflowX: "auto",
-      overflowY: "hidden",
-      WebkitOverflowScrolling: "touch",
-      scrollSnapType: "x proximity",
-      padding: "6px 18%",
-      margin: "0 -10px",
-      perspective: "1000px",
-      scrollBehavior: "smooth"
-    },
-    wheelTrack: {
-      display: "flex",
-      alignItems: "stretch",
-      gap: "10px"
-    },
-    categoryDots: {
-      display: "flex",
-      justifyContent: "center",
-      gap: "5px",
-      marginTop: "10px"
-    },
-    categoryDot: (active) => ({
-      width: active ? "16px" : "6px",
-      height: "6px",
-      borderRadius: "999px",
-      background: active ? "#334155" : "rgba(100, 116, 139, 0.35)",
-      transition: "all 0.2s ease"
-    }),
-    categoryCardBase: (color) => ({
-      background: "rgba(255, 255, 255, 0.95)",
-      borderRadius: "12px",
-      padding: "10px",
-      cursor: "pointer",
-      border: "1px solid rgba(15, 23, 42, 0.08)",
-      borderTop: `3px solid ${color}cc`,
-      boxShadow: "0 6px 16px rgba(15, 23, 42, 0.06)",
-      textAlign: "center",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "flex-start"
-    }),
-    categoryWheelCard: (color, distance) => ({
-      ...{
-        background: "rgba(255, 255, 255, 0.95)",
-        borderRadius: "12px",
-        padding: "12px",
-        cursor: "pointer",
-        border: "1px solid rgba(15, 23, 42, 0.08)",
-        borderTop: `3px solid ${color}cc`,
-        textAlign: "center",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "flex-start"
-      },
-      flex: "0 0 62%",
-      minHeight: "168px",
-      scrollSnapAlign: "center",
-      transform: `translateY(${Math.min(12, distance * 8)}px) scale(${Math.max(0.72, 1 - Math.min(2.2, distance) * 0.16)}) rotateY(${Math.min(20, distance * 12)}deg)`,
-      opacity: Math.max(0.45, 1 - Math.min(2.2, distance) * 0.3),
-      transition: "transform 0.08s linear, opacity 0.08s linear, box-shadow 0.08s linear",
-      boxShadow: distance < 0.55 ? "0 12px 28px rgba(15, 23, 42, 0.14)" : "0 4px 12px rgba(15, 23, 42, 0.06)"
-    }),
-    actionWheelCard: (color, disabled, distance) => ({
-      ...{
-        borderRadius: "12px",
-        padding: "12px",
-        border: `1px solid ${color}30`,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        textAlign: "center",
-        background: disabled ? "rgba(148, 163, 184, 0.08)" : `linear-gradient(135deg, ${color}16, ${color}08)`,
-        cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.5 : Math.max(0.5, 1 - Math.min(2.2, distance) * 0.26)
-      },
-      flex: "0 0 62%",
-      minHeight: "132px",
-      scrollSnapAlign: "center",
-      transform: `translateY(${Math.min(12, distance * 8)}px) scale(${Math.max(0.74, 1 - Math.min(2.2, distance) * 0.15)}) rotateY(${Math.min(18, distance * 10)}deg)`,
-      transition: "transform 0.08s linear, opacity 0.08s linear, box-shadow 0.08s linear",
-      boxShadow: distance < 0.55 ? "0 12px 28px rgba(15, 23, 42, 0.14)" : "0 4px 12px rgba(15, 23, 42, 0.05)"
+    wheelItemBase: (dist, absDist) => ({
+      position: "absolute",
+      width: "62%",
+      top: "4px",
+      bottom: "4px",
+      left: (50 + dist * 36) + "%",
+      transform: "translateX(-50%) scale(" + Math.max(0.72, 1 - Math.min(2.5, absDist) * 0.16) + ") rotateY(" + (Math.min(20, absDist * 12) * (dist > 0 ? -1 : 1)) + "deg)",
+      opacity: Math.max(0.35, 1 - Math.min(2.5, absDist) * 0.3),
+      zIndex: 10 - Math.round(absDist),
+      transition: "none",
+      pointerEvents: absDist < 0.45 ? "auto" : "none"
     }),
     categoryCard: (color) => ({
       ...{
@@ -12749,7 +12707,7 @@ useEffect(() => {
       lineHeight: "1.2"
     },
     searchContainer: {
-      margin: effectiveMobile ? "20px 0" : "24px 0"
+      margin: effectiveMobile ? "16px 0" : "24px 0"
     },
     searchInput: {
       width: "100%",
@@ -13063,8 +13021,8 @@ useEffect(() => {
       boxShadow: "0 4px 20px rgba(245, 158, 11, 0.4)"
     },
     resultsContainer: {
-      maxHeight: "400px",
-      overflowY: "auto",
+      maxHeight: effectiveMobile ? "none" : "600px",
+      overflowY: effectiveMobile ? "visible" : "auto",
       marginTop: "20px"
     },
     resultItem: (isCorrect) => ({
@@ -13155,31 +13113,17 @@ useEffect(() => {
     { id: "qabookmark", icon: "\u{1F516}", label: "Bookmarked", meta: `${progress.bookmarkedQuestions?.length || 0} saved`, color: "#eab308", disabled: (progress.bookmarkedQuestions?.length || 0) === 0, onClick: startBookmarkReview }
   ];
   const renderHome = () => /* @__PURE__ */ React.createElement(React.Fragment, null,
-    /* @__PURE__ */ React.createElement("div", { style: styles.quickActionsCard }, effectiveMobile ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", {
-      ref: actionCarouselRef,
-      style: styles.wheelViewport,
-      onScroll: updateActionWheelState,
-      onTouchEnd: () => settleWheelToCenter(actionCarouselRef.current, "[data-action-card='true']"),
-      onMouseUp: () => settleWheelToCenter(actionCarouselRef.current, "[data-action-card='true']"),
-      onPointerUp: () => settleWheelToCenter(actionCarouselRef.current, "[data-action-card='true']")
-    }, /* @__PURE__ */ React.createElement("div", { style: styles.wheelTrack }, quickActionItems.map((item, idx) => {
-      const distance = Math.abs(actionWheelPosition - idx);
-      const isCentered = distance < 0.45;
-      return /* @__PURE__ */ React.createElement(
-        "div",
-        {
-          key: item.id,
-          "data-action-card": "true",
-          style: styles.actionWheelCard(item.color, item.disabled, distance),
-          onClick: () => {
-            if (isCentered && !item.disabled) item.onClick();
-          }
-        },
+    /* @__PURE__ */ React.createElement("div", { style: styles.quickActionsCard }, effectiveMobile ? renderInfiniteWheel(quickActionItems, actWheelPos, 140, (item, idx, dist, absDist, rawIdx) => {
+      return /* @__PURE__ */ React.createElement("div", {
+        key: rawIdx,
+        style: { ...styles.wheelItemBase(dist, absDist), borderRadius: "12px", padding: "12px", border: "1px solid " + item.color + "30", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", background: item.disabled ? "rgba(148, 163, 184, 0.08)" : "linear-gradient(135deg, " + item.color + "16, " + item.color + "08)", cursor: absDist < 0.45 ? (item.disabled ? "not-allowed" : "pointer") : "default", boxShadow: absDist < 0.55 ? "0 12px 28px rgba(15, 23, 42, 0.14)" : "0 4px 12px rgba(15, 23, 42, 0.05)" },
+        onClick: () => { if (absDist < 0.45 && !item.disabled) item.onClick(); }
+      },
         /* @__PURE__ */ React.createElement("div", { style: { fontSize: "28px", marginBottom: "4px" } }, item.icon),
-        /* @__PURE__ */ React.createElement("div", { style: {...styles.quickActionLabel, fontSize: "14px" } }, item.label),
+        /* @__PURE__ */ React.createElement("div", { style: { ...styles.quickActionLabel, fontSize: "14px" } }, item.label),
         /* @__PURE__ */ React.createElement("div", { style: styles.quickActionMeta }, item.meta)
       );
-    }))), /* @__PURE__ */ React.createElement("div", { style: styles.categoryDots }, quickActionItems.map((item, idx) => /* @__PURE__ */ React.createElement("span", { key: item.id, style: styles.categoryDot(idx === activeActionIndex) })))) : /* @__PURE__ */ React.createElement("div", { style: styles.quickActionsGrid }, quickActionItems.map((item) => /* @__PURE__ */ React.createElement(
+    }, actHandlers, actContainerRef) : /* @__PURE__ */ React.createElement("div", { style: styles.quickActionsGrid }, quickActionItems.map((item) => /* @__PURE__ */ React.createElement(
       "div",
       {
         key: item.id,
@@ -13233,46 +13177,25 @@ useEffect(() => {
         /* @__PURE__ */ React.createElement("p", { style: { marginTop: "8px", fontSize: effectiveMobile ? "13px": "13px", color: "#475569", lineHeight: 1.4 } }, highlightText(q.question.substring(0, 120) + (q.question.length > 120 ? "..." : ""), searchQuery))
       );
     }))),
-    /* @__PURE__ */ React.createElement("div", { style: styles.card }, /* @__PURE__ */ React.createElement("h2", { style: { marginBottom: effectiveMobile ? "12px": "16px", marginTop: 0, fontSize: effectiveMobile ? "18px": "19px", color: "#1e293b" } }, "Study by Category"), effectiveMobile ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", {
-      ref: categoryCarouselRef,
-      style: styles.wheelViewport,
-      onScroll: updateCategoryWheelState,
-      onTouchEnd: () => settleWheelToCenter(categoryCarouselRef.current, "[data-category-card='true']"),
-      onMouseUp: () => settleWheelToCenter(categoryCarouselRef.current, "[data-category-card='true']"),
-      onPointerUp: () => settleWheelToCenter(categoryCarouselRef.current, "[data-category-card='true']")
-    }, /* @__PURE__ */ React.createElement("div", { style: styles.wheelTrack }, CATEGORIES.map((cat, idx) => {
+    /* @__PURE__ */ React.createElement("div", { style: styles.card }, /* @__PURE__ */ React.createElement("h2", { style: { marginBottom: effectiveMobile ? "12px": "16px", marginTop: 0, fontSize: effectiveMobile ? "18px": "19px", color: "#1e293b" } }, "Study by Category"), effectiveMobile ? renderInfiniteWheel(CATEGORIES, catWheelPos, 190, (cat, idx, dist, absDist, rawIdx) => {
       const catQuestions = QUESTIONS.filter((q) => q.categoryId === cat.id).length;
       const catAnswered = categoryAnsweredCounts[cat.id] || { answered: 0, correct: 0 };
       const answeredPercent = catQuestions > 0 ? Math.round(catAnswered.answered / catQuestions * 100) : 0;
       const correctPercent = catAnswered.answered > 0 ? Math.round(catAnswered.correct / catAnswered.answered * 100) : 0;
-      const distance = Math.abs(categoryWheelPosition - idx);
-      const isActive = distance < 0.45;
-      return /* @__PURE__ */ React.createElement(
-        "div",
-        {
-          key: cat.id,
-          "data-category-card": "true",
-          style: styles.categoryWheelCard(cat.color, distance),
-          onClick: () => {
-            if (isActive) {
-              startCategoryReview(cat.id);
-            }
-          }
-        },
+      return /* @__PURE__ */ React.createElement("div", {
+        key: rawIdx,
+        style: { ...styles.wheelItemBase(dist, absDist), background: "rgba(255, 255, 255, 0.95)", borderRadius: "12px", padding: "12px", border: "1px solid rgba(15, 23, 42, 0.08)", borderTop: "3px solid " + cat.color + "cc", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", cursor: absDist < 0.45 ? "pointer" : "default", boxShadow: absDist < 0.55 ? "0 12px 28px rgba(15, 23, 42, 0.14)" : "0 4px 12px rgba(15, 23, 42, 0.06)" },
+        onClick: () => { if (absDist < 0.45) startCategoryReview(cat.id); }
+      },
         /* @__PURE__ */ React.createElement("div", { style: styles.categoryIcon }, renderCategoryIcon(cat.icon, 34)),
         /* @__PURE__ */ React.createElement("div", { style: styles.categoryName }, cat.name),
-        /* @__PURE__ */ React.createElement("div", { style: {
-          fontSize: "11px",
-          color: "#64748b",
-          marginTop: "auto",
-          paddingTop: "8px",
-          width: "100%"
-        } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px", fontSize: "10px" } }, /* @__PURE__ */ React.createElement("span", null, catAnswered.answered, "/", catQuestions), catAnswered.answered > 0 && /* @__PURE__ */ React.createElement("span", { style: {
-          color: correctPercent >= 80 ? "#16a34a" : correctPercent >= 60 ? "#d97706" : "#dc2626",
-          fontWeight: "600"
-        } }, correctPercent, "% \u2713")), /* @__PURE__ */ React.createElement("div", { style: styles.progressBar }, /* @__PURE__ */ React.createElement("div", { style: styles.progressFill(answeredPercent, cat.color) })))
+        /* @__PURE__ */ React.createElement("div", { style: { fontSize: "11px", color: "#64748b", marginTop: "auto", paddingTop: "8px", width: "100%" } },
+          /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px", fontSize: "10px" } },
+            /* @__PURE__ */ React.createElement("span", null, catAnswered.answered, "/", catQuestions),
+            catAnswered.answered > 0 && /* @__PURE__ */ React.createElement("span", { style: { color: correctPercent >= 80 ? "#16a34a" : correctPercent >= 60 ? "#d97706" : "#dc2626", fontWeight: "600" } }, correctPercent, "% \u2713")),
+          /* @__PURE__ */ React.createElement("div", { style: styles.progressBar }, /* @__PURE__ */ React.createElement("div", { style: styles.progressFill(answeredPercent, cat.color) })))
       );
-    }))), /* @__PURE__ */ React.createElement("div", { style: styles.categoryDots }, CATEGORIES.map((cat, idx) => /* @__PURE__ */ React.createElement("span", { key: cat.id, style: styles.categoryDot(idx === activeCategoryIndex) })))) : /* @__PURE__ */ React.createElement("div", { style: styles.categoryGrid }, CATEGORIES.map((cat) => {
+    }, catHandlers, catContainerRef) : /* @__PURE__ */ React.createElement("div", { style: styles.categoryGrid }, CATEGORIES.map((cat) => {
       const catProgress = progress.categoryProgress[cat.id];
       const catQuestions = QUESTIONS.filter((q) => q.categoryId === cat.id).length;
       const catAnswered = categoryAnsweredCounts[cat.id] || { answered: 0, correct: 0 };
