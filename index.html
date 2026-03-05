@@ -9914,9 +9914,6 @@ function PCPLearningApp() {
     answeredQuestions: {},
     incorrectQuestions: [],
     categoryProgress: {},
-    totalCorrect: 0,
-    totalAttempted: 0,
-    gameHighScore: 0,
     bookmarkedQuestions: [],
     spacedReview: {}
   };
@@ -9974,12 +9971,14 @@ function PCPLearningApp() {
   const gameTimerRef = useRef(null);
   const gameScoreRef = useRef(0);
   const progressRef = useRef(null);
-  const highScoreAtGameStartRef = useRef(0);
   const saveTimeoutRef = useRef(null);
   const searchTimeoutRef = useRef(null);
   const chatPollRef = useRef(null);
   const chatOwnerTapCountRef = useRef(0);
   const chatOwnerTapResetRef = useRef(null);
+  const categoryCarouselRef = useRef(null);
+  const carouselSnapTimeoutRef = useRef(null);
+  const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
 
   useEffect(() => {
     return () => {
@@ -9987,6 +9986,7 @@ function PCPLearningApp() {
       if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
       if (chatPollRef.current) clearInterval(chatPollRef.current);
       if (chatOwnerTapResetRef.current) clearTimeout(chatOwnerTapResetRef.current);
+      if (carouselSnapTimeoutRef.current) clearTimeout(carouselSnapTimeoutRef.current);
     };
   }, []);
 
@@ -10047,12 +10047,8 @@ useEffect(() => {
     setProgress((prev) => {
       const catQuestionIds = new Set(QUESTIONS.filter((q) => q.categoryId === categoryId).map((q) => q.id));
       const newAnswered = {};
-      let removedCorrect = 0;
-      let removedTotal = 0;
       Object.entries(prev.answeredQuestions || {}).forEach(([qId, isCorrect]) => {
         if (catQuestionIds.has(parseInt(qId))) {
-          removedTotal++;
-          if (isCorrect) removedCorrect++;
         } else {
           newAnswered[qId] = isCorrect;
         }
@@ -10070,9 +10066,7 @@ useEffect(() => {
         incorrectQuestions: newIncorrect,
         spacedReview: newSpacedReview,
         bookmarkedQuestions: newBookmarks,
-        categoryProgress: newCategoryProgress,
-        totalAttempted: Math.max(0, (prev.totalAttempted || 0) - removedTotal),
-        totalCorrect: Math.max(0, (prev.totalCorrect || 0) - removedCorrect)
+        categoryProgress: newCategoryProgress
       };
       saveProgress(updated);
       return updated;
@@ -10986,8 +10980,6 @@ useEffect(() => {
       const updated = {...prev };
       const now = Date.now();
       updated.answeredQuestions = {...prev.answeredQuestions || {}, [questionId]: isCorrect };
-      updated.totalAttempted = (prev.totalAttempted || 0) + 1;
-      updated.totalCorrect = (prev.totalCorrect || 0) + (isCorrect ? 1: 0);
       let incorrect = Array.isArray(prev.incorrectQuestions) ? [...prev.incorrectQuestions]: [];
       if (isCorrect) {
         incorrect = incorrect.filter((id) => id !== questionId);
@@ -11950,7 +11942,7 @@ useEffect(() => {
   nextQuestionRef.current = nextQuestion;
   const initiateGameMode = () => {
     play("click");
-    setShowGameIntro(true);
+    startGameCountdown();
   };
   const startGameCountdown = () => {
     play("click");
@@ -11973,7 +11965,6 @@ useEffect(() => {
   };
   const gameSeenIdsRef = useRef(/* @__PURE__ */ new Set());
   const startGame = () => {
-    highScoreAtGameStartRef.current = progressRef.current?.gameHighScore ?? progress.gameHighScore ?? 0;
     gameSeenIdsRef.current = /* @__PURE__ */ new Set();
     setGameMode(true);
     setGameTimeLeft(180);
@@ -12014,16 +12005,6 @@ useEffect(() => {
   const endGame = () => {
     setGameEnded(true);
     setGameMode(false);
-    const finalScore = gameScoreRef.current ?? 0;
-    setProgress((prev) => {
-      const prevHigh = prev.gameHighScore || 0;
-      if (finalScore > prevHigh) {
-        const updated = {...prev, gameHighScore: finalScore };
-        saveProgress(updated);
-        return updated;
-      }
-      return prev;
-    });
   };
   const handleSearch = (query) => {
     setSearchQuery(query);
@@ -12297,7 +12278,6 @@ useEffect(() => {
     if (streak >= 3) return { text: "Heating Up! \u{1F525}", color: "#FFA500" };
     return { text: `Streak: ${streak}`, color: "#64748b" };
   };
-  const totalQuestions = QUESTIONS.length;
   const answeredCount = Object.keys(progress.answeredQuestions).length;
   const categoryAnsweredCounts = useMemo(() => {
     const counts = {};
@@ -12313,7 +12293,40 @@ useEffect(() => {
     });
     return counts;
   }, [progress.answeredQuestions]);
-  const correctRate = progress.totalAttempted > 0 ? Math.round(progress.totalCorrect / progress.totalAttempted * 100): 0;
+  const hasAnyProgress = answeredCount > 0;
+  const handleCategoryCarouselScroll = useCallback(() => {
+    if (!categoryCarouselRef.current) return;
+    const viewportRect = categoryCarouselRef.current.getBoundingClientRect();
+    const viewportCenter = viewportRect.left + viewportRect.width / 2;
+    const cards = Array.from(categoryCarouselRef.current.querySelectorAll("[data-category-card='true']"));
+    if (!cards.length) return;
+    let nearestIndex = 0;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+    cards.forEach((card, idx) => {
+      const rect = card.getBoundingClientRect();
+      const cardCenter = rect.left + rect.width / 2;
+      const distance = Math.abs(cardCenter - viewportCenter);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestIndex = idx;
+      }
+    });
+    setActiveCategoryIndex(nearestIndex);
+    if (carouselSnapTimeoutRef.current) clearTimeout(carouselSnapTimeoutRef.current);
+    carouselSnapTimeoutRef.current = setTimeout(() => {
+      const activeCard = cards[nearestIndex];
+      if (activeCard && categoryCarouselRef.current) {
+        activeCard.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      }
+    }, 120);
+  }, []);
+  useEffect(() => {
+    if (!effectiveMobile || currentView !== "home" || !categoryCarouselRef.current) return;
+    const cards = Array.from(categoryCarouselRef.current.querySelectorAll("[data-category-card='true']"));
+    if (!cards.length) return;
+    const safeIndex = Math.min(activeCategoryIndex, cards.length - 1);
+    cards[safeIndex].scrollIntoView({ behavior: "auto", inline: "center", block: "nearest" });
+  }, [effectiveMobile, currentView]);
   const styles = useMemo(() => ({
     app: {
       minHeight: "100vh",
@@ -12533,23 +12546,128 @@ useEffect(() => {
     },
     categoryGrid: {
       display: "grid",
-      gridTemplateColumns: effectiveMobile ? "repeat(3, minmax(0, 1fr))": "repeat(5, minmax(0, 1fr))",
+      gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+      gap: "12px"
+    },
+    quickActionsCard: {
+      background: "rgba(255, 255, 255, 0.98)",
+      borderRadius: effectiveMobile ? "12px": "14px",
+      padding: effectiveMobile ? "10px": "12px 14px",
+      marginBottom: effectiveMobile ? "12px": "16px",
+      border: "1px solid rgba(15, 23, 42, 0.08)",
+      boxShadow: "0 8px 20px rgba(15, 23, 42, 0.06)"
+    },
+    quickActionsGrid: {
+      display: "grid",
+      gridTemplateColumns: effectiveMobile ? "repeat(2, minmax(0, 1fr))": "repeat(5, minmax(0, 1fr))",
       gap: effectiveMobile ? "8px": "10px"
     },
-    categoryCard: (color) => ({
-      background: "rgba(255, 255, 255, 0.92)",
+    quickActionBtn: (color, disabled) => ({
+      border: `1px solid ${color}30`,
       borderRadius: "12px",
-      padding: effectiveMobile ? "8px": "10px",
+      background: disabled ? "rgba(148, 163, 184, 0.08)" : `linear-gradient(135deg, ${color}14, ${color}08)`,
+      color: "#1e293b",
+      minHeight: effectiveMobile ? "66px": "72px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "column",
+      gap: "3px",
+      cursor: disabled ? "not-allowed" : "pointer",
+      opacity: disabled ? 0.55 : 1,
+      transition: "transform 0.18s ease, box-shadow 0.18s ease",
+      fontWeight: 700,
+      padding: "8px"
+    }),
+    quickActionLabel: {
+      fontSize: effectiveMobile ? "12px": "13px",
+      lineHeight: 1.2
+    },
+    quickActionMeta: {
+      fontSize: "11px",
+      fontWeight: 500,
+      color: "#64748b",
+      lineHeight: 1.15
+    },
+    categoryWheelViewport: {
+      overflowX: "auto",
+      overflowY: "hidden",
+      WebkitOverflowScrolling: "touch",
+      scrollSnapType: "x mandatory",
+      padding: "4px 22%",
+      margin: "0 -10px",
+      perspective: "900px"
+    },
+    categoryWheelTrack: {
+      display: "flex",
+      alignItems: "stretch",
+      gap: "8px"
+    },
+    categoryDots: {
+      display: "flex",
+      justifyContent: "center",
+      gap: "5px",
+      marginTop: "8px"
+    },
+    categoryDot: (active) => ({
+      width: active ? "16px" : "6px",
+      height: "6px",
+      borderRadius: "999px",
+      background: active ? "#334155" : "rgba(100, 116, 139, 0.35)",
+      transition: "all 0.2s ease"
+    }),
+    categoryCardBase: (color) => ({
+      background: "rgba(255, 255, 255, 0.95)",
+      borderRadius: "12px",
+      padding: "10px",
       cursor: "pointer",
       border: "1px solid rgba(15, 23, 42, 0.08)",
       borderTop: `3px solid ${color}cc`,
       boxShadow: "0 6px 16px rgba(15, 23, 42, 0.06)",
-      transition: "transform 0.2s ease, box-shadow 0.2s ease",
       textAlign: "center",
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
-      justifyContent: "flex-start",
+      justifyContent: "flex-start"
+    }),
+    categoryWheelCard: (color, active, distance) => ({
+      ...{
+        background: "rgba(255, 255, 255, 0.95)",
+        borderRadius: "12px",
+        padding: "10px",
+        cursor: "pointer",
+        border: "1px solid rgba(15, 23, 42, 0.08)",
+        borderTop: `3px solid ${color}cc`,
+        textAlign: "center",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "flex-start"
+      },
+      flex: "0 0 56%",
+      scrollSnapAlign: "center",
+      transform: `translateY(${active ? "0px" : "10px"}) scale(${active ? 1 : distance === 1 ? 0.85 : 0.72}) rotateY(${active ? "0deg" : distance === 1 ? "14deg" : "20deg"})`,
+      opacity: active ? 1 : distance === 1 ? 0.74 : 0.48,
+      transition: "transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease",
+      boxShadow: active ? "0 12px 26px rgba(15, 23, 42, 0.12)" : "0 4px 12px rgba(15, 23, 42, 0.06)"
+    }),
+    categoryCard: (color) => ({
+      ...{
+        background: "rgba(255, 255, 255, 0.95)",
+        borderRadius: "12px",
+        padding: "10px",
+        cursor: "pointer",
+        border: "1px solid rgba(15, 23, 42, 0.08)",
+        borderTop: `3px solid ${color}cc`,
+        boxShadow: "0 6px 16px rgba(15, 23, 42, 0.06)",
+        textAlign: "center",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "flex-start"
+      },
+      padding: "10px",
+      transition: "transform 0.2s ease, box-shadow 0.2s ease",
 }),
     categoryIcon: {
       marginBottom: effectiveMobile ? "4px": "8px",
@@ -12969,11 +13087,66 @@ useEffect(() => {
     })
   }), [effectiveMobile]);
   const renderHome = () => /* @__PURE__ */ React.createElement(React.Fragment, null,
-    /* @__PURE__ */ React.createElement("div", { style: styles.statsGrid },
-      /* @__PURE__ */ React.createElement("div", { style: styles.statCard }, /* @__PURE__ */ React.createElement("div", { style: styles.statValue }, answeredCount, "/", totalQuestions), /* @__PURE__ */ React.createElement("div", { style: styles.statLabel }, "Questions Seen")),
-      /* @__PURE__ */ React.createElement("div", { style: styles.statCard }, /* @__PURE__ */ React.createElement("div", { style: styles.statValue }, correctRate, "%"), /* @__PURE__ */ React.createElement("div", { style: styles.statLabel }, "Accuracy")),
-      /* @__PURE__ */ React.createElement("div", { style: styles.statCard }, /* @__PURE__ */ React.createElement("div", { style: styles.statValue }, progress.gameHighScore), /* @__PURE__ */ React.createElement("div", { style: styles.statLabel }, "Game High Score"))
-    ),
+    /* @__PURE__ */ React.createElement("div", { style: styles.quickActionsCard }, /* @__PURE__ */ React.createElement("h2", { style: { margin: "0 0 10px 0", fontSize: effectiveMobile ? "17px": "18px", color: "#1e293b" } }, "Quick Actions"), /* @__PURE__ */ React.createElement("div", { style: styles.quickActionsGrid }, /* @__PURE__ */ React.createElement(
+      "div",
+      {
+        style: styles.quickActionBtn("#475569", false),
+        onClick: () => startQuiz(3),
+        onMouseEnter: (e) => e.currentTarget.style.transform = "translateY(-2px)",
+        onMouseLeave: (e) => e.currentTarget.style.transform = "translateY(0)"
+      },
+      /* @__PURE__ */ React.createElement("div", null, "\u{1F4DD}"),
+      /* @__PURE__ */ React.createElement("div", { style: styles.quickActionLabel }, "3 Random"),
+      /* @__PURE__ */ React.createElement("div", { style: styles.quickActionMeta }, "Quick practice")
+    ), /* @__PURE__ */ React.createElement(
+      "div",
+      {
+        style: styles.quickActionBtn("#334155", false),
+        onClick: () => startQuiz(10),
+        onMouseEnter: (e) => e.currentTarget.style.transform = "translateY(-2px)",
+        onMouseLeave: (e) => e.currentTarget.style.transform = "translateY(0)"
+      },
+      /* @__PURE__ */ React.createElement("div", null, "\u{1F4DA}"),
+      /* @__PURE__ */ React.createElement("div", { style: styles.quickActionLabel }, "10 Random"),
+      /* @__PURE__ */ React.createElement("div", { style: styles.quickActionMeta }, "Full session")
+    ), /* @__PURE__ */ React.createElement(
+      "div",
+      {
+        style: styles.quickActionBtn("#f59e0b", false),
+        onClick: initiateGameMode,
+        onMouseEnter: (e) => e.currentTarget.style.transform = "translateY(-2px)",
+        onMouseLeave: (e) => e.currentTarget.style.transform = "translateY(0)"
+      },
+      /* @__PURE__ */ React.createElement("div", null, "\u{1F3AE}"),
+      /* @__PURE__ */ React.createElement("div", { style: styles.quickActionLabel }, "Game Mode"),
+      /* @__PURE__ */ React.createElement("div", { style: styles.quickActionMeta }, "3-minute sprint")
+    ), /* @__PURE__ */ React.createElement(
+      "div",
+      {
+        style: styles.quickActionBtn("#ef4444", progress.incorrectQuestions.length === 0),
+        onClick: progress.incorrectQuestions.length > 0 ? startIncorrectReview : null,
+        onMouseEnter: (e) => {
+          if (progress.incorrectQuestions.length > 0) e.currentTarget.style.transform = "translateY(-2px)";
+        },
+        onMouseLeave: (e) => e.currentTarget.style.transform = "translateY(0)"
+      },
+      /* @__PURE__ */ React.createElement("div", null, "\u{1F504}"),
+      /* @__PURE__ */ React.createElement("div", { style: styles.quickActionLabel }, "Review Incorrect"),
+      /* @__PURE__ */ React.createElement("div", { style: styles.quickActionMeta }, progress.incorrectQuestions.length, " queued")
+    ), /* @__PURE__ */ React.createElement(
+      "div",
+      {
+        style: styles.quickActionBtn("#eab308", (progress.bookmarkedQuestions?.length || 0) === 0),
+        onClick: (progress.bookmarkedQuestions?.length || 0) > 0 ? startBookmarkReview : null,
+        onMouseEnter: (e) => {
+          if ((progress.bookmarkedQuestions?.length || 0) > 0) e.currentTarget.style.transform = "translateY(-2px)";
+        },
+        onMouseLeave: (e) => e.currentTarget.style.transform = "translateY(0)"
+      },
+      /* @__PURE__ */ React.createElement("div", null, "\u{1F516}"),
+      /* @__PURE__ */ React.createElement("div", { style: styles.quickActionLabel }, "Bookmarked"),
+      /* @__PURE__ */ React.createElement("div", { style: styles.quickActionMeta }, progress.bookmarkedQuestions?.length || 0, " saved")
+    )),
     /* @__PURE__ */ React.createElement("div", { style: styles.searchContainer }, /* @__PURE__ */ React.createElement(
       "input",
       {
@@ -13013,77 +13186,37 @@ useEffect(() => {
         /* @__PURE__ */ React.createElement("p", { style: { marginTop: "8px", fontSize: effectiveMobile ? "13px": "13px", color: "#475569", lineHeight: 1.4 } }, highlightText(q.question.substring(0, 120) + (q.question.length > 120 ? "..." : ""), searchQuery))
       );
     }))),
-    /* @__PURE__ */ React.createElement("div", { style: styles.actionGrid }, /* @__PURE__ */ React.createElement(
-      "div",
-      {
-        style: styles.actionCard("#475569"),
-        onClick: () => startQuiz(3),
-        onMouseEnter: (e) => e.currentTarget.style.transform = "translateY(-4px)",
-        onMouseLeave: (e) => e.currentTarget.style.transform = "translateY(0)"
-      },
-      /* @__PURE__ */ React.createElement("div", { style: styles.actionIcon }, "\u{1F4DD}"),
-      /* @__PURE__ */ React.createElement("div", { style: styles.actionTitle }, "3 Random Questions"),
-      /* @__PURE__ */ React.createElement("div", { style: styles.actionDesc }, "Quick Practice")
-    ), /* @__PURE__ */ React.createElement(
-      "div",
-      {
-        style: styles.actionCard("#334155"),
-        onClick: () => startQuiz(10),
-        onMouseEnter: (e) => e.currentTarget.style.transform = "translateY(-4px)",
-        onMouseLeave: (e) => e.currentTarget.style.transform = "translateY(0)"
-      },
-      /* @__PURE__ */ React.createElement("div", { style: styles.actionIcon }, "\u{1F4DA}"),
-      /* @__PURE__ */ React.createElement("div", { style: styles.actionTitle }, "10 Random Questions"),
-      /* @__PURE__ */ React.createElement("div", { style: styles.actionDesc }, "Full Practice Session")
-    ), /* @__PURE__ */ React.createElement(
-      "div",
-      {
-        style: styles.actionCard("#f59e0b"),
-        onClick: initiateGameMode,
-        onMouseEnter: (e) => e.currentTarget.style.transform = "translateY(-4px)",
-        onMouseLeave: (e) => e.currentTarget.style.transform = "translateY(0)"
-      },
-      /* @__PURE__ */ React.createElement("div", { style: styles.actionIcon }, "\u{1F3AE}"),
-      /* @__PURE__ */ React.createElement("div", { style: styles.actionTitle }, "Game Mode"),
-      /* @__PURE__ */ React.createElement("div", { style: styles.actionDesc }, "3 Minutes - Beat Your Score!")
-    ), /* @__PURE__ */ React.createElement(
-      "div",
-      {
-        style: {
-          ...styles.actionCard("#ef4444"),
-          opacity: progress.incorrectQuestions.length === 0 ? 0.5 : 1,
-          cursor: progress.incorrectQuestions.length === 0 ? "not-allowed" : "pointer"
+    /* @__PURE__ */ React.createElement("div", { style: styles.card }, /* @__PURE__ */ React.createElement("h2", { style: { marginBottom: effectiveMobile ? "12px": "16px", marginTop: 0, fontSize: effectiveMobile ? "18px": "19px", color: "#1e293b" } }, "Study by Category"), effectiveMobile ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { ref: categoryCarouselRef, style: styles.categoryWheelViewport, onScroll: handleCategoryCarouselScroll }, /* @__PURE__ */ React.createElement("div", { style: styles.categoryWheelTrack }, CATEGORIES.map((cat, idx) => {
+      const catQuestions = QUESTIONS.filter((q) => q.categoryId === cat.id).length;
+      const catAnswered = categoryAnsweredCounts[cat.id] || { answered: 0, correct: 0 };
+      const answeredPercent = catQuestions > 0 ? Math.round(catAnswered.answered / catQuestions * 100) : 0;
+      const correctPercent = catAnswered.answered > 0 ? Math.round(catAnswered.correct / catAnswered.answered * 100) : 0;
+      const distance = Math.abs(activeCategoryIndex - idx);
+      const isActive = idx === activeCategoryIndex;
+      return /* @__PURE__ */ React.createElement(
+        "div",
+        {
+          key: cat.id,
+          "data-category-card": "true",
+          style: styles.categoryWheelCard(cat.color, isActive, distance),
+          onClick: () => {
+            if (isActive) startCategoryReview(cat.id);
+          }
         },
-        onClick: progress.incorrectQuestions.length > 0 ? startIncorrectReview : null,
-        onMouseEnter: (e) => {
-          if (progress.incorrectQuestions.length > 0) e.currentTarget.style.transform = "translateY(-4px)";
-        },
-        onMouseLeave: (e) => e.currentTarget.style.transform = "translateY(0)"
-      },
-      /* @__PURE__ */ React.createElement("div", { style: styles.actionIcon }, "\u{1F504}"),
-      /* @__PURE__ */ React.createElement("div", { style: styles.actionTitle }, "Review Incorrect"),
-      /* @__PURE__ */ React.createElement("div", { style: styles.actionDesc }, progress.incorrectQuestions.length, " Questions to Review")
-    ), /* @__PURE__ */ React.createElement(
-      "div",
-      {
-        style: {
-          ...styles.actionCard("#eab308"),
-          opacity: (progress.bookmarkedQuestions?.length || 0) === 0 ? 0.5 : 1,
-          cursor: (progress.bookmarkedQuestions?.length || 0) === 0 ? "not-allowed" : "pointer",
-          borderColor: "rgba(234, 179, 8, 0.3)",
-          background: "linear-gradient(135deg, rgba(234, 179, 8, 0.04), rgba(245, 158, 11, 0.08))"
-        },
-        onClick: (progress.bookmarkedQuestions?.length || 0) > 0 ? startBookmarkReview : null,
-        onMouseEnter: (e) => {
-          if ((progress.bookmarkedQuestions?.length || 0) > 0) e.currentTarget.style.transform = "translateY(-4px)";
-        },
-        onMouseLeave: (e) => e.currentTarget.style.transform = "translateY(0)"
-      },
-      /* @__PURE__ */ React.createElement("div", { style: styles.actionIcon }, "\u{1F516}"),
-      /* @__PURE__ */ React.createElement("div", { style: styles.actionTitle }, "Bookmarked"),
-      /* @__PURE__ */ React.createElement("div", { style: styles.actionDesc }, progress.bookmarkedQuestions?.length || 0, " Saved Questions")
-    )),
-    /* @__PURE__ */ React.createElement("div", { style: styles.card }, /* @__PURE__ */ React.createElement("h2", { style: { marginBottom: effectiveMobile ? "12px": "16px", marginTop: 0, fontSize: effectiveMobile ? "18px": "19px", color: "#1e293b" } }, "Study by Category"), /* @__PURE__ */ React.createElement("div", { style: styles.categoryGrid }, CATEGORIES.map((cat) => {
+        /* @__PURE__ */ React.createElement("div", { style: styles.categoryIcon }, renderCategoryIcon(cat.icon, 34)),
+        /* @__PURE__ */ React.createElement("div", { style: styles.categoryName }, cat.name),
+        /* @__PURE__ */ React.createElement("div", { style: {
+          fontSize: "11px",
+          color: "#64748b",
+          marginTop: "auto",
+          paddingTop: "8px",
+          width: "100%"
+        } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px", fontSize: "10px" } }, /* @__PURE__ */ React.createElement("span", null, catAnswered.answered, "/", catQuestions), catAnswered.answered > 0 && /* @__PURE__ */ React.createElement("span", { style: {
+          color: correctPercent >= 80 ? "#16a34a" : correctPercent >= 60 ? "#d97706" : "#dc2626",
+          fontWeight: "600"
+        } }, correctPercent, "% \u2713")), /* @__PURE__ */ React.createElement("div", { style: styles.progressBar }, /* @__PURE__ */ React.createElement("div", { style: styles.progressFill(answeredPercent, cat.color) })))
+      );
+    }))), /* @__PURE__ */ React.createElement("div", { style: styles.categoryDots }, CATEGORIES.map((cat, idx) => /* @__PURE__ */ React.createElement("span", { key: cat.id, style: styles.categoryDot(idx === activeCategoryIndex) })))) : /* @__PURE__ */ React.createElement("div", { style: styles.categoryGrid }, CATEGORIES.map((cat) => {
       const catProgress = progress.categoryProgress[cat.id];
       const catQuestions = QUESTIONS.filter((q) => q.categoryId === cat.id).length;
       const catAnswered = categoryAnsweredCounts[cat.id] || { answered: 0, correct: 0 };
@@ -13111,8 +13244,8 @@ useEffect(() => {
           fontWeight: "600"
         } }, correctPercent, "% \u2713")), /* @__PURE__ */ React.createElement("div", { style: styles.progressBar }, /* @__PURE__ */ React.createElement("div", { style: styles.progressFill(answeredPercent, cat.color) })))
       );
-    }))),
-    answeredCount > 0 && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", marginTop: effectiveMobile ? "20px": "32px", paddingTop: effectiveMobile ? "16px": "24px", borderTop: "1px solid rgba(0,0,0,0.06)" } }, /* @__PURE__ */ React.createElement("button", { style: { background: "none", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#dc2626", padding: effectiveMobile ? "9px 16px": "10px 24px", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "500", transition: "all 0.15s ease" }, onClick: resetAllProgress, onMouseEnter: (e) => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.08)"; }, onMouseLeave: (e) => { e.currentTarget.style.background = "none"; } }, "\u{1F5D1}\uFE0F Reset All Progress"))
+    })))),
+    hasAnyProgress && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", marginTop: effectiveMobile ? "20px": "32px", paddingTop: effectiveMobile ? "16px": "24px", borderTop: "1px solid rgba(0,0,0,0.06)" } }, /* @__PURE__ */ React.createElement("button", { style: { background: "none", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#dc2626", padding: effectiveMobile ? "9px 16px": "10px 24px", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "500", transition: "all 0.15s ease" }, onClick: resetAllProgress, onMouseEnter: (e) => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.08)"; }, onMouseLeave: (e) => { e.currentTarget.style.background = "none"; } }, "\u{1F5D1}\uFE0F Reset All Progress"))
   );
   const renderQuestionRow = (q, idx, categoryQuestions) => {
     const wasAnswered = q.id in progress.answeredQuestions;
