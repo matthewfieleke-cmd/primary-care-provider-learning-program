@@ -9984,6 +9984,10 @@ function PCPLearningApp() {
   const actWheelRef = useRef({ pos: 0, vel: 0, drag: null, anim: null });
   const [catWheelPos, setCatWheelPos] = useState(0);
   const [actWheelPos, setActWheelPos] = useState(0);
+  const pearlVisitRef = useRef(0);
+  const [pearlIndex, setPearlIndex] = useState(0);
+  const pearlGridRef = useRef(null);
+  const [pearlGridCols, setPearlGridCols] = useState(6);
 
   useEffect(() => {
     return () => {
@@ -12148,7 +12152,39 @@ useEffect(() => {
     setCurrentView("home");
     setSearchQuery("");
     setSearchResults([]);
+    pearlVisitRef.current += 1;
+    setPearlIndex(pearlVisitRef.current);
   };
+  const getClinicalPearlText = useCallback((questionIndex) => {
+    const n = QUESTIONS.length;
+    if (n === 0) return "";
+    for (let attempt = 0; attempt < n; attempt++) {
+      const q = QUESTIONS[(questionIndex + attempt) % n];
+      const raw = getBulletDraftText(q);
+      if (!raw || !raw.trim()) continue;
+      const lines = raw.split("\n").map((l) => l.replace(/^-\s*/, "").trim()).filter(Boolean);
+      const pearlLines = lines.filter((l) => !/^CORRECT:/i.test(l));
+      if (pearlLines.length > 0) return pearlLines.join(" ");
+    }
+    return "";
+  }, []);
+  useEffect(() => {
+    if (!pearlGridRef.current || effectiveMobile) return;
+    const measure = () => {
+      const w = pearlGridRef.current.offsetWidth;
+      const cols = Math.max(1, Math.floor((w + 12) / (180 + 12)));
+      setPearlGridCols(cols);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(pearlGridRef.current);
+    return () => observer.disconnect();
+  }, [effectiveMobile]);
+  const pearlSpan = useMemo(() => {
+    const remainder = CATEGORIES.length % pearlGridCols;
+    return remainder === 0 ? pearlGridCols : pearlGridCols - remainder;
+  }, [pearlGridCols]);
+  const pearlText = useMemo(() => getClinicalPearlText(pearlIndex), [pearlIndex, getClinicalPearlText]);
   const getCategoryById = (id) => CATEGORIES.find((c) => c.id === id);
   const renderCategoryIcon = (icon, size = 36) => {
     // Optical size compensation for a few Material-symbol / ligature icons that render smaller.
@@ -12741,6 +12777,37 @@ useEffect(() => {
       justifyContent: "center",
       lineHeight: "1.2"
     },
+    clinicalPearlCard: {
+      background: "rgba(255, 255, 255, 0.95)",
+      borderRadius: "12px",
+      padding: effectiveMobile ? "14px 16px" : "10px 14px",
+      border: "1px solid rgba(15, 23, 42, 0.08)",
+      borderLeft: "3px solid #64748b",
+      boxShadow: "0 6px 16px rgba(15, 23, 42, 0.06)",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      overflow: "hidden",
+      gridColumn: effectiveMobile ? undefined : `span ${pearlSpan}`
+    },
+    clinicalPearlHeader: {
+      fontSize: "9px",
+      fontWeight: "700",
+      letterSpacing: "0.08em",
+      textTransform: "uppercase",
+      color: "#94a3b8",
+      marginBottom: effectiveMobile ? "8px" : "6px"
+    },
+    clinicalPearlText: {
+      fontSize: effectiveMobile ? "12px" : "13px",
+      lineHeight: "1.55",
+      color: "#334155",
+      fontWeight: "400",
+      display: "-webkit-box",
+      WebkitLineClamp: effectiveMobile ? 4 : 5,
+      WebkitBoxOrient: "vertical",
+      overflow: "hidden"
+    },
     searchContainer: {
       margin: effectiveMobile ? "16px 0" : "24px 0"
     },
@@ -13230,7 +13297,7 @@ useEffect(() => {
             catAnswered.answered > 0 && /* @__PURE__ */ React.createElement("span", { style: { color: correctPercent >= 80 ? "#16a34a" : correctPercent >= 60 ? "#d97706" : "#dc2626", fontWeight: "600" } }, correctPercent, "% \u2713")),
           /* @__PURE__ */ React.createElement("div", { style: styles.progressBar }, /* @__PURE__ */ React.createElement("div", { style: styles.progressFill(answeredPercent, cat.color) })))
       );
-    }, catHandlers, catContainerRef, 3) : /* @__PURE__ */ React.createElement("div", { style: styles.categoryGrid }, CATEGORIES.map((cat) => {
+    }, catHandlers, catContainerRef, 3) : /* @__PURE__ */ React.createElement("div", { ref: pearlGridRef, style: styles.categoryGrid }, CATEGORIES.map((cat) => {
       const catProgress = progress.categoryProgress[cat.id];
       const catQuestions = QUESTIONS.filter((q) => q.categoryId === cat.id).length;
       const catAnswered = categoryAnsweredCounts[cat.id] || { answered: 0, correct: 0 };
@@ -13258,7 +13325,8 @@ useEffect(() => {
           fontWeight: "600"
         } }, correctPercent, "% \u2713")), /* @__PURE__ */ React.createElement("div", { style: styles.progressBar }, /* @__PURE__ */ React.createElement("div", { style: styles.progressFill(answeredPercent, cat.color) })))
       );
-    })))),
+    }), pearlText && /* @__PURE__ */ React.createElement("div", { key: "clinical-pearl", style: styles.clinicalPearlCard }, /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlHeader }, "CLINICAL PEARL"), /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlText }, pearlText))))),
+    effectiveMobile && pearlText && /* @__PURE__ */ React.createElement("div", { style: { ...styles.clinicalPearlCard, marginTop: "16px" } }, /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlHeader }, "CLINICAL PEARL"), /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlText }, pearlText)),
     hasAnyProgress && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", marginTop: effectiveMobile ? "20px": "32px", paddingTop: effectiveMobile ? "16px": "24px", borderTop: "1px solid rgba(0,0,0,0.06)" } }, /* @__PURE__ */ React.createElement("button", { style: { background: "none", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#dc2626", padding: effectiveMobile ? "9px 16px": "10px 24px", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "500", transition: "all 0.15s ease" }, onClick: resetAllProgress, onMouseEnter: (e) => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.08)"; }, onMouseLeave: (e) => { e.currentTarget.style.background = "none"; } }, "\u{1F5D1}\uFE0F Reset All Progress"))
   );
   const renderQuestionRow = (q, idx, categoryQuestions) => {
