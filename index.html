@@ -12454,7 +12454,7 @@ useEffect(() => {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundImage: `
+      backgroundImage: effectiveMobile ? "none" : `
         radial-gradient(circle at 20% 10%, rgba(71, 85, 105, 0.035) 0%, transparent 55%),
         radial-gradient(circle at 85% 75%, rgba(51, 65, 85, 0.03) 0%, transparent 55%)
       `,
@@ -12611,8 +12611,8 @@ useEffect(() => {
       borderRadius: 0
     },
     card: {
-      background: "rgba(255, 255, 255, 0.98)",
-      backdropFilter: "blur(10px)",
+      background: effectiveMobile ? "#ffffff" : "rgba(255, 255, 255, 0.98)",
+      backdropFilter: effectiveMobile ? "none" : "blur(10px)",
       borderRadius: effectiveMobile ? "12px": "16px",
       padding: effectiveMobile ? "12px": "24px",
       marginBottom: effectiveMobile ? "10px": "16px",
@@ -12681,7 +12681,7 @@ useEffect(() => {
       gap: "12px"
     },
     quickActionsCard: {
-      background: "rgba(255, 255, 255, 0.98)",
+      background: effectiveMobile ? "#ffffff" : "rgba(255, 255, 255, 0.98)",
       borderRadius: effectiveMobile ? "12px": "14px",
       padding: effectiveMobile ? "14px 6px 16px": "12px 14px",
       marginBottom: effectiveMobile ? "10px": "16px",
@@ -12787,7 +12787,7 @@ useEffect(() => {
       lineHeight: "1.2"
     },
     clinicalPearlCard: {
-      background: "rgba(255, 255, 255, 0.95)",
+      background: effectiveMobile ? "#ffffff" : "rgba(255, 255, 255, 0.95)",
       borderRadius: "12px",
       padding: effectiveMobile ? "14px 16px" : "10px 14px",
       border: "1px solid rgba(15, 23, 42, 0.08)",
@@ -12823,7 +12823,7 @@ useEffect(() => {
       overflow: "hidden"
     },
     searchContainer: effectiveMobile ? {
-      background: "rgba(255, 255, 255, 0.98)",
+      background: "#ffffff",
       borderRadius: "12px",
       padding: "10px 12px",
       marginBottom: "10px",
