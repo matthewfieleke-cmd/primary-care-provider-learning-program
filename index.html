@@ -12345,14 +12345,14 @@ useEffect(() => {
       wd.drag = null;
       wd.vel = Math.max(-2.5, Math.min(2.5, wd.vel));
       const tick = () => {
-        wd.vel *= 0.91;
+        wd.vel *= 0.95;
         wd.pos += wd.vel;
-        if (Math.abs(wd.vel) < 0.004) {
+        if (Math.abs(wd.vel) < 0.005) {
           const t = Math.round(wd.pos);
           const ease = () => {
             const d = t - wd.pos;
-            if (Math.abs(d) < 0.001) { wd.pos = t; setPos(t); return; }
-            wd.pos += d * 0.18;
+            if (Math.abs(d) < 0.002) { wd.pos = t; setPos(t); return; }
+            wd.pos += d * 0.15;
             setPos(wd.pos);
             wd.anim = requestAnimationFrame(ease);
           };
@@ -12659,23 +12659,34 @@ useEffect(() => {
       lineHeight: 1.15
     },
     wheelItemBase: (dist, absDist, opts) => {
-      const tw = (opts && opts.tileWidth) || "32%";
-      const sp = (opts && opts.spacing) || 16;
-      const sf = (opts && opts.scaleFactor) || 0.2;
+      const tw = (opts && opts.tileWidth) || 28;
+      const sf = (opts && opts.scaleFactor) || 0.25;
+      const mn = (opts && opts.minScale) || 0.35;
       const md = (opts && opts.maxDist) || 3;
-      return {
+      const gp = (opts && opts.gap) || 1;
+      const th = opts && opts.tileHeight;
+      const scaleAt = (d) => Math.max(mn, 1 - Math.min(md, d) * sf);
+      const cumPos = (n) => { var p = 0; for (var i = 0; i < n; i++) p += scaleAt(i) * tw / 2 + gp + scaleAt(i + 1) * tw / 2; return p; };
+      const ad = Math.abs(dist);
+      const lo = Math.floor(ad);
+      const frac = ad - lo;
+      const pos = cumPos(lo) + frac * (cumPos(lo + 1) - cumPos(lo));
+      const dir = dist >= 0 ? 1 : -1;
+      const leftPct = 50 + dir * pos;
+      const sc = scaleAt(ad);
+      var s = {
         position: "absolute",
-        width: tw,
-        top: "4px",
-        bottom: "4px",
-        left: (50 + dist * sp) + "%",
-        transform: "translateX(-50%) scale(" + Math.max(0.38, 1 - Math.min(md, absDist) * sf) + ")",
-        opacity: Math.max(0.3, 1 - Math.min(md, absDist) * 0.25),
-        zIndex: 10 - Math.round(absDist),
-        transition: "transform 0.05s linear, opacity 0.05s linear, left 0.05s linear",
-        willChange: "transform, left, opacity",
+        width: tw + "%",
+        left: leftPct + "%",
+        transform: "translateX(-50%) scale(" + sc + ")",
+        opacity: Math.max(0.3, 1 - Math.min(md, ad) * 0.25),
+        zIndex: 10 - Math.round(ad),
+        transition: "none",
         pointerEvents: absDist < 0.45 ? "auto" : "none"
       };
+      if (th) { s.height = th + "px"; s.top = "50%"; s.transform = "translate(-50%,-50%) scale(" + sc + ")"; }
+      else { s.top = "4px"; s.bottom = "4px"; }
+      return s;
     },
     categoryCard: (color) => ({
       ...{
@@ -13120,10 +13131,10 @@ useEffect(() => {
     { id: "qabookmark", icon: "\u{1F516}", label: "Bookmarked", meta: `${progress.bookmarkedQuestions?.length || 0} saved`, color: "#eab308", disabled: (progress.bookmarkedQuestions?.length || 0) === 0, onClick: startBookmarkReview }
   ];
   const renderHome = () => /* @__PURE__ */ React.createElement(React.Fragment, null,
-    /* @__PURE__ */ React.createElement("div", { style: styles.quickActionsCard }, effectiveMobile ? renderInfiniteWheel(quickActionItems, actWheelPos, 120, (item, idx, dist, absDist, rawIdx) => {
+    /* @__PURE__ */ React.createElement("div", { style: styles.quickActionsCard }, effectiveMobile ? renderInfiniteWheel(quickActionItems, actWheelPos, 110, (item, idx, dist, absDist, rawIdx) => {
       return /* @__PURE__ */ React.createElement("div", {
         key: rawIdx,
-        style: { ...styles.wheelItemBase(dist, absDist, { tileWidth: "32%", spacing: 17, scaleFactor: 0.22, maxDist: 2.5 }), borderRadius: "12px", padding: "10px 8px", border: "1px solid " + item.color + "30", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", background: item.disabled ? "rgba(148, 163, 184, 0.08)" : "linear-gradient(135deg, " + item.color + "16, " + item.color + "08)", cursor: absDist < 0.45 ? (item.disabled ? "not-allowed" : "pointer") : "default", boxShadow: absDist < 0.55 ? "0 10px 24px rgba(15, 23, 42, 0.13)" : "0 3px 10px rgba(15, 23, 42, 0.05)" },
+        style: { ...styles.wheelItemBase(dist, absDist, { tileWidth: 28, scaleFactor: 0.25, minScale: 0.4, maxDist: 2.5, gap: 1.2 }), borderRadius: "12px", padding: "10px 8px", border: "1px solid " + item.color + "30", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", background: item.disabled ? "rgba(148, 163, 184, 0.08)" : "linear-gradient(135deg, " + item.color + "16, " + item.color + "08)", cursor: absDist < 0.45 ? (item.disabled ? "not-allowed" : "pointer") : "default", boxShadow: absDist < 0.55 ? "0 10px 24px rgba(15, 23, 42, 0.13)" : "0 3px 10px rgba(15, 23, 42, 0.05)" },
         onClick: () => { if (absDist < 0.45 && !item.disabled) item.onClick(); }
       },
         /* @__PURE__ */ React.createElement("div", { style: { fontSize: "22px", marginBottom: "2px" } }, item.icon),
@@ -13184,20 +13195,20 @@ useEffect(() => {
         /* @__PURE__ */ React.createElement("p", { style: { marginTop: "8px", fontSize: effectiveMobile ? "13px": "13px", color: "#475569", lineHeight: 1.4 } }, highlightText(q.question.substring(0, 120) + (q.question.length > 120 ? "..." : ""), searchQuery))
       );
     }))),
-    /* @__PURE__ */ React.createElement("div", { style: styles.card }, /* @__PURE__ */ React.createElement("h2", { style: { marginBottom: effectiveMobile ? "12px": "16px", marginTop: 0, fontSize: effectiveMobile ? "18px": "19px", color: "#1e293b" } }, "Study by Category"), effectiveMobile ? renderInfiniteWheel(CATEGORIES, catWheelPos, 160, (cat, idx, dist, absDist, rawIdx) => {
+    /* @__PURE__ */ React.createElement("div", { style: styles.card }, /* @__PURE__ */ React.createElement("h2", { style: { marginBottom: effectiveMobile ? "12px": "16px", marginTop: 0, fontSize: effectiveMobile ? "18px": "19px", color: "#1e293b" } }, "Study by Category"), effectiveMobile ? renderInfiniteWheel(CATEGORIES, catWheelPos, 100, (cat, idx, dist, absDist, rawIdx) => {
       const catQuestions = QUESTIONS.filter((q) => q.categoryId === cat.id).length;
       const catAnswered = categoryAnsweredCounts[cat.id] || { answered: 0, correct: 0 };
       const answeredPercent = catQuestions > 0 ? Math.round(catAnswered.answered / catQuestions * 100) : 0;
       const correctPercent = catAnswered.answered > 0 ? Math.round(catAnswered.correct / catAnswered.answered * 100) : 0;
       return /* @__PURE__ */ React.createElement("div", {
         key: rawIdx,
-        style: { ...styles.wheelItemBase(dist, absDist, { tileWidth: "24%", spacing: 13, scaleFactor: 0.18, maxDist: 3.5 }), background: "rgba(255, 255, 255, 0.95)", borderRadius: "10px", padding: "8px 6px", border: "1px solid rgba(15, 23, 42, 0.08)", borderTop: "3px solid " + cat.color + "cc", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", cursor: absDist < 0.45 ? "pointer" : "default", boxShadow: absDist < 0.55 ? "0 10px 24px rgba(15, 23, 42, 0.13)" : "0 3px 10px rgba(15, 23, 42, 0.05)" },
+        style: { ...styles.wheelItemBase(dist, absDist, { tileWidth: 24, scaleFactor: 0.25, minScale: 0.35, maxDist: 3.5, gap: 0.8, tileHeight: 78 }), background: "rgba(255, 255, 255, 0.95)", borderRadius: "10px", padding: "6px 8px", border: "1px solid rgba(15, 23, 42, 0.08)", borderTop: "3px solid " + cat.color + "cc", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: absDist < 0.45 ? "pointer" : "default", boxShadow: absDist < 0.55 ? "0 10px 24px rgba(15, 23, 42, 0.13)" : "0 3px 10px rgba(15, 23, 42, 0.05)" },
         onClick: () => { if (absDist < 0.45) startCategoryReview(cat.id); }
       },
-        /* @__PURE__ */ React.createElement("div", { style: styles.categoryIcon }, renderCategoryIcon(cat.icon, 26)),
-        /* @__PURE__ */ React.createElement("div", { style: { ...styles.categoryName, fontSize: "12px" } }, cat.name),
-        /* @__PURE__ */ React.createElement("div", { style: { fontSize: "10px", color: "#64748b", marginTop: "auto", paddingTop: "4px", width: "100%" } },
-          /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "3px", fontSize: "9px" } },
+        /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center", alignItems: "center", height: "28px" } }, renderCategoryIcon(cat.icon, 22)),
+        /* @__PURE__ */ React.createElement("div", { style: { fontSize: "11px", fontWeight: "500", color: "#334155", lineHeight: "1.2", marginTop: "2px" } }, cat.name),
+        /* @__PURE__ */ React.createElement("div", { style: { fontSize: "9px", color: "#64748b", marginTop: "auto", paddingTop: "2px", width: "100%" } },
+          /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2px" } },
             /* @__PURE__ */ React.createElement("span", null, catAnswered.answered, "/", catQuestions),
             catAnswered.answered > 0 && /* @__PURE__ */ React.createElement("span", { style: { color: correctPercent >= 80 ? "#16a34a" : correctPercent >= 60 ? "#d97706" : "#dc2626", fontWeight: "600" } }, correctPercent, "% \u2713")),
           /* @__PURE__ */ React.createElement("div", { style: styles.progressBar }, /* @__PURE__ */ React.createElement("div", { style: styles.progressFill(answeredPercent, cat.color) })))
