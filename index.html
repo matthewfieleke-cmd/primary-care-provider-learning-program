@@ -12326,7 +12326,7 @@ useEffect(() => {
     const onMove = (e) => {
       if (!wd.drag) return;
       const cx = e.touches ? e.touches[0].clientX : e.clientX;
-      const pxPerItem = wd.drag.cw * 0.36;
+      const pxPerItem = wd.drag.cw * 0.28;
       wd.pos = wd.drag.sp - (cx - wd.drag.sx) / pxPerItem;
       setPos(wd.pos);
       const now = performance.now();
@@ -12343,13 +12343,13 @@ useEffect(() => {
         try { e.currentTarget.releasePointerCapture(e.pointerId); } catch (_) {}
       }
       wd.drag = null;
-      wd.vel = Math.max(-2.5, Math.min(2.5, wd.vel));
+      wd.vel = Math.max(-4.5, Math.min(4.5, wd.vel));
       const tick = () => {
         const speed = Math.abs(wd.vel);
-        const blend = Math.max(0, Math.min(1, 1 - speed / 0.12));
-        wd.vel *= 0.95 - blend * 0.10;
+        const blend = Math.max(0, Math.min(1, 1 - speed / 0.06));
+        wd.vel *= 0.98 - blend * 0.06;
         const target = Math.round(wd.pos);
-        wd.vel += (target - wd.pos) * 0.008 * blend;
+        wd.vel += (target - wd.pos) * 0.005 * blend;
         wd.pos += wd.vel;
         if (speed < 0.001 && Math.abs(target - wd.pos) < 0.002) {
           wd.pos = target;
