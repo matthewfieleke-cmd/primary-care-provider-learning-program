@@ -13206,7 +13206,7 @@ useEffect(() => {
         onClick: () => { if (absDist < 0.45) startCategoryReview(cat.id); }
       },
         /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center", alignItems: "center", height: "24px", flexShrink: 0 } }, renderCategoryIcon(cat.icon, 20)),
-        /* @__PURE__ */ React.createElement("div", { style: { fontSize: "10px", fontWeight: "500", color: "#334155", lineHeight: "12px", height: "24px", flexShrink: 0, overflow: "hidden", overflowWrap: "break-word", wordBreak: "break-word", textAlign: "center", width: "100%", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" } }, cat.name),
+        /* @__PURE__ */ React.createElement("div", { style: { fontSize: (cat.name === "Musculoskeletal" || cat.name === "Gastroenterology" || cat.name === "Cardiovascular" || cat.name === "Rheumatology") ? "7.5px" : "10px", fontWeight: "500", color: "#334155", lineHeight: "12px", height: "24px", flexShrink: 0, overflow: "hidden", overflowWrap: "break-word", wordBreak: "break-word", textAlign: "center", width: "100%", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" } }, cat.name),
         /* @__PURE__ */ React.createElement("div", { style: { fontSize: "9px", color: "#64748b", marginTop: "auto", width: "100%", flexShrink: 0 } },
           /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2px" } },
             /* @__PURE__ */ React.createElement("span", null, catAnswered.answered, "/", catQuestions),
