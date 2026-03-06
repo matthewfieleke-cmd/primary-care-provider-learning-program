@@ -12927,7 +12927,7 @@ useEffect(() => {
     },
     gameTimer: {
       position: "fixed",
-      top: effectiveMobile ? "95px": "20px",
+      top: effectiveMobile ? "130px": "20px",
       left: "50%",
       transform: "translateX(-50%)",
       background: gameTimeLeft <= 10 ? "linear-gradient(135deg, #ef4444, #dc2626)": gameTimeLeft <= 60 ? "linear-gradient(135deg, #f59e0b, #d97706)": "linear-gradient(135deg, #475569, #334155)",
@@ -12942,7 +12942,7 @@ useEffect(() => {
     },
     streakCounter: {
       position: "fixed",
-      top: effectiveMobile ? "95px": "20px",
+      top: effectiveMobile ? "130px": "20px",
       right: effectiveMobile ? "14px": "20px",
       background: "rgba(255, 255, 255, 0.98)",
       padding: effectiveMobile ? "6px 12px": "10px 20px",
@@ -13042,7 +13042,7 @@ useEffect(() => {
     },
     warningBanner: {
       position: "fixed",
-      top: effectiveMobile ? "135px": "80px",
+      top: effectiveMobile ? "170px": "80px",
       left: "50%",
       transform: "translateX(-50%)",
       background: "linear-gradient(135deg, #f59e0b, #ef4444)",
@@ -13470,7 +13470,7 @@ useEffect(() => {
     const category = getCategoryById(currentQuestion.categoryId);
     const streakStatus = getStreakStatus();
     const gameQuestionImages = normalizeImageEntries(currentQuestion.questionImages || currentQuestion.questionImage, "Question image");
-    return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: styles.gameTimer }, "\u23F1\uFE0F ", formatTime(gameTimeLeft)), /* @__PURE__ */ React.createElement("div", { style: styles.streakCounter }, streakStatus.text), warningShown.oneMin && /* @__PURE__ */ React.createElement("div", { style: styles.warningBanner }, "\u26A0\uFE0F 1 MINUTE LEFT!"), warningShown.tenSec && !warningShown.oneMin && /* @__PURE__ */ React.createElement("div", { style: styles.warningBanner }, "\u26A0\uFE0F 10 SECONDS!"), /* @__PURE__ */ React.createElement("div", { style: { marginTop: effectiveMobile ? "80px": "60px" } }, /* @__PURE__ */ React.createElement("div", { style: {
+    return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: styles.gameTimer }, "\u23F1\uFE0F ", formatTime(gameTimeLeft)), /* @__PURE__ */ React.createElement("div", { style: styles.streakCounter }, streakStatus.text), warningShown.oneMin && /* @__PURE__ */ React.createElement("div", { style: styles.warningBanner }, "\u26A0\uFE0F 1 MINUTE LEFT!"), warningShown.tenSec && !warningShown.oneMin && /* @__PURE__ */ React.createElement("div", { style: styles.warningBanner }, "\u26A0\uFE0F 10 SECONDS!"), /* @__PURE__ */ React.createElement("div", { style: { marginTop: effectiveMobile ? "110px": "60px" } }, /* @__PURE__ */ React.createElement("div", { style: {
       display: "flex",
       justifyContent: "space-between",
       marginBottom: "16px",
