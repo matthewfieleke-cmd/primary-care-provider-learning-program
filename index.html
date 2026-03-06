@@ -12345,18 +12345,15 @@ useEffect(() => {
       wd.drag = null;
       wd.vel = Math.max(-2.5, Math.min(2.5, wd.vel));
       const tick = () => {
-        wd.vel *= 0.95;
+        const speed = Math.abs(wd.vel);
+        const blend = Math.max(0, Math.min(1, 1 - speed / 0.12));
+        wd.vel *= 0.95 - blend * 0.10;
+        const target = Math.round(wd.pos);
+        wd.vel += (target - wd.pos) * 0.008 * blend;
         wd.pos += wd.vel;
-        if (Math.abs(wd.vel) < 0.005) {
-          const t = Math.round(wd.pos);
-          const ease = () => {
-            const d = t - wd.pos;
-            if (Math.abs(d) < 0.002) { wd.pos = t; setPos(t); return; }
-            wd.pos += d * 0.15;
-            setPos(wd.pos);
-            wd.anim = requestAnimationFrame(ease);
-          };
-          ease();
+        if (speed < 0.001 && Math.abs(target - wd.pos) < 0.002) {
+          wd.pos = target;
+          setPos(target);
           return;
         }
         setPos(wd.pos);
