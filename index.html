@@ -12468,12 +12468,13 @@ useEffect(() => {
       margin: "0 auto",
       display: effectiveMobile ? "flex" : undefined,
       flexDirection: effectiveMobile ? "column" : undefined,
-      gap: effectiveMobile ? "10px" : undefined,
+      gap: effectiveMobile && currentView === "home" ? "0" : undefined,
       flex: effectiveMobile ? 1 : undefined
     },
     mobileHomeStack: {
       display: "flex",
       flexDirection: "column",
+      paddingTop: "10px",
       gap: "10px",
       flex: 1,
       minHeight: 0
@@ -12485,7 +12486,7 @@ useEffect(() => {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: effectiveMobile ? "0": "24px",
+      marginBottom: effectiveMobile ? currentView === "home" ? "0" : "10px" : "24px",
       padding: effectiveMobile ? "12px 14px": "12px 16px",
       background: effectiveMobile ? "#ffffff" : "rgba(255, 255, 255, 0.88)",
       backdropFilter: effectiveMobile ? "none" : "blur(14px)",
@@ -13241,7 +13242,7 @@ useEffect(() => {
       borderRadius: "3px",
       transition: "width 0.5s ease"
     })
-  }), [effectiveMobile]);
+  }), [currentView, effectiveMobile]);
   const quickActionItems = [
     { id: "qa3", icon: "\u{1F4DD}", label: "3 Random", meta: "Quick practice", color: "#475569", disabled: false, onClick: () => startQuiz(3) },
     { id: "qa10", icon: "\u{1F4DA}", label: "10 Random", meta: "Full session", color: "#334155", disabled: false, onClick: () => startQuiz(10) },
