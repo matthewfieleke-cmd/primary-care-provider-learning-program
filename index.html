@@ -12606,13 +12606,12 @@ useEffect(() => {
       display: "block",
       borderRadius: effectiveMobile ? "6px" : 0
     },
-    chatButtonGlyph: {
-      fontSize: "24px",
-      lineHeight: 1,
-      display: "inline-flex",
-      alignItems: "center",
-      justifyContent: "center",
-      color: "#0f172a"
+    chatButtonMobileIcon: {
+      width: "26px",
+      height: "26px",
+      display: "block",
+      fill: "#0f172a",
+      flexShrink: 0
     },
     chatHeaderIconWrap: {
       width: "44px",
@@ -13865,7 +13864,11 @@ useEffect(() => {
         setCurrentView("chat");
       }
     },
-    effectiveMobile ? /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true", style: styles.chatButtonGlyph }, "\uD83D\uDDE3") : /* @__PURE__ */ React.createElement("img", { src: CHAT_ICON, alt: "", "aria-hidden": "true", style: styles.chatButtonIcon }),
+    effectiveMobile ? /* @__PURE__ */ React.createElement("svg", {
+      "aria-hidden": "true",
+      viewBox: "0 0 64 64",
+      style: styles.chatButtonMobileIcon
+    }, /* @__PURE__ */ React.createElement("path", { d: "M17 49c2-4 2-8 0-12-4-5-6-11-6-17 0-10 8-17 19-17 11 0 19 7 19 17 0 3-1 5-2 7 1 2 2 5 2 8 0 9-7 16-16 16h-5l-3 8c-.3.8-1.2 1.1-1.9.6L17 49z" }), /* @__PURE__ */ React.createElement("path", { d: "M46 21c7 0 13 5 13 11s-6 11-13 11c-2 0-3 0-5-.5l-5.5 3.4c-.5.3-1.1-.2-.9-.8l1.8-5.1C34 38.9 33 35.6 33 32c0-6 6-11 13-11z" }), /* @__PURE__ */ React.createElement("circle", { cx: "42", cy: "32", r: "1.9", fill: "#ffffff" }), /* @__PURE__ */ React.createElement("circle", { cx: "47", cy: "32", r: "1.9", fill: "#ffffff" }), /* @__PURE__ */ React.createElement("circle", { cx: "52", cy: "32", r: "1.9", fill: "#ffffff" })) : /* @__PURE__ */ React.createElement("img", { src: CHAT_ICON, alt: "", "aria-hidden": "true", style: styles.chatButtonIcon }),
     effectiveMobile && /* @__PURE__ */ React.createElement("span", { style: styles.chatLabel }, "Chat")
   ))), currentView === "home" && renderHome(), currentView === "category-questions" && renderCategoryQuestions(), currentView === "quiz" && renderQuiz(), currentView === "category-review" && renderQuiz(), currentView === "game" && !gameEnded && renderGame(), currentView === "game" && gameEnded && renderGameResults(), currentView === "quiz-complete" && renderQuizComplete(), currentView === "chat" && renderChat()), /* @__PURE__ */ React.createElement("style", null, `
         @keyframes pulse {
