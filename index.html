@@ -12606,6 +12606,14 @@ useEffect(() => {
       display: "block",
       borderRadius: effectiveMobile ? "6px" : 0
     },
+    chatButtonGlyph: {
+      fontSize: "24px",
+      lineHeight: 1,
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      color: "#0f172a"
+    },
     chatHeaderIconWrap: {
       width: "44px",
       height: "44px",
@@ -13857,7 +13865,7 @@ useEffect(() => {
         setCurrentView("chat");
       }
     },
-    /* @__PURE__ */ React.createElement("img", { src: CHAT_ICON, alt: "", "aria-hidden": "true", style: styles.chatButtonIcon }),
+    effectiveMobile ? /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true", style: styles.chatButtonGlyph }, "\uD83D\uDDE3") : /* @__PURE__ */ React.createElement("img", { src: CHAT_ICON, alt: "", "aria-hidden": "true", style: styles.chatButtonIcon }),
     effectiveMobile && /* @__PURE__ */ React.createElement("span", { style: styles.chatLabel }, "Chat")
   ))), currentView === "home" && renderHome(), currentView === "category-questions" && renderCategoryQuestions(), currentView === "quiz" && renderQuiz(), currentView === "category-review" && renderQuiz(), currentView === "game" && !gameEnded && renderGame(), currentView === "game" && gameEnded && renderGameResults(), currentView === "quiz-complete" && renderQuizComplete(), currentView === "chat" && renderChat()), /* @__PURE__ */ React.createElement("style", null, `
         @keyframes pulse {
