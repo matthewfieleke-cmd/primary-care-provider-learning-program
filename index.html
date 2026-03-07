@@ -12155,9 +12155,9 @@ useEffect(() => {
     pearlVisitRef.current += 1;
     setPearlIndex(pearlVisitRef.current);
   };
-  const getClinicalPearlText = useCallback((questionIndex) => {
+  const getClinicalPearlData = useCallback((questionIndex) => {
     const n = QUESTIONS.length;
-    if (n === 0) return "";
+    if (n === 0) return { text: "", questionId: null };
     for (let attempt = 0; attempt < n; attempt++) {
       const q = QUESTIONS[(questionIndex + attempt) % n];
       const raw = getBulletDraftText(q);
@@ -12177,9 +12177,9 @@ useEffect(() => {
         wordCount += sWords;
         if (wordCount >= 15) break;
       }
-      if (wordCount >= 15 && wordCount <= 25) return result;
+      if (wordCount >= 15 && wordCount <= 25) return { text: result, questionId: q.id };
     }
-    return "";
+    return { text: "", questionId: null };
   }, []);
   useEffect(() => {
     if (!pearlGridRef.current || effectiveMobile) return;
@@ -12197,7 +12197,9 @@ useEffect(() => {
     const remainder = CATEGORIES.length % pearlGridCols;
     return remainder === 0 ? pearlGridCols : pearlGridCols - remainder;
   }, [pearlGridCols]);
-  const pearlText = useMemo(() => getClinicalPearlText(pearlIndex), [pearlIndex, getClinicalPearlText]);
+  const pearlData = useMemo(() => getClinicalPearlData(pearlIndex), [pearlIndex, getClinicalPearlData]);
+  const pearlText = pearlData.text;
+  const pearlQuestionId = pearlData.questionId;
   const getCategoryById = (id) => CATEGORIES.find((c) => c.id === id);
   const renderCategoryIcon = (icon, size = 36) => {
     // Optical size compensation for a few Material-symbol / ligature icons that render smaller.
@@ -12847,6 +12849,22 @@ useEffect(() => {
       WebkitBoxOrient: "vertical",
       overflow: "hidden"
     },
+    clinicalPearlExploreBtn: {
+      background: "none",
+      border: "none",
+      color: "#64748b",
+      fontSize: "11px",
+      fontWeight: "600",
+      cursor: "pointer",
+      padding: "4px 0",
+      marginTop: effectiveMobile ? "10px" : "8px",
+      alignSelf: "flex-end",
+      display: "flex",
+      alignItems: "center",
+      gap: "4px",
+      transition: "color 0.15s ease",
+      letterSpacing: "0.01em"
+    },
     searchContainer: effectiveMobile ? {
       background: "#ffffff",
       borderRadius: "14px",
@@ -13334,7 +13352,7 @@ useEffect(() => {
           /* @__PURE__ */ React.createElement("div", { style: styles.progressBar }, /* @__PURE__ */ React.createElement("div", { style: styles.progressFill(answeredPercent, cat.color) })))
       );
     }, catHandlers, catContainerRef, 3)),
-    pearlText && /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlCard }, /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlHeader }, "CLINICAL PEARL"), /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlText }, pearlText)),
+    pearlText && /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlCard }, /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlHeader }, "CLINICAL PEARL"), /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlText }, pearlText), pearlQuestionId && /* @__PURE__ */ React.createElement("button", { style: styles.clinicalPearlExploreBtn, onClick: () => startQuizFromQuestion(pearlQuestionId), onMouseEnter: (e) => { e.currentTarget.style.color = "#334155"; }, onMouseLeave: (e) => { e.currentTarget.style.color = "#64748b"; } }, "Explore this \u2192")),
     hasAnyProgress && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", marginTop: "0", paddingBottom: "4px" } }, /* @__PURE__ */ React.createElement("button", { style: { background: "none", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#dc2626", padding: "9px 16px", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "500", transition: "all 0.15s ease" }, onClick: resetAllProgress, onMouseEnter: (e) => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.08)"; }, onMouseLeave: (e) => { e.currentTarget.style.background = "none"; } }, "\u{1F5D1}\uFE0F Reset All Progress"))) : /* @__PURE__ */ React.createElement(React.Fragment, null,
     /* @__PURE__ */ React.createElement("div", { style: styles.quickActionsCard }, /* @__PURE__ */ React.createElement("div", { style: styles.quickActionsGrid }, quickActionItems.map((item) => /* @__PURE__ */ React.createElement(
       "div",
@@ -13436,8 +13454,8 @@ useEffect(() => {
           fontWeight: "600"
         } }, correctPercent, "% \u2713")), /* @__PURE__ */ React.createElement("div", { style: styles.progressBar }, /* @__PURE__ */ React.createElement("div", { style: styles.progressFill(answeredPercent, cat.color) })))
       );
-    }), pearlText && /* @__PURE__ */ React.createElement("div", { key: "clinical-pearl", style: styles.clinicalPearlCard }, /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlHeader }, "CLINICAL PEARL"), /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlText }, pearlText))))),
-    effectiveMobile && pearlText && /* @__PURE__ */ React.createElement("div", { style: { ...styles.clinicalPearlCard, flex: 1 } }, /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlHeader }, "CLINICAL PEARL"), /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlText }, pearlText)),
+    }), pearlText && /* @__PURE__ */ React.createElement("div", { key: "clinical-pearl", style: styles.clinicalPearlCard }, /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlHeader }, "CLINICAL PEARL"), /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlText }, pearlText), pearlQuestionId && /* @__PURE__  */ React.createElement("button", { style: styles.clinicalPearlExploreBtn, onClick: () => startQuizFromQuestion(pearlQuestionId), onMouseEnter: (e) => { e.currentTarget.style.color = "#334155"; }, onMouseLeave: (e) => { e.currentTarget.style.color = "#64748b"; } }, "Explore this \u2192"))))),
+    effectiveMobile && pearlText && /* @__PURE__ */ React.createElement("div", { style: { ...styles.clinicalPearlCard, flex: 1 } }, /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlHeader }, "CLINICAL PEARL"), /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlText }, pearlText), pearlQuestionId && /* @__PURE__ */ React.createElement("button", { style: styles.clinicalPearlExploreBtn, onClick: () => startQuizFromQuestion(pearlQuestionId), onMouseEnter: (e) => { e.currentTarget.style.color = "#334155"; }, onMouseLeave: (e) => { e.currentTarget.style.color = "#64748b"; } }, "Explore this \u2192")),
     hasAnyProgress && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", marginTop: "32px", paddingBottom: "24px" } }, /* @__PURE__ */ React.createElement("button", { style: { background: "none", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#dc2626", padding: "10px 24px", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "500", transition: "all 0.15s ease" }, onClick: resetAllProgress, onMouseEnter: (e) => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.08)"; }, onMouseLeave: (e) => { e.currentTarget.style.background = "none"; } }, "\u{1F5D1}\uFE0F Reset All Progress"))
   );
   const renderQuestionRow = (q, idx, categoryQuestions) => {
