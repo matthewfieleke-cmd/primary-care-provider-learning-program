@@ -10500,14 +10500,8 @@ useEffect(() => {
 
   const speakSingleChunk = useCallback((chunk) => {
     return new Promise((resolve) => {
-      const utter = new SpeechSynthesisUtterance(chunk);
       const voice = pickMaleVoice();
-      if (voice) utter.voice = voice;
-      utter.rate = 1.0;
-      utter.pitch = 1.0;
-      utter.volume = 1;
       let resolved = false;
-      let started = false;
       let safetyTimer = null;
       let startTimer = null;
       const done = (success) => {
@@ -10517,18 +10511,30 @@ useEffect(() => {
         if (startTimer) clearTimeout(startTimer);
         resolve(success !== false);
       };
+      const makeUtterance = () => {
+        const u = new SpeechSynthesisUtterance(chunk);
+        if (voice) u.voice = voice;
+        u.rate = 1.0; u.pitch = 1.0; u.volume = 1;
+        return u;
+      };
+      let started = false;
+      const utter = makeUtterance();
       utter.onstart = () => { started = true; };
       utter.onend = () => done(true);
-      utter.onerror = () => done(false);
+      utter.onerror = (e) => {
+        if (e && e.error === "interrupted") return;
+        done(false);
+      };
       safetyTimer = setTimeout(() => {
         if (!resolved) { window.speechSynthesis.cancel(); done(false); }
       }, Math.max(10000, chunk.length * 100));
       startTimer = setTimeout(() => {
         if (!started && !resolved) {
+          utter.onend = null;
+          utter.onerror = null;
+          utter.onstart = null;
           window.speechSynthesis.cancel();
-          const retry = new SpeechSynthesisUtterance(chunk);
-          if (voice) retry.voice = voice;
-          retry.rate = 1.0; retry.pitch = 1.0; retry.volume = 1;
+          const retry = makeUtterance();
           retry.onstart = () => { started = true; };
           retry.onend = () => done(true);
           retry.onerror = () => done(false);
@@ -10605,10 +10611,10 @@ useEffect(() => {
           for (let j = 0; j < e.results[i].length; j++) {
             const t = e.results[i][j].transcript.trim().toUpperCase();
             if (!answered) setLastTranscript(e.results[i][j].transcript.trim());
-            if (/\bA\b|ALPHA|OPTION\s*A|ANSWER\s*A|FIRST/.test(t)) { finish(0); return; }
-            if (/\bB\b|BRAVO|OPTION\s*B|ANSWER\s*B|SECOND/.test(t)) { finish(1); return; }
-            if (/\bC\b|CHARLIE|OPTION\s*C|ANSWER\s*C|THIRD/.test(t)) { finish(2); return; }
-            if (/\bD\b|DELTA|OPTION\s*D|ANSWER\s*D|FOURTH/.test(t)) { finish(3); return; }
+            if (/\bA\b|ALPHA|OPTION\s*A|ANSWER\s*A|FIRST|^AY$|^EH$/.test(t)) { finish(0); return; }
+            if (/\bB\b|BRAVO|OPTION\s*B|ANSWER\s*B|SECOND|\bBEE\b|\bBE\b/.test(t)) { finish(1); return; }
+            if (/\bC\b|CHARLIE|OPTION\s*C|ANSWER\s*C|THIRD|\bSEE\b|\bSEA\b/.test(t)) { finish(2); return; }
+            if (/\bD\b|DELTA|OPTION\s*D|ANSWER\s*D|FOURTH|\bDEE\b/.test(t)) { finish(3); return; }
           }
         }
       };
@@ -10711,9 +10717,14 @@ useEffect(() => {
       return;
     }
     if (window.speechSynthesis) {
-      const warmup = new SpeechSynthesisUtterance("");
+      window.speechSynthesis.cancel();
+      const warmup = new SpeechSynthesisUtterance(" ");
       warmup.volume = 0;
+      warmup.onend = () => {};
+      warmup.onerror = () => {};
       window.speechSynthesis.speak(warmup);
+      await new Promise(r => setTimeout(r, 100));
+      window.speechSynthesis.cancel();
     }
     const hasMicPermission = await ensureMicPermission();
     if (!hasMicPermission) {
