@@ -12535,6 +12535,7 @@ useEffect(() => {
       border: "none",
       borderRadius: "18px",
       padding: effectiveMobile ? "6px 10px" : "7px 14px",
+      minHeight: effectiveMobile ? "28px" : "32px",
       fontSize: effectiveMobile ? "11px" : "12px",
       fontWeight: 600,
       cursor: "pointer",
@@ -12550,10 +12551,10 @@ useEffect(() => {
       whiteSpace: "nowrap"
     }),
     soundBtn: {
-      border: "none",
-      borderRadius: effectiveMobile ? "18px" : "50%",
-      background: soundEnabled ? "linear-gradient(135deg, #334155, #1e293b)" : "rgba(15, 23, 42, 0.08)",
-      color: soundEnabled ? "#ffffff" : "#475569",
+      border: effectiveMobile ? "1px solid rgba(15, 23, 42, 0.08)" : "none",
+      borderRadius: effectiveMobile ? "18px" : "12px",
+      background: effectiveMobile ? "rgba(15, 23, 42, 0.06)" : "transparent",
+      color: soundEnabled ? "#0f172a" : "#64748b",
       cursor: "pointer",
       fontSize: effectiveMobile ? "14px" : "18px",
       transition: "all 0.2s",
@@ -12561,12 +12562,13 @@ useEffect(() => {
       alignItems: "center",
       justifyContent: "center",
       gap: "4px",
-      padding: effectiveMobile ? "6px 10px" : "0",
-      width: effectiveMobile ? "auto" : "40px",
-      height: effectiveMobile ? "auto" : "40px",
+      padding: effectiveMobile ? "5px 10px" : "6px",
+      minHeight: effectiveMobile ? "36px" : "auto",
+      width: "auto",
+      height: "auto",
       fontWeight: 600,
       lineHeight: 1,
-      boxShadow: soundEnabled ? "0 2px 8px rgba(15, 23, 42, 0.25)" : "none"
+      boxShadow: "none"
     },
     soundLabel: {
       fontSize: "11px",
@@ -12584,6 +12586,7 @@ useEffect(() => {
       justifyContent: "center",
       gap: "5px",
       padding: effectiveMobile ? "5px 10px" : 0,
+      minHeight: effectiveMobile ? "36px" : "auto",
       overflow: "hidden",
       transition: "all 0.2s",
       width: effectiveMobile ? "auto" : "48px",
