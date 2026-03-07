@@ -12552,8 +12552,8 @@ useEffect(() => {
     soundBtn: {
       border: "none",
       borderRadius: effectiveMobile ? "18px" : "50%",
-      background: soundEnabled ? "rgba(16, 185, 129, 0.15)": "rgba(239, 68, 68, 0.15)",
-      color: soundEnabled ? "#059669": "#dc2626",
+      background: soundEnabled ? "linear-gradient(135deg, #334155, #1e293b)" : "rgba(15, 23, 42, 0.08)",
+      color: soundEnabled ? "#ffffff" : "#475569",
       cursor: "pointer",
       fontSize: effectiveMobile ? "14px" : "18px",
       transition: "all 0.2s",
@@ -12565,7 +12565,8 @@ useEffect(() => {
       width: effectiveMobile ? "auto" : "40px",
       height: effectiveMobile ? "auto" : "40px",
       fontWeight: 600,
-      lineHeight: 1
+      lineHeight: 1,
+      boxShadow: soundEnabled ? "0 2px 8px rgba(15, 23, 42, 0.25)" : "none"
     },
     soundLabel: {
       fontSize: "11px",
