@@ -12472,7 +12472,9 @@ useEffect(() => {
       flex: effectiveMobile ? 1 : undefined
     },
     mobileHomeStack: {
-      display: "contents"
+      display: "flex",
+      flexDirection: "column",
+      gap: "10px"
     },
     header: {
       position: "sticky",
