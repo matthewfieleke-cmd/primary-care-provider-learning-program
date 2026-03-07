@@ -12952,7 +12952,7 @@ useEffect(() => {
     clinicalPearlCard: {
       background: effectiveMobile ? "#ffffff" : "rgba(255, 255, 255, 0.95)",
       borderRadius: effectiveMobile ? "14px" : "12px",
-      padding: effectiveMobile ? "14px 16px" : "10px 14px",
+      padding: effectiveMobile ? "14px 16px" : isDesktopHome ? "clamp(8px, 1.2vh, 18px) clamp(10px, 1.5vw, 20px)" : "10px 14px",
       border: effectiveMobile ? "1px solid rgba(15, 23, 42, 0.12)" : "1px solid rgba(15, 23, 42, 0.08)",
       borderLeft: "3px solid #64748b",
       boxShadow: effectiveMobile ? "none" : "0 6px 16px rgba(15, 23, 42, 0.06)",
@@ -12963,12 +12963,12 @@ useEffect(() => {
       gridColumn: effectiveMobile ? undefined : `span ${pearlSpan}`
     },
     clinicalPearlHeader: {
-      fontSize: "9px",
+      fontSize: isDesktopHome ? "clamp(9px, 1.1vh, 13px)" : "9px",
       fontWeight: "700",
       letterSpacing: "0.08em",
       textTransform: "uppercase",
       color: "#94a3b8",
-      marginBottom: effectiveMobile ? "8px" : "6px"
+      marginBottom: effectiveMobile ? "8px" : isDesktopHome ? "clamp(4px, 0.6vh, 8px)" : "6px"
     },
     clinicalPearlText: effectiveMobile ? {
       fontSize: "13px",
@@ -12976,24 +12976,22 @@ useEffect(() => {
       color: "#334155",
       fontWeight: "400"
     } : {
-      fontSize: "13px",
-      lineHeight: "1.55",
+      fontSize: isDesktopHome ? "clamp(12px, 1.6vh, 18px)" : "13px",
+      lineHeight: isDesktopHome ? "1.6" : "1.55",
       color: "#334155",
       fontWeight: "400",
-      display: "-webkit-box",
-      WebkitLineClamp: 5,
-      WebkitBoxOrient: "vertical",
+      flex: isDesktopHome ? 1 : undefined,
       overflow: "hidden"
     },
     clinicalPearlExploreBtn: {
       background: "none",
       border: "none",
       color: "#64748b",
-      fontSize: "11px",
+      fontSize: isDesktopHome ? "clamp(10px, 1.2vh, 14px)" : "11px",
       fontWeight: "600",
       cursor: "pointer",
       padding: "4px 0",
-      marginTop: effectiveMobile ? "10px" : "8px",
+      marginTop: effectiveMobile ? "10px" : isDesktopHome ? "clamp(4px, 0.6vh, 10px)" : "8px",
       alignSelf: "flex-end",
       display: "flex",
       alignItems: "center",
