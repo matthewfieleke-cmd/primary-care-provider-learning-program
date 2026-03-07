@@ -12565,17 +12565,21 @@ useEffect(() => {
         onPointerCancel: handlers.onUp
       }, els);
   }, []);
+  const isDesktopHome = !effectiveMobile && currentView === "home";
+  const deskVh = !effectiveMobile ? window.innerHeight : 0;
+  const deskCatIconSize = Math.max(20, Math.min(44, Math.round(deskVh * 0.035)));
   const styles = useMemo(() => ({
     app: {
       minHeight: "100vh",
+      height: isDesktopHome ? "100vh" : undefined,
       background: effectiveMobile ? "#f1f5f9" : "linear-gradient(180deg, #f8fafc 0%, #eef2f7 55%, #e9edf4 100%)",
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
       color: "#1e293b",
-      padding: effectiveMobile ? "12px 12px calc(20px + env(safe-area-inset-bottom, 0px))": "24px",
+      padding: effectiveMobile ? "12px 12px calc(20px + env(safe-area-inset-bottom, 0px))" : isDesktopHome ? "clamp(12px, 2vh, 24px)" : "24px",
       position: "relative",
       overflow: "hidden",
-      display: effectiveMobile ? "flex" : undefined,
-      flexDirection: effectiveMobile ? "column" : undefined
+      display: (effectiveMobile || isDesktopHome) ? "flex" : undefined,
+      flexDirection: (effectiveMobile || isDesktopHome) ? "column" : undefined
     },
     backgroundPattern: {
       position: "fixed",
@@ -12595,10 +12599,12 @@ useEffect(() => {
       zIndex: 1,
       maxWidth: effectiveMobile ? "100%": "1400px",
       margin: "0 auto",
-      display: effectiveMobile ? "flex" : undefined,
-      flexDirection: effectiveMobile ? "column" : undefined,
+      display: (effectiveMobile || isDesktopHome) ? "flex" : undefined,
+      flexDirection: (effectiveMobile || isDesktopHome) ? "column" : undefined,
       gap: effectiveMobile ? "12px" : undefined,
-      flex: effectiveMobile ? 1 : undefined
+      flex: (effectiveMobile || isDesktopHome) ? 1 : undefined,
+      minHeight: isDesktopHome ? 0 : undefined,
+      width: isDesktopHome ? "100%" : undefined
     },
     mobileHomeStack: {
       display: "flex",
@@ -12613,8 +12619,8 @@ useEffect(() => {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: effectiveMobile ? currentView === "home" ? "12px" : "10px" : "24px",
-      padding: effectiveMobile ? "12px 14px": "12px 16px",
+      marginBottom: effectiveMobile ? currentView === "home" ? "12px" : "10px" : isDesktopHome ? "clamp(6px, 1.2vh, 20px)" : "24px",
+      padding: effectiveMobile ? "12px 14px" : isDesktopHome ? "clamp(8px, 1vh, 12px) 16px" : "12px 16px",
       background: effectiveMobile ? "#ffffff" : "rgba(255, 255, 255, 0.88)",
       backdropFilter: effectiveMobile ? "none" : "blur(14px)",
       borderRadius: effectiveMobile ? "14px": "16px",
@@ -12832,13 +12838,16 @@ useEffect(() => {
     categoryGrid: {
       display: "grid",
       gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-      gap: "12px"
+      gap: isDesktopHome ? "clamp(8px, 1vh, 14px)" : "12px",
+      flex: isDesktopHome ? 1 : undefined,
+      gridAutoRows: isDesktopHome ? "1fr" : undefined,
+      alignContent: isDesktopHome ? "stretch" : undefined
     },
     quickActionsCard: {
       background: effectiveMobile ? "#ffffff" : "rgba(255, 255, 255, 0.98)",
       borderRadius: effectiveMobile ? "14px": "14px",
-      padding: effectiveMobile ? "14px 10px 16px": "12px 14px",
-      marginBottom: effectiveMobile ? "0": "16px",
+      padding: effectiveMobile ? "14px 10px 16px" : isDesktopHome ? "clamp(6px, 1vh, 12px) 14px" : "12px 14px",
+      marginBottom: effectiveMobile ? "0" : isDesktopHome ? "clamp(4px, 0.6vh, 14px)" : "16px",
       border: effectiveMobile ? "1px solid rgba(15, 23, 42, 0.12)" : "1px solid rgba(15, 23, 42, 0.08)",
       boxShadow: effectiveMobile ? "none" : "0 8px 20px rgba(15, 23, 42, 0.06)"
     },
@@ -12852,7 +12861,7 @@ useEffect(() => {
       borderRadius: "12px",
       background: disabled ? "rgba(148, 163, 184, 0.08)" : `linear-gradient(135deg, ${color}14, ${color}08)`,
       color: "#1e293b",
-      minHeight: effectiveMobile ? "66px": "72px",
+      minHeight: effectiveMobile ? "66px" : isDesktopHome ? "clamp(52px, 7vh, 80px)" : "72px",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -12908,7 +12917,7 @@ useEffect(() => {
       ...{
         background: "rgba(255, 255, 255, 0.95)",
         borderRadius: "12px",
-        padding: "10px",
+        padding: isDesktopHome ? "clamp(6px, 1vh, 14px)" : "10px",
         cursor: "pointer",
         border: "1px solid rgba(15, 23, 42, 0.08)",
         borderTop: `3px solid ${color}cc`,
@@ -12917,24 +12926,24 @@ useEffect(() => {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "flex-start"
+        justifyContent: isDesktopHome ? "center" : "flex-start"
       },
-      padding: "10px",
+      padding: isDesktopHome ? "clamp(6px, 1vh, 14px)" : "10px",
       transition: "transform 0.2s ease, box-shadow 0.2s ease",
 }),
     categoryIcon: {
-      marginBottom: effectiveMobile ? "2px": "8px",
+      marginBottom: effectiveMobile ? "2px" : isDesktopHome ? "clamp(2px, 0.6vh, 8px)" : "8px",
       display: "flex",
       justifyContent: "center",
       alignItems: "center",
-      height: effectiveMobile ? "34px": "60px",
+      height: effectiveMobile ? "34px" : isDesktopHome ? "clamp(32px, 5vh, 72px)" : "60px",
       width: "100%"
     },
     categoryName: {
-      fontSize: effectiveMobile ? "11px": "13px",
+      fontSize: effectiveMobile ? "11px" : isDesktopHome ? "clamp(10px, 1.4vh, 15px)" : "13px",
       fontWeight: "500",
       color: "#334155",
-      minHeight: effectiveMobile ? "20px": "28px",
+      minHeight: effectiveMobile ? "20px" : isDesktopHome ? "clamp(18px, 2.5vh, 32px)" : "28px",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -13003,7 +13012,7 @@ useEffect(() => {
       border: "1px solid rgba(15, 23, 42, 0.12)",
       boxShadow: "none"
     } : {
-      margin: "24px 0"
+      margin: isDesktopHome ? "clamp(4px, 0.8vh, 20px) 0" : "24px 0"
     },
     searchInput: {
       width: "100%",
@@ -13535,7 +13544,7 @@ useEffect(() => {
         /* @__PURE__ */ React.createElement("p", { style: { marginTop: "8px", fontSize: effectiveMobile ? "13px": "13px", color: "#475569", lineHeight: 1.4 } }, highlightText(q.question.substring(0, 120) + (q.question.length > 120 ? "..." : ""), searchQuery))
       );
     }))),
-    /* @__PURE__ */ React.createElement("div", { style: styles.card }, /* @__PURE__ */ React.createElement("h2", { style: { marginBottom: effectiveMobile ? "12px": "16px", marginTop: 0, fontSize: effectiveMobile ? "18px": "19px", color: "#1e293b" } }, "Study by Category"), effectiveMobile ? renderInfiniteWheel(CATEGORIES, catWheelPos, 100, (cat, idx, dist, absDist, rawIdx) => {
+    /* @__PURE__ */ React.createElement("div", { style: { ...styles.card, ...(isDesktopHome ? { flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden", padding: "clamp(8px, 1.2vh, 16px)" } : {}) } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: effectiveMobile ? "12px" : isDesktopHome ? "clamp(6px, 1vh, 16px)" : "16px" } }, /* @__PURE__ */ React.createElement("h2", { style: { margin: 0, fontSize: effectiveMobile ? "18px" : isDesktopHome ? "clamp(15px, 2vh, 20px)" : "19px", color: "#1e293b" } }, "Study by Category"), !effectiveMobile && hasAnyProgress && /* @__PURE__ */ React.createElement("button", { style: { background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: "12px", fontWeight: "500", opacity: 0.7, transition: "opacity 0.15s ease", padding: "4px 8px" }, onClick: resetAllProgress, onMouseEnter: (e) => { e.currentTarget.style.opacity = "1"; }, onMouseLeave: (e) => { e.currentTarget.style.opacity = "0.7"; } }, "Reset All Progress")), effectiveMobile ? renderInfiniteWheel(CATEGORIES, catWheelPos, 100, (cat, idx, dist, absDist, rawIdx) => {
       const catQuestions = QUESTIONS.filter((q) => q.categoryId === cat.id).length;
       const catAnswered = categoryAnsweredCounts[cat.id] || { answered: 0, correct: 0 };
       const answeredPercent = catQuestions > 0 ? Math.round(catAnswered.answered / catQuestions * 100) : 0;
@@ -13568,22 +13577,22 @@ useEffect(() => {
           onMouseEnter: (e) => e.currentTarget.style.transform = "scale(1.03)",
           onMouseLeave: (e) => e.currentTarget.style.transform = "scale(1)"
         },
-        /* @__PURE__ */ React.createElement("div", { style: styles.categoryIcon }, renderCategoryIcon(cat.icon, effectiveMobile ? 32 : 40)),
+        /* @__PURE__ */ React.createElement("div", { style: styles.categoryIcon }, renderCategoryIcon(cat.icon, effectiveMobile ? 32 : deskCatIconSize)),
         /* @__PURE__ */ React.createElement("div", { style: styles.categoryName }, cat.name),
         /* @__PURE__ */ React.createElement("div", { style: {
-          fontSize: "11px",
+          fontSize: isDesktopHome ? "clamp(9px, 1.2vh, 12px)" : "11px",
           color: "#64748b",
           marginTop: "auto",
-          paddingTop: effectiveMobile ? "6px": "8px",
+          paddingTop: effectiveMobile ? "6px" : isDesktopHome ? "clamp(4px, 0.6vh, 8px)" : "8px",
           width: "100%"
-        } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px", fontSize: effectiveMobile ? "10px": "11px" } }, /* @__PURE__ */ React.createElement("span", null, catAnswered.answered, "/", catQuestions, " answered"), catAnswered.answered > 0 && /* @__PURE__ */ React.createElement("span", { style: {
+        } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: isDesktopHome ? "clamp(2px, 0.4vh, 4px)" : "4px", fontSize: effectiveMobile ? "10px" : isDesktopHome ? "clamp(9px, 1.2vh, 12px)" : "11px" } }, /* @__PURE__ */ React.createElement("span", null, catAnswered.answered, "/", catQuestions, " answered"), catAnswered.answered > 0 && /* @__PURE__ */ React.createElement("span", { style: {
           color: correctPercent >= 80 ? "#16a34a" : correctPercent >= 60 ? "#d97706" : "#dc2626",
           fontWeight: "600"
         } }, correctPercent, "% \u2713")), /* @__PURE__ */ React.createElement("div", { style: styles.progressBar }, /* @__PURE__ */ React.createElement("div", { style: styles.progressFill(answeredPercent, cat.color) })))
       );
     }), pearlText && /* @__PURE__ */ React.createElement("div", { key: "clinical-pearl", style: styles.clinicalPearlCard }, /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlHeader }, "CLINICAL PEARL"), /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlText }, pearlText), pearlQuestionId && /* @__PURE__  */ React.createElement("button", { style: styles.clinicalPearlExploreBtn, onClick: () => startQuizFromQuestion(pearlQuestionId), onMouseEnter: (e) => { e.currentTarget.style.color = "#334155"; }, onMouseLeave: (e) => { e.currentTarget.style.color = "#64748b"; } }, "Explore this \u2192"))))),
     effectiveMobile && pearlText && /* @__PURE__ */ React.createElement("div", { style: { ...styles.clinicalPearlCard, flex: 1 } }, /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlHeader }, "CLINICAL PEARL"), /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlText }, pearlText), pearlQuestionId && /* @__PURE__ */ React.createElement("button", { style: styles.clinicalPearlExploreBtn, onClick: () => startQuizFromQuestion(pearlQuestionId), onMouseEnter: (e) => { e.currentTarget.style.color = "#334155"; }, onMouseLeave: (e) => { e.currentTarget.style.color = "#64748b"; } }, "Explore this \u2192")),
-    hasAnyProgress && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", marginTop: "32px", paddingBottom: "24px" } }, /* @__PURE__ */ React.createElement("button", { style: { background: "none", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#dc2626", padding: "10px 24px", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "500", transition: "all 0.15s ease" }, onClick: resetAllProgress, onMouseEnter: (e) => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.08)"; }, onMouseLeave: (e) => { e.currentTarget.style.background = "none"; } }, "\u{1F5D1}\uFE0F Reset All Progress"))
+    effectiveMobile && hasAnyProgress && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", marginTop: "32px", paddingBottom: "24px" } }, /* @__PURE__ */ React.createElement("button", { style: { background: "none", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#dc2626", padding: "10px 24px", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "500", transition: "all 0.15s ease" }, onClick: resetAllProgress, onMouseEnter: (e) => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.08)"; }, onMouseLeave: (e) => { e.currentTarget.style.background = "none"; } }, "\u{1F5D1}\uFE0F Reset All Progress"))
   );
   const renderQuestionRow = (q, idx, categoryQuestions) => {
     const wasAnswered = q.id in progress.answeredQuestions;
