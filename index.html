@@ -9988,8 +9988,9 @@ function PCPLearningApp() {
   const actWheelRef = useRef({ pos: 0, vel: 0, drag: null, anim: null });
   const [catWheelPos, setCatWheelPos] = useState(0);
   const [actWheelPos, setActWheelPos] = useState(0);
-  const pearlVisitRef = useRef(0);
-  const [pearlIndex, setPearlIndex] = useState(0);
+  const [initialPearlIdx] = useState(() => Math.floor(Math.random() * QUESTIONS.length));
+  const pearlVisitRef = useRef(initialPearlIdx);
+  const [pearlIndex, setPearlIndex] = useState(initialPearlIdx);
   const pearlGridRef = useRef(null);
   const [pearlGridCols, setPearlGridCols] = useState(6);
 
