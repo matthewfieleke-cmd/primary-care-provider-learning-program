@@ -10628,15 +10628,18 @@ useEffect(() => {
             if (/\bBRAVO\b|OPTION\s*B|ANSWER\s*B/.test(t)) { finish(1); return; }
             if (/\bCHARLIE\b|OPTION\s*C|ANSWER\s*C/.test(t)) { finish(2); return; }
             if (/\bDELTA\b|OPTION\s*D|ANSWER\s*D/.test(t)) { finish(3); return; }
-            if (isFinal) {
-              const words = t.split(/\s+/).filter(w => w.length > 0);
-              const last = words[words.length - 1] || "";
-              if (words.length <= 4) {
-                if (/^A$/.test(last)) { finish(0); return; }
-                if (/^B$/.test(last) || /^BEE$/.test(last)) { finish(1); return; }
-                if (/^C$/.test(last) || /^SEE$/.test(last)) { finish(2); return; }
-                if (/^D$/.test(last) || /^DEE$/.test(last)) { finish(3); return; }
+            const words = t.split(/\s+/).filter(w => w.length > 0);
+            const last = words[words.length - 1] || "";
+            const isShort = words.length <= 2;
+            if (isShort || isFinal) {
+              if (isShort || words.length <= 4) {
+                if (/^(A|AY|EH|HEY)$/.test(last)) { finish(0); return; }
+                if (/^(B|BEE|BE)$/.test(last)) { finish(1); return; }
+                if (/^(C|SEE|SEA)$/.test(last)) { finish(2); return; }
+                if (/^(D|DEE)$/.test(last)) { finish(3); return; }
               }
+            }
+            if (isFinal) {
               if (/\bFIRST\b/.test(t)) { finish(0); return; }
               if (/\bSECOND\b/.test(t)) { finish(1); return; }
               if (/\bTHIRD\b/.test(t)) { finish(2); return; }
@@ -10691,8 +10694,12 @@ useEffect(() => {
       const letter = String.fromCharCode(65 + i);
       return `${letter}, ${opt.replace(/^[A-D]\)\s*/, "")}`;
     });
-    const optionsAndPrompt = optionLines.join(". ") + ". What is your answer?";
-    await speakAndWait(optionsAndPrompt);
+    for (const line of optionLines) {
+      if (!handsFreeRef.current.active) return;
+      await speakAndWait(line);
+    }
+    if (!handsFreeRef.current.active) return;
+    await speakAndWait("What is your answer?");
     if (!handsFreeRef.current.active) return;
 
     await new Promise(r => setTimeout(r, 150));
