@@ -12525,11 +12525,14 @@ useEffect(() => {
     },
     explanationToggleWrap: {
       display: "inline-flex",
+      alignItems: "center",
       background: "rgba(15, 23, 42, 0.08)",
       borderRadius: "20px",
       padding: "3px",
       gap: "2px",
-      border: "1px solid rgba(15, 23, 42, 0.06)"
+      border: "1px solid rgba(15, 23, 42, 0.06)",
+      minHeight: effectiveMobile ? "36px" : "auto",
+      boxSizing: "border-box"
     },
     explanationToggleBtn: (active) => ({
       border: "none",
@@ -12607,13 +12610,12 @@ useEffect(() => {
       borderRadius: effectiveMobile ? "6px" : 0
     },
     chatButtonMobileIcon: {
-      width: "28px",
-      height: "28px",
-      objectFit: "cover",
-      objectPosition: "center",
+      width: "24px",
+      height: "24px",
+      objectFit: "contain",
       display: "block",
-      borderRadius: "4px",
-      flexShrink: 0
+      flexShrink: 0,
+      mixBlendMode: "multiply"
     },
     chatHeaderIconWrap: {
       width: "44px",
