@@ -12484,7 +12484,7 @@ useEffect(() => {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: effectiveMobile ? "8px": "24px",
+      marginBottom: effectiveMobile ? "10px": "24px",
       padding: effectiveMobile ? "12px 14px": "12px 16px",
       background: effectiveMobile ? "#ffffff" : "rgba(255, 255, 255, 0.88)",
       backdropFilter: effectiveMobile ? "none" : "blur(14px)",
@@ -12835,7 +12835,10 @@ useEffect(() => {
     searchContainer: effectiveMobile ? {
       background: "#ffffff",
       borderRadius: "14px",
-      padding: "10px 12px",
+      padding: "0 14px",
+      minHeight: "56px",
+      display: "flex",
+      alignItems: "center",
       marginBottom: "0",
       border: "1px solid rgba(15, 23, 42, 0.12)",
       boxShadow: "none"
@@ -12844,10 +12847,10 @@ useEffect(() => {
     },
     searchInput: {
       width: "100%",
-      padding: effectiveMobile ? "9px 12px": "14px 20px",
+      padding: effectiveMobile ? "0": "14px 20px",
       borderRadius: effectiveMobile ? "8px": "12px",
-      border: effectiveMobile ? "1.5px solid rgba(0,0,0,0.08)" : "2px solid rgba(0,0,0,0.1)",
-      background: effectiveMobile ? "rgba(241, 245, 249, 0.6)" : "rgba(255, 255, 255, 0.98)",
+      border: effectiveMobile ? "none" : "2px solid rgba(0,0,0,0.1)",
+      background: effectiveMobile ? "transparent" : "rgba(255, 255, 255, 0.98)",
       color: "#1e293b",
       fontSize: effectiveMobile ? "14px": "16px",
       outline: "none",
@@ -13315,7 +13318,7 @@ useEffect(() => {
           /* @__PURE__ */ React.createElement("div", { style: styles.progressBar }, /* @__PURE__ */ React.createElement("div", { style: styles.progressFill(answeredPercent, cat.color) })))
       );
     }, catHandlers, catContainerRef, 3)),
-    pearlText && /* @__PURE__ */ React.createElement("div", { style: { ...styles.clinicalPearlCard, flex: 1 } }, /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlHeader }, "CLINICAL PEARL"), /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlText }, pearlText)),
+    pearlText && /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlCard }, /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlHeader }, "CLINICAL PEARL"), /* @__PURE__ */ React.createElement("div", { style: styles.clinicalPearlText }, pearlText)),
     hasAnyProgress && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", marginTop: "0", paddingBottom: "4px" } }, /* @__PURE__ */ React.createElement("button", { style: { background: "none", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#dc2626", padding: "9px 16px", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "500", transition: "all 0.15s ease" }, onClick: resetAllProgress, onMouseEnter: (e) => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.08)"; }, onMouseLeave: (e) => { e.currentTarget.style.background = "none"; } }, "\u{1F5D1}\uFE0F Reset All Progress"))) : /* @__PURE__ */ React.createElement(React.Fragment, null,
     /* @__PURE__ */ React.createElement("div", { style: styles.quickActionsCard }, /* @__PURE__ */ React.createElement("div", { style: styles.quickActionsGrid }, quickActionItems.map((item) => /* @__PURE__ */ React.createElement(
       "div",
