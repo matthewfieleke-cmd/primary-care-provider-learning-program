@@ -12442,7 +12442,7 @@ useEffect(() => {
       background: effectiveMobile ? "#f1f5f9" : "linear-gradient(180deg, #f8fafc 0%, #eef2f7 55%, #e9edf4 100%)",
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
       color: "#1e293b",
-      padding: effectiveMobile ? "8px": "24px",
+      padding: effectiveMobile ? "12px 12px calc(20px + env(safe-area-inset-bottom, 0px))": "24px",
       position: "relative",
       overflow: "hidden",
       display: effectiveMobile ? "flex" : undefined,
@@ -12468,22 +12468,23 @@ useEffect(() => {
       margin: "0 auto",
       display: effectiveMobile ? "flex" : undefined,
       flexDirection: effectiveMobile ? "column" : undefined,
-      gap: effectiveMobile ? "10px" : undefined,
+      gap: effectiveMobile ? "12px" : undefined,
       flex: effectiveMobile ? 1 : undefined
     },
     mobileHomeStack: {
       display: "flex",
       flexDirection: "column",
-      gap: "10px"
+      gap: "12px",
+      paddingBottom: "8px"
     },
     header: {
       position: "sticky",
-      top: effectiveMobile ? "8px": "16px",
+      top: effectiveMobile ? "calc(8px + env(safe-area-inset-top, 0px))": "16px",
       zIndex: 20,
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: effectiveMobile ? currentView === "home" ? "0" : "10px" : "24px",
+      marginBottom: effectiveMobile ? currentView === "home" ? "12px" : "10px" : "24px",
       padding: effectiveMobile ? "12px 14px": "12px 16px",
       background: effectiveMobile ? "#ffffff" : "rgba(255, 255, 255, 0.88)",
       backdropFilter: effectiveMobile ? "none" : "blur(14px)",
@@ -12692,7 +12693,7 @@ useEffect(() => {
     quickActionsCard: {
       background: effectiveMobile ? "#ffffff" : "rgba(255, 255, 255, 0.98)",
       borderRadius: effectiveMobile ? "14px": "14px",
-      padding: effectiveMobile ? "14px 6px 16px": "12px 14px",
+      padding: effectiveMobile ? "14px 10px 16px": "12px 14px",
       marginBottom: effectiveMobile ? "0": "16px",
       border: effectiveMobile ? "1px solid rgba(15, 23, 42, 0.12)" : "1px solid rgba(15, 23, 42, 0.08)",
       boxShadow: effectiveMobile ? "none" : "0 8px 20px rgba(15, 23, 42, 0.06)"
