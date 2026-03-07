@@ -10568,17 +10568,21 @@ useEffect(() => {
     return rec;
   }, []);
 
-  const listenForAnswer = useCallback(() => {
+  const listenForAnswer = useCallback((preStartedRec) => {
     return new Promise((resolve) => {
-      if (recognitionRef.current) {
-        try { recognitionRef.current.abort(); } catch(e) {}
-        recognitionRef.current.onresult = null;
-        recognitionRef.current.onend = null;
-        recognitionRef.current.onerror = null;
+      let rec = preStartedRec || null;
+      const alreadyRunning = !!rec;
+      if (!rec) {
+        if (recognitionRef.current) {
+          try { recognitionRef.current.abort(); } catch(e) {}
+          recognitionRef.current.onresult = null;
+          recognitionRef.current.onend = null;
+          recognitionRef.current.onerror = null;
+        }
+        rec = initRecognition();
+        if (!rec) { resolve(null); return; }
+        recognitionRef.current = rec;
       }
-      const rec = initRecognition();
-      if (!rec) { resolve(null); return; }
-      recognitionRef.current = rec;
 
       setIsListening(true);
       setHandsFreePhase("listening");
@@ -10643,7 +10647,9 @@ useEffect(() => {
         if (!answered) setLastTranscript("__HINT__");
       }, 10000);
 
-      try { rec.start(); } catch(e) { finish(null); }
+      if (!alreadyRunning) {
+        try { rec.start(); } catch(e) { finish(null); }
+      }
     });
   }, [initRecognition]);
 
@@ -10658,21 +10664,22 @@ useEffect(() => {
 
     setHandsFreePhase("reading-options");
     handsFreeRef.current.phase = "reading-options";
-    for (let i = 0; i < shuffled.options.length; i++) {
-      if (!handsFreeRef.current.active) return;
+    const optionLines = shuffled.options.map((opt, i) => {
       const letter = String.fromCharCode(65 + i);
-      const optionText = shuffled.options[i].replace(/^[A-D]\)\s*/, "");
-      await speakAndWait(`${letter}. ${optionText}`);
+      return `${letter}, ${opt.replace(/^[A-D]\)\s*/, "")}`;
+    });
+    const optionsAndPrompt = optionLines.join(". ") + ". What is your answer?";
+    const preRec = initRecognition();
+    if (preRec) {
+      try {
+        recognitionRef.current = preRec;
+        preRec.start();
+      } catch(e) {}
     }
+    await speakAndWait(optionsAndPrompt);
     if (!handsFreeRef.current.active) return;
 
-    await speakAndWait("What is your answer?");
-    if (!handsFreeRef.current.active) return;
-
-    await new Promise((r) => setTimeout(r, 50));
-    if (!handsFreeRef.current.active) return;
-
-    const answerIdx = await listenForAnswer();
+    const answerIdx = await listenForAnswer(preRec);
     if (!handsFreeRef.current.active) return;
     if (answerIdx === null) {
       setHandsFreePhase("idle");
@@ -10708,7 +10715,7 @@ useEffect(() => {
     if (!handsFreeRef.current.active) return;
 
     if (nextQuestionRef.current) nextQuestionRef.current();
-  }, [speakAndWait, listenForAnswer]);
+  }, [speakAndWait, listenForAnswer, initRecognition]);
 
   const startHandsFree = useCallback(async () => {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
