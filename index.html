@@ -12468,16 +12468,11 @@ useEffect(() => {
       margin: "0 auto",
       display: effectiveMobile ? "flex" : undefined,
       flexDirection: effectiveMobile ? "column" : undefined,
-      gap: effectiveMobile && currentView === "home" ? "0" : undefined,
+      gap: effectiveMobile ? "10px" : undefined,
       flex: effectiveMobile ? 1 : undefined
     },
     mobileHomeStack: {
-      display: "flex",
-      flexDirection: "column",
-      paddingTop: "10px",
-      gap: "10px",
-      flex: 1,
-      minHeight: 0
+      display: "contents"
     },
     header: {
       position: "sticky",
