@@ -10699,11 +10699,16 @@ useEffect(() => {
       await speakAndWait(line);
     }
     if (!handsFreeRef.current.active) return;
+    const preRec = initRecognition();
+    if (preRec) {
+      recognitionRef.current = preRec;
+      preRec.onend = () => { try { preRec.start(); } catch(e) {} };
+      try { preRec.start(); } catch(e) {}
+    }
     await speakAndWait("What is your answer?");
     if (!handsFreeRef.current.active) return;
 
-    await new Promise(r => setTimeout(r, 150));
-    const answerIdx = await listenForAnswer(null);
+    const answerIdx = await listenForAnswer(preRec);
     if (!handsFreeRef.current.active) return;
     if (answerIdx === null) {
       setHandsFreePhase("idle");
