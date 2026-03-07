@@ -12468,6 +12468,7 @@ useEffect(() => {
       margin: "0 auto",
       display: effectiveMobile ? "flex" : undefined,
       flexDirection: effectiveMobile ? "column" : undefined,
+      gap: effectiveMobile ? "10px" : undefined,
       flex: effectiveMobile ? 1 : undefined
     },
     mobileHomeStack: {
@@ -12484,7 +12485,7 @@ useEffect(() => {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: effectiveMobile ? "10px": "24px",
+      marginBottom: effectiveMobile ? "0": "24px",
       padding: effectiveMobile ? "12px 14px": "12px 16px",
       background: effectiveMobile ? "#ffffff" : "rgba(255, 255, 255, 0.88)",
       backdropFilter: effectiveMobile ? "none" : "blur(14px)",
