@@ -9960,12 +9960,16 @@ function PCPLearningApp() {
   const [handsFreeMode, setHandsFreeMode] = useState(false);
   const [handsFreePhase, setHandsFreePhase] = useState("idle");
   const [isListening, setIsListening] = useState(false);
+  const [lastTranscript, setLastTranscript] = useState("");
   const speechUtterRef = useRef(null);
   const handsFreeRef = useRef({ active: false, phase: "idle" });
   const recognitionRef = useRef(null);
   const micPermissionPrimedRef = useRef(false);
   const ttsKeepAliveRef = useRef(null);
   const wakeLockRef = useRef(null);
+  const hfAnswerRef = useRef(null);
+  const getExplanationTextRef = useRef(null);
+  const isSafariBrowser = useRef(/^((?!chrome|android).)*safari/i.test(navigator.userAgent));
   const handleAnswerRef = useRef(null);
   const nextQuestionRef = useRef(null);
   const getShuffledOptionsRef = useRef(null);
@@ -10388,30 +10392,32 @@ useEffect(() => {
   }, [normalizeMedicalSpeechText]);
 
   const ensureMicPermission = useCallback(async () => {
-    if (micPermissionPrimedRef.current) return true;
+    if (micPermissionPrimedRef.current && !isSafariBrowser.current) return true;
     const hasMediaDevices = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
     if (!hasMediaDevices) {
       micPermissionPrimedRef.current = true;
       return true;
     }
     try {
-      if (navigator.permissions && navigator.permissions.query) {
+      if (!isSafariBrowser.current && navigator.permissions && navigator.permissions.query) {
         const status = await navigator.permissions.query({ name: "microphone" });
         if (status && status.state === "granted") {
           micPermissionPrimedRef.current = true;
           return true;
         }
       }
-    } catch (e) {
+    } catch (e) {}
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((track) => track.stop());
+        micPermissionPrimedRef.current = true;
+        return true;
+      } catch (e) {
+        if (attempt === 0) await new Promise(r => setTimeout(r, 500));
+      }
     }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach((track) => track.stop());
-      micPermissionPrimedRef.current = true;
-      return true;
-    } catch (e) {
-      return false;
-    }
+    return false;
   }, []);
 
   const readAloud = useCallback((text) => {
@@ -10455,55 +10461,104 @@ useEffect(() => {
     if (!showExplanation && isSpeaking && !handsFreeRef.current.active) stopSpeaking();
   }, [showExplanation, isSpeaking, stopSpeaking]);
 
-  const speakAndWait = useCallback((text) => {
+  const splitIntoSpeechChunks = useCallback((text) => {
+    if (!text) return [];
+    const built = buildSpeechText(text);
+    if (built.length <= 300) return [built];
+    const sentences = built.match(/[^.!?]+[.!?]+[\s]*/g) || [built];
+    const chunks = [];
+    let current = "";
+    for (const s of sentences) {
+      if (current.length + s.length > 300 && current.length > 0) {
+        chunks.push(current.trim());
+        current = s;
+      } else {
+        current += s;
+      }
+    }
+    if (current.trim()) chunks.push(current.trim());
+    const finalChunks = [];
+    for (const chunk of chunks) {
+      if (chunk.length <= 300) {
+        finalChunks.push(chunk);
+      } else {
+        const parts = chunk.split(/(?<=[,;])\s+/);
+        let sub = "";
+        for (const p of parts) {
+          if (sub.length + p.length > 300 && sub.length > 0) {
+            finalChunks.push(sub.trim());
+            sub = p;
+          } else {
+            sub += (sub ? " " : "") + p;
+          }
+        }
+        if (sub.trim()) finalChunks.push(sub.trim());
+      }
+    }
+    return finalChunks.length > 0 ? finalChunks : [built];
+  }, [buildSpeechText]);
+
+  const speakSingleChunk = useCallback((chunk) => {
     return new Promise((resolve) => {
-      if (!text || !window.speechSynthesis) { resolve(); return; }
-      window.speechSynthesis.cancel();
-      const builtText = buildSpeechText(text);
-      const utter = new SpeechSynthesisUtterance(builtText);
+      const utter = new SpeechSynthesisUtterance(chunk);
       const voice = pickMaleVoice();
       if (voice) utter.voice = voice;
       utter.rate = 1.0;
       utter.pitch = 1.0;
       utter.volume = 1;
       let resolved = false;
-      let keepAlive = null;
+      let started = false;
       let safetyTimer = null;
-      const done = () => {
+      let startTimer = null;
+      const done = (success) => {
         if (resolved) return;
         resolved = true;
-        if (keepAlive) { clearInterval(keepAlive); keepAlive = null; }
-        if (safetyTimer) { clearTimeout(safetyTimer); safetyTimer = null; }
-        resolve();
+        if (safetyTimer) clearTimeout(safetyTimer);
+        if (startTimer) clearTimeout(startTimer);
+        resolve(success !== false);
       };
-      utter.onend = done;
-      utter.onerror = done;
-      keepAlive = setInterval(() => {
-        if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
-          window.speechSynthesis.pause();
-          window.speechSynthesis.resume();
-        } else if (!window.speechSynthesis.speaking && !resolved) {
-          done();
-        }
-      }, 10000);
-      const safetyMs = Math.max(30000, builtText.length * 120);
+      utter.onstart = () => { started = true; };
+      utter.onend = () => done(true);
+      utter.onerror = () => done(false);
       safetyTimer = setTimeout(() => {
-        if (!resolved) { window.speechSynthesis.cancel(); done(); }
-      }, safetyMs);
+        if (!resolved) { window.speechSynthesis.cancel(); done(false); }
+      }, Math.max(10000, chunk.length * 100));
+      startTimer = setTimeout(() => {
+        if (!started && !resolved) {
+          window.speechSynthesis.cancel();
+          const retry = new SpeechSynthesisUtterance(chunk);
+          if (voice) retry.voice = voice;
+          retry.rate = 1.0; retry.pitch = 1.0; retry.volume = 1;
+          retry.onstart = () => { started = true; };
+          retry.onend = () => done(true);
+          retry.onerror = () => done(false);
+          window.speechSynthesis.speak(retry);
+        }
+      }, 500);
       window.speechSynthesis.speak(utter);
     });
-  }, [buildSpeechText]);
+  }, []);
+
+  const speakAndWait = useCallback(async (text) => {
+    if (!text || !window.speechSynthesis) return;
+    const chunks = splitIntoSpeechChunks(text);
+    for (let i = 0; i < chunks.length; i++) {
+      if (!handsFreeRef.current.active) return;
+      await speakSingleChunk(chunks[i]);
+      if (i < chunks.length - 1) {
+        await new Promise(r => setTimeout(r, 30));
+      }
+    }
+  }, [splitIntoSpeechChunks, speakSingleChunk]);
 
   const initRecognition = useCallback(() => {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) return null;
-    if (recognitionRef.current) return recognitionRef.current;
     const rec = new SpeechRec();
     rec.lang = "en-US";
-    rec.interimResults = false;
+    rec.interimResults = true;
     rec.maxAlternatives = 5;
-    rec.continuous = false;
-    recognitionRef.current = rec;
+    rec.continuous = !isSafariBrowser.current;
     return rec;
   }, []);
 
@@ -10514,26 +10569,28 @@ useEffect(() => {
         recognitionRef.current.onresult = null;
         recognitionRef.current.onend = null;
         recognitionRef.current.onerror = null;
-        recognitionRef.current.onspeechend = null;
       }
-      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRec) { resolve(null); return; }
-      const rec = new SpeechRec();
-      rec.lang = "en-US";
-      rec.interimResults = false;
-      rec.maxAlternatives = 5;
-      rec.continuous = false;
+      const rec = initRecognition();
+      if (!rec) { resolve(null); return; }
       recognitionRef.current = rec;
 
       setIsListening(true);
       setHandsFreePhase("listening");
       handsFreeRef.current.phase = "listening";
+      setLastTranscript("");
 
       let answered = false;
+      let restartCount = 0;
+      const maxRestarts = isSafariBrowser.current ? 30 : 5;
+      let hintTimer = null;
+
       const finish = (idx) => {
         if (answered) return;
         answered = true;
+        hfAnswerRef.current = null;
         setIsListening(false);
+        setLastTranscript("");
+        if (hintTimer) { clearTimeout(hintTimer); hintTimer = null; }
         rec.onresult = null;
         rec.onend = null;
         rec.onerror = null;
@@ -10541,49 +10598,52 @@ useEffect(() => {
         resolve(idx);
       };
 
+      hfAnswerRef.current = finish;
+
       rec.onresult = (e) => {
         for (let i = 0; i < e.results.length; i++) {
           for (let j = 0; j < e.results[i].length; j++) {
             const t = e.results[i][j].transcript.trim().toUpperCase();
-            if (/\bA\b|ALPHA|OPTION A|ANSWER A|FIRST/.test(t)) { finish(0); return; }
-            if (/\bB\b|BRAVO|OPTION B|ANSWER B|SECOND/.test(t)) { finish(1); return; }
-            if (/\bC\b|CHARLIE|OPTION C|ANSWER C|THIRD/.test(t)) { finish(2); return; }
-            if (/\bD\b|DELTA|OPTION D|ANSWER D|FOURTH/.test(t)) { finish(3); return; }
+            if (!answered) setLastTranscript(e.results[i][j].transcript.trim());
+            if (/\bA\b|ALPHA|OPTION\s*A|ANSWER\s*A|FIRST/.test(t)) { finish(0); return; }
+            if (/\bB\b|BRAVO|OPTION\s*B|ANSWER\s*B|SECOND/.test(t)) { finish(1); return; }
+            if (/\bC\b|CHARLIE|OPTION\s*C|ANSWER\s*C|THIRD/.test(t)) { finish(2); return; }
+            if (/\bD\b|DELTA|OPTION\s*D|ANSWER\s*D|FOURTH/.test(t)) { finish(3); return; }
           }
         }
       };
+
       rec.onend = () => {
-        if (!answered && handsFreeRef.current.active) {
-          setTimeout(() => {
-            if (!answered && handsFreeRef.current.active) {
-              try { rec.start(); } catch(e) { finish(null); }
-            }
-          }, 150);
+        if (!answered && handsFreeRef.current.active && restartCount < maxRestarts) {
+          restartCount++;
+          try { rec.start(); } catch(e) { finish(null); }
         } else if (!answered) {
           finish(null);
         }
       };
+
       rec.onerror = (e) => {
         if (e.error === "not-allowed" || e.error === "service-not-allowed") {
           setHandsFreeMode(false);
           setHandsFreePhase("idle");
           handsFreeRef.current.active = false;
           setIsListening(false);
-          alert("Microphone access is required for Hands-Free Mode. Please allow access and try again.");
           finish(null);
           return;
         }
-        if (e.error !== "aborted" && e.error !== "no-speech") {
-          finish(null);
-        }
       };
+
+      hintTimer = setTimeout(() => {
+        if (!answered) setLastTranscript("__HINT__");
+      }, 10000);
+
       try { rec.start(); } catch(e) { finish(null); }
     });
-  }, []);
+  }, [initRecognition]);
 
   const runHandsFreeQuestion = useCallback(async (question, questionIndex, totalQuestions) => {
     if (!handsFreeRef.current.active) return;
-    const shuffled = getShuffledOptionsRef.current ? getShuffledOptionsRef.current(question): { options: question.options || [], correctIndex: question.correctAnswer || 0 };
+    const shuffled = getShuffledOptionsRef.current ? getShuffledOptionsRef.current(question) : { options: question.options || [], correctIndex: question.correctAnswer || 0 };
 
     setHandsFreePhase("reading-question");
     handsFreeRef.current.phase = "reading-question";
@@ -10603,11 +10663,16 @@ useEffect(() => {
     await speakAndWait("What is your answer?");
     if (!handsFreeRef.current.active) return;
 
-    await new Promise((r) => setTimeout(r, 350));
+    await new Promise((r) => setTimeout(r, 50));
     if (!handsFreeRef.current.active) return;
 
     const answerIdx = await listenForAnswer();
-    if (!handsFreeRef.current.active || answerIdx === null) return;
+    if (!handsFreeRef.current.active) return;
+    if (answerIdx === null) {
+      setHandsFreePhase("idle");
+      handsFreeRef.current.phase = "idle";
+      return;
+    }
 
     if (handleAnswerRef.current) handleAnswerRef.current(answerIdx);
     const isCorrect = answerIdx === shuffled.correctIndex;
@@ -10626,7 +10691,8 @@ useEffect(() => {
     setHandsFreePhase("reading-explanation");
     handsFreeRef.current.phase = "reading-explanation";
     const cLetter = String.fromCharCode(65 + shuffled.correctIndex);
-    const correctedExplanation = getExplanationText(question, cLetter);
+    const explainFn = getExplanationTextRef.current;
+    const correctedExplanation = explainFn ? explainFn(question, cLetter) : "";
     await speakAndWait(correctedExplanation);
     if (!handsFreeRef.current.active) return;
 
@@ -10636,13 +10702,18 @@ useEffect(() => {
     if (!handsFreeRef.current.active) return;
 
     if (nextQuestionRef.current) nextQuestionRef.current();
-  }, [speakAndWait, listenForAnswer, explanationMode]);
+  }, [speakAndWait, listenForAnswer]);
 
   const startHandsFree = useCallback(async () => {
-    const rec = initRecognition();
-    if (!rec) {
-      alert("Your browser does not support speech recognition. Please use Chrome or Edge.");
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRec) {
+      alert("Your browser does not support speech recognition. Please use Chrome, Edge, or Safari 14.5+.");
       return;
+    }
+    if (window.speechSynthesis) {
+      const warmup = new SpeechSynthesisUtterance("");
+      warmup.volume = 0;
+      window.speechSynthesis.speak(warmup);
     }
     const hasMicPermission = await ensureMicPermission();
     if (!hasMicPermission) {
@@ -10658,7 +10729,14 @@ useEffect(() => {
     handsFreeRef.current.active = true;
     handsFreeRef.current.phase = "idle";
     setHandsFreePhase("idle");
-  }, [initRecognition, ensureMicPermission]);
+    setLastTranscript("");
+    const question = quizQuestions[currentQuestionIndex];
+    if (question && !showExplanation) {
+      setTimeout(() => {
+        if (runHandsFreeRef.current) runHandsFreeRef.current(question, currentQuestionIndex, quizQuestions.length);
+      }, 100);
+    }
+  }, [ensureMicPermission, quizQuestions, currentQuestionIndex, showExplanation]);
 
   const stopHandsFree = useCallback(() => {
     handsFreeRef.current.active = false;
@@ -10666,6 +10744,8 @@ useEffect(() => {
     setHandsFreeMode(false);
     setHandsFreePhase("idle");
     setIsListening(false);
+    setLastTranscript("");
+    hfAnswerRef.current = null;
     if (ttsKeepAliveRef.current) { clearInterval(ttsKeepAliveRef.current); ttsKeepAliveRef.current = null; }
     window.speechSynthesis.cancel();
     if (recognitionRef.current) {
@@ -10673,7 +10753,7 @@ useEffect(() => {
       recognitionRef.current.onresult = null;
       recognitionRef.current.onend = null;
       recognitionRef.current.onerror = null;
-      recognitionRef.current.onspeechend = null;
+      recognitionRef.current = null;
     }
     if (wakeLockRef.current) {
       try { wakeLockRef.current.release(); } catch(e) {}
@@ -10683,18 +10763,6 @@ useEffect(() => {
 
   const runHandsFreeRef = useRef(null);
   runHandsFreeRef.current = runHandsFreeQuestion;
-
-  useEffect(() => {
-    if (handsFreeMode && !showExplanation && handsFreeRef.current.phase === "idle") {
-      const question = quizQuestions[currentQuestionIndex];
-      if (question) {
-        const timer = setTimeout(() => {
-          if (runHandsFreeRef.current) runHandsFreeRef.current(question, currentQuestionIndex, quizQuestions.length);
-        }, 400);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [handsFreeMode, currentQuestionIndex, showExplanation, quizQuestions]);
 
   useEffect(() => {
     if (currentView !== "quiz" && currentView !== "category-review") {
@@ -11148,6 +11216,7 @@ useEffect(() => {
     }
     return chosenBullet || fixExplanationLetter(expanded, correctLetter);
   };
+  getExplanationTextRef.current = getExplanationText;
   const getCanonicalCorrectLetter = (question) => {
     const idx = Number.isInteger(question?.correctAnswer) ? question.correctAnswer: 0;
     return String.fromCharCode(65 + Math.min(3, Math.max(0, idx)));
@@ -11941,9 +12010,20 @@ useEffect(() => {
       setHandsFreePhase("idle");
     }
     if (currentQuestionIndex < quizQuestions.length - 1) {
+      const nextIdx = currentQuestionIndex + 1;
       setCurrentQuestionIndex((prev) => prev + 1);
       setSelectedAnswer(null);
       setShowExplanation(false);
+      if (handsFreeRef.current.active) {
+        const nextQ = quizQuestions[nextIdx];
+        if (nextQ) {
+          setTimeout(() => {
+            if (runHandsFreeRef.current && handsFreeRef.current.active) {
+              runHandsFreeRef.current(nextQ, nextIdx, quizQuestions.length);
+            }
+          }, 200);
+        }
+      }
     } else {
       if (handsFreeMode) stopHandsFree();
       setCurrentView("quiz-complete");
@@ -13570,30 +13650,61 @@ useEffect(() => {
     return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("button", { style: styles.backBtn, onClick: currentView === "category-review" ? () => {
       play("click");
       setCurrentView("category-questions");
-    }: goHome }, "\u2190 ", currentView === "category-review" ? "Back to Questions": "Back to Home"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "flex-end", marginBottom: "8px", gap: "8px" } }, handsFreeMode && handsFreePhase === "listening" && /* @__PURE__ */ React.createElement("span", { style: {
+    }: goHome }, "\u2190 ", currentView === "category-review" ? "Back to Questions": "Back to Home"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "flex-end", marginBottom: "8px", gap: "8px", flexWrap: "wrap" } },
+    handsFreeMode && handsFreePhase === "listening" && /* @__PURE__ */ React.createElement("span", { style: {
       display: "inline-flex", alignItems: "center", gap: "6px",
       padding: "4px 12px", borderRadius: "16px", fontSize: "13px", fontWeight: 600,
       background: "rgba(239, 68, 68, 0.1)", color: "#dc2626",
       border: "1px solid rgba(239, 68, 68, 0.3)",
       animation: "pulse 1.5s ease-in-out infinite"
-    } }, "\u{1F3A4} Listening..."),
-    handsFreeMode && handsFreePhase !== "listening" && handsFreePhase !== "idle" && /* @__PURE__ */ React.createElement("span", { style: {
+    } }, "\u{1F3A4} ", lastTranscript === "__HINT__" ? "Say A, B, C, or D" : lastTranscript ? "Heard: \"" + lastTranscript + "\"" : "Listening..."),
+    handsFreeMode && handsFreePhase === "reading-question" && /* @__PURE__ */ React.createElement("span", { style: {
       display: "inline-flex", alignItems: "center", gap: "6px",
       padding: "4px 12px", borderRadius: "16px", fontSize: "13px", fontWeight: 500,
       background: "rgba(37, 99, 235, 0.08)", color: "#1d4ed8",
       border: "1px solid rgba(37, 99, 235, 0.2)"
-    } }, "\u{1F50A} Speaking..."),
+    } }, "\u{1F50A} Reading question..."),
+    handsFreeMode && handsFreePhase === "reading-options" && /* @__PURE__ */ React.createElement("span", { style: {
+      display: "inline-flex", alignItems: "center", gap: "6px",
+      padding: "4px 12px", borderRadius: "16px", fontSize: "13px", fontWeight: 500,
+      background: "rgba(37, 99, 235, 0.08)", color: "#1d4ed8",
+      border: "1px solid rgba(37, 99, 235, 0.2)"
+    } }, "\u{1F50A} Reading options..."),
+    handsFreeMode && (handsFreePhase === "reading-result" || handsFreePhase === "reading-explanation") && /* @__PURE__ */ React.createElement("span", { style: {
+      display: "inline-flex", alignItems: "center", gap: "6px",
+      padding: "4px 12px", borderRadius: "16px", fontSize: "13px", fontWeight: 500,
+      background: "rgba(37, 99, 235, 0.08)", color: "#1d4ed8",
+      border: "1px solid rgba(37, 99, 235, 0.2)"
+    } }, "\u{1F50A} Reading explanation..."),
+    handsFreeMode && handsFreePhase === "advancing" && /* @__PURE__ */ React.createElement("span", { style: {
+      display: "inline-flex", alignItems: "center", gap: "6px",
+      padding: "4px 12px", borderRadius: "16px", fontSize: "13px", fontWeight: 500,
+      background: "rgba(16, 185, 129, 0.08)", color: "#059669",
+      border: "1px solid rgba(16, 185, 129, 0.2)"
+    } }, "Next question..."),
     /* @__PURE__ */ React.createElement("button", {
-      onClick: handsFreeMode ? stopHandsFree: startHandsFree,
+      onClick: handsFreeMode ? stopHandsFree : startHandsFree,
       style: {
         display: "inline-flex", alignItems: "center", gap: "6px",
         padding: "8px 14px", borderRadius: "10px", cursor: "pointer",
         fontSize: "13px", fontWeight: 600, border: "none",
-        background: handsFreeMode ? "linear-gradient(135deg, #dc2626, #b91c1c)": "linear-gradient(135deg, #2563eb, #1d4ed8)",
+        background: handsFreeMode ? "linear-gradient(135deg, #dc2626, #b91c1c)" : "linear-gradient(135deg, #2563eb, #1d4ed8)",
         color: "white", transition: "all 0.2s",
-        boxShadow: handsFreeMode ? "0 2px 8px rgba(220, 38, 38, 0.3)": "0 2px 8px rgba(37, 99, 235, 0.3)"
+        boxShadow: handsFreeMode ? "0 2px 8px rgba(220, 38, 38, 0.3)" : "0 2px 8px rgba(37, 99, 235, 0.3)"
       }
-    }, handsFreeMode ? "\u23F9 Stop Hands-Free": "\u{1F3A7} Hands-Free Mode")), /* @__PURE__ */ React.createElement("div", { style: styles.questionCard }, /* @__PURE__ */ React.createElement("div", { style: styles.questionHeader }, /* @__PURE__ */ React.createElement("span", { style: styles.questionProgress }, "Question ", currentQuestionIndex + 1, " of ", quizQuestions.length), /* @__PURE__ */ React.createElement("span", { style: styles.categoryBadgeLarge(category.color) }, /* @__PURE__ */ React.createElement("span", { style: { display: "inline-flex", alignItems: "center", transform: "scale(2.0)", transformOrigin: "center" } }, renderBadgeCategoryIcon(category.icon)), category.name)), /* @__PURE__ */ React.createElement("div", { style: styles.progressBar }, /* @__PURE__ */ React.createElement("div", { style: styles.progressFill(
+    }, handsFreeMode ? "\u23F9 Stop Hands-Free" : "\u{1F3A7} Hands-Free Mode")),
+    handsFreeMode && handsFreePhase === "listening" && !showExplanation && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: "8px", width: "100%", justifyContent: "center", marginTop: "4px" } },
+      ["A", "B", "C", "D"].map((letter, idx) => /* @__PURE__ */ React.createElement("button", {
+        key: letter,
+        onClick: () => { if (hfAnswerRef.current) hfAnswerRef.current(idx); },
+        style: {
+          padding: "8px 18px", borderRadius: "8px", cursor: "pointer",
+          fontSize: "14px", fontWeight: 600, border: "1px solid rgba(37, 99, 235, 0.3)",
+          background: "rgba(37, 99, 235, 0.06)", color: "#1d4ed8",
+          transition: "all 0.15s"
+        }
+      }, letter))
+    ), /* @__PURE__ */ React.createElement("div", { style: styles.questionCard }, /* @__PURE__ */ React.createElement("div", { style: styles.questionHeader }, /* @__PURE__ */ React.createElement("span", { style: styles.questionProgress }, "Question ", currentQuestionIndex + 1, " of ", quizQuestions.length), /* @__PURE__ */ React.createElement("span", { style: styles.categoryBadgeLarge(category.color) }, /* @__PURE__ */ React.createElement("span", { style: { display: "inline-flex", alignItems: "center", transform: "scale(2.0)", transformOrigin: "center" } }, renderBadgeCategoryIcon(category.icon)), category.name)), /* @__PURE__ */ React.createElement("div", { style: styles.progressBar }, /* @__PURE__ */ React.createElement("div", { style: styles.progressFill(
       (currentQuestionIndex + 1) / quizQuestions.length * 100
     ) })), questionImages.length > 0 && !currentQuestion.questionImageBelow && /* @__PURE__ */ React.createElement("div", { style: styles.quizImageGroup }, questionImages.map((img, idx) => /* @__PURE__ */ React.createElement("figure", { key: `${currentQuestion.id}-qimg-${idx}`, style: styles.quizImageCard }, /* @__PURE__ */ React.createElement("img", { src: img.src, alt: img.alt, style: styles.quizImage, loading: "lazy", decoding: "async" }), !!img.caption && /* @__PURE__ */ React.createElement("figcaption", { style: styles.quizImageCaption }, img.caption)))), /* @__PURE__ */ React.createElement("p", { style: showExplanation ? styles.questionTextCompact: styles.questionText }, currentQuestion.question), questionImages.length > 0 && currentQuestion.questionImageBelow && /* @__PURE__ */ React.createElement("div", { style: styles.quizImageGroup }, questionImages.map((img, idx) => /* @__PURE__ */ React.createElement("figure", { key: `${currentQuestion.id}-qimg-${idx}`, style: styles.quizImageCard }, /* @__PURE__ */ React.createElement("img", { src: img.src, alt: img.alt, style: styles.quizImage, loading: "lazy", decoding: "async" }), !!img.caption && /* @__PURE__ */ React.createElement("figcaption", { style: styles.quizImageCaption }, img.caption)))), (() => {
       const shuffled = getShuffledOptions(currentQuestion);
