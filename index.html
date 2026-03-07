@@ -10504,11 +10504,13 @@ useEffect(() => {
       let resolved = false;
       let safetyTimer = null;
       let startTimer = null;
+      let keepAlive = null;
       const done = (success) => {
         if (resolved) return;
         resolved = true;
         if (safetyTimer) clearTimeout(safetyTimer);
         if (startTimer) clearTimeout(startTimer);
+        if (keepAlive) { clearInterval(keepAlive); keepAlive = null; }
         resolve(success !== false);
       };
       const makeUtterance = () => {
@@ -10541,6 +10543,12 @@ useEffect(() => {
           window.speechSynthesis.speak(retry);
         }
       }, 500);
+      keepAlive = setInterval(() => {
+        if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+          window.speechSynthesis.pause();
+          window.speechSynthesis.resume();
+        }
+      }, 8000);
       window.speechSynthesis.speak(utter);
     });
   }, []);
@@ -10612,13 +10620,28 @@ useEffect(() => {
 
       rec.onresult = (e) => {
         for (let i = 0; i < e.results.length; i++) {
+          const isFinal = e.results[i].isFinal;
           for (let j = 0; j < e.results[i].length; j++) {
             const t = e.results[i][j].transcript.trim().toUpperCase();
             if (!answered) setLastTranscript(e.results[i][j].transcript.trim());
-            if (/\bA\b|ALPHA|OPTION\s*A|ANSWER\s*A|FIRST|^AY$|^EH$/.test(t)) { finish(0); return; }
-            if (/\bB\b|BRAVO|OPTION\s*B|ANSWER\s*B|SECOND|\bBEE\b|\bBE\b/.test(t)) { finish(1); return; }
-            if (/\bC\b|CHARLIE|OPTION\s*C|ANSWER\s*C|THIRD|\bSEE\b|\bSEA\b/.test(t)) { finish(2); return; }
-            if (/\bD\b|DELTA|OPTION\s*D|ANSWER\s*D|FOURTH|\bDEE\b/.test(t)) { finish(3); return; }
+            if (/\bALPHA\b|OPTION\s*A|ANSWER\s*A/.test(t)) { finish(0); return; }
+            if (/\bBRAVO\b|OPTION\s*B|ANSWER\s*B/.test(t)) { finish(1); return; }
+            if (/\bCHARLIE\b|OPTION\s*C|ANSWER\s*C/.test(t)) { finish(2); return; }
+            if (/\bDELTA\b|OPTION\s*D|ANSWER\s*D/.test(t)) { finish(3); return; }
+            if (isFinal) {
+              const words = t.split(/\s+/).filter(w => w.length > 0);
+              const last = words[words.length - 1] || "";
+              if (words.length <= 4) {
+                if (/^A$/.test(last)) { finish(0); return; }
+                if (/^B$/.test(last) || /^BEE$/.test(last)) { finish(1); return; }
+                if (/^C$/.test(last) || /^SEE$/.test(last)) { finish(2); return; }
+                if (/^D$/.test(last) || /^DEE$/.test(last)) { finish(3); return; }
+              }
+              if (/\bFIRST\b/.test(t)) { finish(0); return; }
+              if (/\bSECOND\b/.test(t)) { finish(1); return; }
+              if (/\bTHIRD\b/.test(t)) { finish(2); return; }
+              if (/\bFOURTH\b/.test(t)) { finish(3); return; }
+            }
           }
         }
       };
@@ -10669,17 +10692,11 @@ useEffect(() => {
       return `${letter}, ${opt.replace(/^[A-D]\)\s*/, "")}`;
     });
     const optionsAndPrompt = optionLines.join(". ") + ". What is your answer?";
-    const preRec = initRecognition();
-    if (preRec) {
-      try {
-        recognitionRef.current = preRec;
-        preRec.start();
-      } catch(e) {}
-    }
     await speakAndWait(optionsAndPrompt);
     if (!handsFreeRef.current.active) return;
 
-    const answerIdx = await listenForAnswer(preRec);
+    await new Promise(r => setTimeout(r, 150));
+    const answerIdx = await listenForAnswer(null);
     if (!handsFreeRef.current.active) return;
     if (answerIdx === null) {
       setHandsFreePhase("idle");
@@ -10711,7 +10728,7 @@ useEffect(() => {
 
     setHandsFreePhase("advancing");
     handsFreeRef.current.phase = "advancing";
-    await new Promise((r) => setTimeout(r, 800));
+    await new Promise((r) => setTimeout(r, 300));
     if (!handsFreeRef.current.active) return;
 
     if (nextQuestionRef.current) nextQuestionRef.current();
@@ -12039,7 +12056,7 @@ useEffect(() => {
             if (runHandsFreeRef.current && handsFreeRef.current.active) {
               runHandsFreeRef.current(nextQ, nextIdx, quizQuestions.length);
             }
-          }, 200);
+          }, 100);
         }
       }
     } else {
