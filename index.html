@@ -9992,7 +9992,10 @@ function PCPLearningApp() {
   const pearlVisitRef = useRef(initialPearlIdx);
   const [pearlIndex, setPearlIndex] = useState(initialPearlIdx);
   const pearlGridRef = useRef(null);
-  const [pearlGridCols, setPearlGridCols] = useState(6);
+  const [pearlGridCols, setPearlGridCols] = useState(() => {
+    const gridW = Math.min(window.innerWidth - 48, 1400) - 32;
+    return Math.max(1, Math.floor((gridW + 12) / (180 + 12)));
+  });
 
   useEffect(() => {
     return () => {
