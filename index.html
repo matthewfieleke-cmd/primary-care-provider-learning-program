@@ -9721,19 +9721,23 @@ const unlockAudio = () => {
       });
     }
     if (audioCtx.state === "running") {
-      ["touchstart","touchend","mousedown","click"].forEach(
+      ["touchstart","touchend","pointerdown","mousedown","click"].forEach(
         evt => document.removeEventListener(evt, unlockAudio, true)
       );
     }
   } catch (_) {}
 };
-["touchstart","touchend","mousedown","click"].forEach(
+["touchstart","touchend","pointerdown","mousedown","click"].forEach(
   evt => document.addEventListener(evt, unlockAudio, true)
 );
 const playSound = async (type) => {
   try {
     const ctx = getAudioContext();
-    if (!ctx || ctx.state !== "running") return;
+    if (!ctx) return;
+    if (ctx.state !== "running") {
+      try { await ctx.resume(); } catch (_) {}
+      if (ctx.state !== "running") return;
+    }
     const oscillator = ctx.createOscillator();
     const gainNode = ctx.createGain();
     oscillator.connect(gainNode);
@@ -12530,6 +12534,9 @@ useEffect(() => {
       if (c !== wd.lastCenter) { wd.lastCenter = c; play("tick"); }
     };
     const onDown = (e) => {
+      if (audioCtx && audioCtx.state !== "running") {
+        try { audioCtx.resume(); } catch (_) {}
+      }
       if (wd.anim) { cancelAnimationFrame(wd.anim); wd.anim = null; }
       wd.vel = 0;
       wd.lastCenter = Math.round(wd.pos);
