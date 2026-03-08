@@ -3,10 +3,14 @@
   "short_name": "LearnHealth Hub",
   "start_url": "./index.html",
   "scope": ".",
-  "display": "fullscreen",
+  "display": "standalone",
+  "orientation": "any",
+  "lang": "en-US",
+  "dir": "ltr",
   "background_color": "#1e293b",
   "theme_color": "#1e293b",
-  "description": "Clinical microlearning, quizzes, and rapid review for primary care providers.",
+  "description": "Clinical microlearning, quizzes, and rapid review for primary care providers. Study 19 medical categories with hundreds of quiz questions, detailed explanations, spaced review, game mode, and offline support.",
+  "categories": ["education", "medical"],
   "icons": [
     {
       "src": "assets/pwa-icon-192.png",
@@ -37,6 +41,22 @@
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "assets/screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Home screen showing medical categories"
+    },
+    {
+      "src": "assets/screenshot-narrow.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Quiz question with clinical explanation"
     }
   ]
 }
