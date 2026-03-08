@@ -9707,6 +9707,13 @@ const getAudioContext = () => {
   }
   return audioCtx;
 };
+const primeAudio = () => {
+  try { const ctx = getAudioContext(); if (ctx.state === "suspended") ctx.resume(); } catch (_) {}
+  document.removeEventListener("touchstart", primeAudio, true);
+  document.removeEventListener("click", primeAudio, true);
+};
+document.addEventListener("touchstart", primeAudio, true);
+document.addEventListener("click", primeAudio, true);
 const playSound = async (type) => {
   try {
     const ctx = getAudioContext();
@@ -12512,7 +12519,6 @@ useEffect(() => {
       if (c !== wd.lastCenter) { wd.lastCenter = c; play("tick"); }
     };
     const onDown = (e) => {
-      try { const ctx = getAudioContext(); if (ctx.state === "suspended") ctx.resume(); } catch (_) {}
       if (wd.anim) { cancelAnimationFrame(wd.anim); wd.anim = null; }
       wd.vel = 0;
       wd.lastCenter = Math.round(wd.pos);
