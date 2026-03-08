@@ -9799,11 +9799,11 @@ const playSound = async (type) => {
         break;
       case "tick":
         oscillator.type = "sine";
-        oscillator.frequency.setValueAtTime(1200, ctx.currentTime);
-        gainNode.gain.setValueAtTime(0.04, ctx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.03);
+        oscillator.frequency.setValueAtTime(700, ctx.currentTime);
+        gainNode.gain.setValueAtTime(0.045, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.035);
         oscillator.start(ctx.currentTime);
-        oscillator.stop(ctx.currentTime + 0.03);
+        oscillator.stop(ctx.currentTime + 0.035);
         break;
       case "heartbeat": {
         const t = ctx.currentTime;
@@ -12512,6 +12512,7 @@ useEffect(() => {
       if (c !== wd.lastCenter) { wd.lastCenter = c; play("tick"); }
     };
     const onDown = (e) => {
+      try { const ctx = getAudioContext(); if (ctx.state === "suspended") ctx.resume(); } catch (_) {}
       if (wd.anim) { cancelAnimationFrame(wd.anim); wd.anim = null; }
       wd.vel = 0;
       wd.lastCenter = Math.round(wd.pos);
