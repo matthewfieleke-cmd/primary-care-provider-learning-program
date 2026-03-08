@@ -1,6 +1,6 @@
 {
-  "name": "Spira Learn",
-  "short_name": "Spira Learn",
+  "name": "LearnHealth Hub",
+  "short_name": "LearnHealth Hub",
   "start_url": "./index.html",
   "scope": ".",
   "display": "standalone",
