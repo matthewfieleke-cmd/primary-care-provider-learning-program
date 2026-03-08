@@ -12571,7 +12571,7 @@ useEffect(() => {
   }, []);
   const isDesktopHome = !effectiveMobile && currentView === "home";
   const deskVh = !effectiveMobile ? window.innerHeight : 0;
-  const deskCatIconSize = Math.max(20, Math.min(44, Math.round(deskVh * 0.035)));
+  const deskCatIconSize = Math.max(20, Math.min(60, Math.round(deskVh * 0.05)));
   const styles = useMemo(() => ({
     app: {
       minHeight: "100vh",
@@ -12930,7 +12930,7 @@ useEffect(() => {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: isDesktopHome ? "center" : "flex-start"
+        justifyContent: "flex-start"
       },
       padding: isDesktopHome ? "clamp(6px, 1vh, 14px)" : "10px",
       transition: "transform 0.2s ease, box-shadow 0.2s ease",
@@ -12940,11 +12940,11 @@ useEffect(() => {
       display: "flex",
       justifyContent: "center",
       alignItems: "center",
-      height: effectiveMobile ? "34px" : isDesktopHome ? "clamp(32px, 5vh, 72px)" : "60px",
+      height: effectiveMobile ? "34px" : isDesktopHome ? "clamp(32px, 7vh, 96px)" : "60px",
       width: "100%"
     },
     categoryName: {
-      fontSize: effectiveMobile ? "11px" : isDesktopHome ? "clamp(10px, 1.4vh, 15px)" : "13px",
+      fontSize: effectiveMobile ? "11px" : isDesktopHome ? "clamp(11px, 1.8vh, 18px)" : "13px",
       fontWeight: "500",
       color: "#334155",
       minHeight: effectiveMobile ? "20px" : isDesktopHome ? "clamp(18px, 2.5vh, 32px)" : "28px",
@@ -13579,12 +13579,12 @@ useEffect(() => {
           onMouseEnter: (e) => e.currentTarget.style.transform = "scale(1.03)",
           onMouseLeave: (e) => e.currentTarget.style.transform = "scale(1)"
         },
-        /* @__PURE__ */ React.createElement("div", { style: styles.categoryIcon }, renderCategoryIcon(cat.icon, effectiveMobile ? 32 : deskCatIconSize)),
-        /* @__PURE__ */ React.createElement("div", { style: styles.categoryName }, cat.name),
+        /* @__PURE__ */ React.createElement("div", { style: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%" } },
+          /* @__PURE__ */ React.createElement("div", { style: styles.categoryIcon }, renderCategoryIcon(cat.icon, effectiveMobile ? 32 : deskCatIconSize)),
+          /* @__PURE__ */ React.createElement("div", { style: styles.categoryName }, cat.name)),
         /* @__PURE__ */ React.createElement("div", { style: {
           fontSize: isDesktopHome ? "clamp(9px, 1.2vh, 12px)" : "11px",
           color: "#64748b",
-          marginTop: "auto",
           paddingTop: effectiveMobile ? "6px" : isDesktopHome ? "clamp(4px, 0.6vh, 8px)" : "8px",
           width: "100%"
         } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: isDesktopHome ? "clamp(2px, 0.4vh, 4px)" : "4px", fontSize: effectiveMobile ? "10px" : isDesktopHome ? "clamp(9px, 1.2vh, 12px)" : "11px" } }, /* @__PURE__ */ React.createElement("span", null, catAnswered.answered, "/", catQuestions, " answered"), catAnswered.answered > 0 && /* @__PURE__ */ React.createElement("span", { style: {
