@@ -9992,9 +9992,10 @@ function PCPLearningApp() {
   const pearlVisitRef = useRef(initialPearlIdx);
   const [pearlIndex, setPearlIndex] = useState(initialPearlIdx);
   const pearlGridRef = useRef(null);
+  const minGridCols = Math.ceil((CATEGORIES.length + 1) / 3);
   const [pearlGridCols, setPearlGridCols] = useState(() => {
     const gridW = Math.min(window.innerWidth - 48, 1400) - 32;
-    return Math.max(1, Math.floor((gridW + 12) / (180 + 12)));
+    return Math.max(minGridCols, Math.floor((gridW + 12) / (180 + 12)));
   });
 
   useEffect(() => {
@@ -12316,7 +12317,7 @@ useEffect(() => {
     if (!pearlGridRef.current || effectiveMobile) return;
     const measure = () => {
       const w = pearlGridRef.current.offsetWidth;
-      const cols = Math.max(1, Math.floor((w + 12) / (180 + 12)));
+      const cols = Math.max(minGridCols, Math.floor((w + 12) / (180 + 12)));
       setPearlGridCols(cols);
     };
     measure();
@@ -12844,7 +12845,7 @@ useEffect(() => {
       gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
       gap: isDesktopHome ? "clamp(8px, 1vh, 14px)" : "12px",
       flex: isDesktopHome ? 1 : undefined,
-      gridAutoRows: isDesktopHome ? "1fr" : undefined,
+      gridAutoRows: isDesktopHome ? "minmax(0, 1fr)" : undefined,
       alignContent: isDesktopHome ? "stretch" : undefined
     },
     quickActionsCard: {
@@ -13546,7 +13547,7 @@ useEffect(() => {
         /* @__PURE__ */ React.createElement("p", { style: { marginTop: "8px", fontSize: effectiveMobile ? "13px": "13px", color: "#475569", lineHeight: 1.4 } }, highlightText(q.question.substring(0, 120) + (q.question.length > 120 ? "..." : ""), searchQuery))
       );
     }))),
-    /* @__PURE__ */ React.createElement("div", { style: { ...styles.card, ...(isDesktopHome ? { flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflowY: "auto", padding: "clamp(8px, 1.2vh, 16px)" } : {}) } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: effectiveMobile ? "12px" : isDesktopHome ? "clamp(6px, 1vh, 16px)" : "16px" } }, /* @__PURE__ */ React.createElement("h2", { style: { margin: 0, fontSize: effectiveMobile ? "18px" : isDesktopHome ? "clamp(15px, 2vh, 20px)" : "19px", color: "#1e293b" } }, "Study by Category"), !effectiveMobile && hasAnyProgress && /* @__PURE__ */ React.createElement("button", { style: { background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: "12px", fontWeight: "500", opacity: 0.7, transition: "opacity 0.15s ease", padding: "4px 8px" }, onClick: resetAllProgress, onMouseEnter: (e) => { e.currentTarget.style.opacity = "1"; }, onMouseLeave: (e) => { e.currentTarget.style.opacity = "0.7"; } }, "Reset All Progress")), effectiveMobile ? renderInfiniteWheel(CATEGORIES, catWheelPos, 100, (cat, idx, dist, absDist, rawIdx) => {
+    /* @__PURE__ */ React.createElement("div", { style: { ...styles.card, ...(isDesktopHome ? { flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden", padding: "clamp(8px, 1.2vh, 16px)" } : {}) } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: effectiveMobile ? "12px" : isDesktopHome ? "clamp(6px, 1vh, 16px)" : "16px" } }, /* @__PURE__ */ React.createElement("h2", { style: { margin: 0, fontSize: effectiveMobile ? "18px" : isDesktopHome ? "clamp(15px, 2vh, 20px)" : "19px", color: "#1e293b" } }, "Study by Category"), !effectiveMobile && hasAnyProgress && /* @__PURE__ */ React.createElement("button", { style: { background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: "12px", fontWeight: "500", opacity: 0.7, transition: "opacity 0.15s ease", padding: "4px 8px" }, onClick: resetAllProgress, onMouseEnter: (e) => { e.currentTarget.style.opacity = "1"; }, onMouseLeave: (e) => { e.currentTarget.style.opacity = "0.7"; } }, "Reset All Progress")), effectiveMobile ? renderInfiniteWheel(CATEGORIES, catWheelPos, 100, (cat, idx, dist, absDist, rawIdx) => {
       const catQuestions = QUESTIONS.filter((q) => q.categoryId === cat.id).length;
       const catAnswered = categoryAnsweredCounts[cat.id] || { answered: 0, correct: 0 };
       const answeredPercent = catQuestions > 0 ? Math.round(catAnswered.answered / catQuestions * 100) : 0;
@@ -13564,7 +13565,7 @@ useEffect(() => {
             catAnswered.answered > 0 && /* @__PURE__ */ React.createElement("span", { style: { color: correctPercent >= 80 ? "#16a34a" : correctPercent >= 60 ? "#d97706" : "#dc2626", fontWeight: "600" } }, correctPercent, "% \u2713")),
           /* @__PURE__ */ React.createElement("div", { style: styles.progressBar }, /* @__PURE__ */ React.createElement("div", { style: styles.progressFill(answeredPercent, cat.color) })))
       );
-    }, catHandlers, catContainerRef, 3) : /* @__PURE__ */ React.createElement("div", { ref: pearlGridRef, style: styles.categoryGrid }, CATEGORIES.map((cat) => {
+    }, catHandlers, catContainerRef, 3) : /* @__PURE__ */ React.createElement("div", { ref: pearlGridRef, style: { ...styles.categoryGrid, ...(isDesktopHome ? { gridTemplateColumns: `repeat(${pearlGridCols}, 1fr)` } : {}) } }, CATEGORIES.map((cat) => {
       const catProgress = progress.categoryProgress[cat.id];
       const catQuestions = QUESTIONS.filter((q) => q.categoryId === cat.id).length;
       const catAnswered = categoryAnsweredCounts[cat.id] || { answered: 0, correct: 0 };
