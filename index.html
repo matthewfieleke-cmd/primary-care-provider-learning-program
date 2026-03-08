@@ -9921,6 +9921,7 @@ function PCPLearningApp() {
   const REVIEW_INTERVALS_MS = [24 * 60 * 60 * 1e3, 3 * 24 * 60 * 60 * 1e3, 7 * 24 * 60 * 60 * 1e3];
   const EXPLANATION_MODE_KEY = "pcp-explanation-mode";
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [deskHeight, setDeskHeight] = useState(window.innerHeight);
   const [currentView, setCurrentView] = useState("home");
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [expandedSubcategoryId, setExpandedSubcategoryId] = useState(null);
@@ -10024,6 +10025,7 @@ useEffect(() => {
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
+      setDeskHeight(window.innerHeight);
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -12571,18 +12573,17 @@ useEffect(() => {
       }, els);
   }, []);
   const isDesktopHome = !effectiveMobile && currentView === "home";
-  const deskVh = !effectiveMobile ? window.innerHeight : 0;
-  const deskCatIconSize = Math.max(20, Math.min(60, Math.round(deskVh * 0.05)));
+  const deskCatIconSize = Math.max(20, Math.min(60, Math.round(deskHeight * 0.05)));
   const styles = useMemo(() => ({
     app: {
-      minHeight: "100vh",
-      height: isDesktopHome ? "100vh" : undefined,
+      minHeight: "100dvh",
+      height: isDesktopHome ? "100dvh" : undefined,
       background: effectiveMobile ? "#f1f5f9" : "linear-gradient(180deg, #f8fafc 0%, #eef2f7 55%, #e9edf4 100%)",
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
       color: "#1e293b",
       padding: effectiveMobile ? "12px 12px calc(20px + env(safe-area-inset-bottom, 0px))" : isDesktopHome ? "clamp(12px, 2vh, 24px)" : "24px",
       position: "relative",
-      overflow: "hidden",
+      overflow: isDesktopHome ? "hidden auto" : "hidden",
       display: (effectiveMobile || isDesktopHome) ? "flex" : undefined,
       flexDirection: (effectiveMobile || isDesktopHome) ? "column" : undefined
     },
@@ -13413,7 +13414,7 @@ useEffect(() => {
       borderRadius: "3px",
       transition: "width 0.5s ease"
     })
-  }), [currentView, effectiveMobile]);
+  }), [currentView, effectiveMobile, pearlSpan, pearlGridCols, deskHeight]);
   const quickActionItems = [
     { id: "qa3", icon: "\u{1F4DD}", label: "3 Random", meta: "Quick practice", color: "#475569", disabled: false, onClick: () => startQuiz(3) },
     { id: "qa10", icon: "\u{1F4DA}", label: "10 Random", meta: "Full session", color: "#334155", disabled: false, onClick: () => startQuiz(10) },
