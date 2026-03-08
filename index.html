@@ -9701,28 +9701,39 @@ for (const question of QUESTIONS) {
 const QUESTION_MAP = Object.fromEntries(QUESTIONS.map(q => [q.id, q]));
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx = null;
+try { audioCtx = new AudioContext(); } catch (_) {}
 const getAudioContext = () => {
   if (!audioCtx) {
-    audioCtx = new AudioContext();
+    try { audioCtx = new AudioContext(); } catch (_) {}
   }
   return audioCtx;
 };
-const primeAudio = () => {
-  try { const ctx = getAudioContext(); if (ctx.state === "suspended") ctx.resume(); } catch (_) {}
-  document.removeEventListener("touchstart", primeAudio, true);
-  document.removeEventListener("click", primeAudio, true);
+const unlockAudio = () => {
+  try {
+    if (!audioCtx) audioCtx = new AudioContext();
+    if (audioCtx.state !== "running") {
+      audioCtx.resume().then(() => {
+        const buf = audioCtx.createBuffer(1, 1, 22050);
+        const src = audioCtx.createBufferSource();
+        src.buffer = buf;
+        src.connect(audioCtx.destination);
+        src.start(0);
+      });
+    }
+    if (audioCtx.state === "running") {
+      ["touchstart","touchend","mousedown","click"].forEach(
+        evt => document.removeEventListener(evt, unlockAudio, true)
+      );
+    }
+  } catch (_) {}
 };
-document.addEventListener("touchstart", primeAudio, true);
-document.addEventListener("click", primeAudio, true);
+["touchstart","touchend","mousedown","click"].forEach(
+  evt => document.addEventListener(evt, unlockAudio, true)
+);
 const playSound = async (type) => {
   try {
     const ctx = getAudioContext();
-    if (ctx && ctx.state === "suspended") {
-      try {
-        await ctx.resume();
-      } catch (e) {
-      }
-    }
+    if (!ctx || ctx.state !== "running") return;
     const oscillator = ctx.createOscillator();
     const gainNode = ctx.createGain();
     oscillator.connect(gainNode);
