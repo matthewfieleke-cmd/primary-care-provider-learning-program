@@ -3,7 +3,7 @@
   "short_name": "LearnHealth Hub",
   "start_url": "./index.html",
   "scope": ".",
-  "display": "standalone",
+  "display": "fullscreen",
   "background_color": "#1e293b",
   "theme_color": "#1e293b",
   "description": "Clinical microlearning, quizzes, and rapid review for primary care providers.",
