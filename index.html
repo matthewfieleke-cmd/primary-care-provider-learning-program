@@ -9797,6 +9797,14 @@ const playSound = async (type) => {
         oscillator.start(ctx.currentTime);
         oscillator.stop(ctx.currentTime + 0.05);
         break;
+      case "tick":
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(1200, ctx.currentTime);
+        gainNode.gain.setValueAtTime(0.04, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.03);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.03);
+        break;
       case "heartbeat": {
         const t = ctx.currentTime;
         oscillator.type = "sine";
@@ -12498,9 +12506,15 @@ useEffect(() => {
   }, [progress.answeredQuestions]);
   const hasAnyProgress = answeredCount > 0;
   const makeWheelHandlers = useCallback((wd, setPos) => {
+    wd.lastCenter = Math.round(wd.pos);
+    const checkTick = () => {
+      const c = Math.round(wd.pos);
+      if (c !== wd.lastCenter) { wd.lastCenter = c; play("tick"); }
+    };
     const onDown = (e) => {
       if (wd.anim) { cancelAnimationFrame(wd.anim); wd.anim = null; }
       wd.vel = 0;
+      wd.lastCenter = Math.round(wd.pos);
       const cx = e.touches ? e.touches[0].clientX : e.clientX;
       const cw = e.currentTarget ? e.currentTarget.clientWidth : 375;
       wd.drag = { sx: cx, sp: wd.pos, lx: cx, lt: performance.now(), cw: cw };
@@ -12514,6 +12528,7 @@ useEffect(() => {
       const pxPerItem = wd.drag.cw * 0.28;
       wd.pos = wd.drag.sp - (cx - wd.drag.sx) / pxPerItem;
       setPos(wd.pos);
+      checkTick();
       const now = performance.now();
       const dt = now - wd.drag.lt;
       if (dt > 5) {
@@ -12539,9 +12554,11 @@ useEffect(() => {
         if (speed < 0.001 && Math.abs(target - wd.pos) < 0.002) {
           wd.pos = target;
           setPos(target);
+          checkTick();
           return;
         }
         setPos(wd.pos);
+        checkTick();
         wd.anim = requestAnimationFrame(tick);
       };
       wd.anim = requestAnimationFrame(tick);
