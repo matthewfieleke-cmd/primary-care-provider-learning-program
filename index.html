@@ -13289,9 +13289,9 @@ useEffect(() => {
     },
     gameTimer: {
       background: gameTimeLeft <= 10 ? "linear-gradient(135deg, #ef4444, #dc2626)": gameTimeLeft <= 60 ? "linear-gradient(135deg, #f59e0b, #d97706)": "linear-gradient(135deg, #475569, #334155)",
-      padding: effectiveMobile ? "6px 12px": "10px 20px",
+      padding: effectiveMobile ? "6px 12px": "12px 24px",
       borderRadius: "10px",
-      fontSize: effectiveMobile ? "13px": "16px",
+      fontSize: effectiveMobile ? "13px": "18px",
       fontWeight: "700",
       color: "white",
       boxShadow: "0 3px 14px rgba(0,0,0,0.18)",
@@ -13301,9 +13301,9 @@ useEffect(() => {
     },
     streakCounter: {
       background: "rgba(255, 255, 255, 0.98)",
-      padding: effectiveMobile ? "6px 12px": "10px 20px",
+      padding: effectiveMobile ? "6px 12px": "12px 24px",
       borderRadius: "10px",
-      fontSize: effectiveMobile ? "13px": "16px",
+      fontSize: effectiveMobile ? "13px": "18px",
       fontWeight: "600",
       color: getStreakStatus().color,
       boxShadow: "0 3px 12px rgba(0,0,0,0.1)",
@@ -13397,18 +13397,18 @@ useEffect(() => {
       boxShadow: "0 4px 20px rgba(245, 158, 11, 0.3)"
     },
     warningBanner: {
-      position: "absolute",
+      position: effectiveMobile ? "absolute" : "fixed",
       left: "50%",
-      top: "50%",
-      transform: "translate(-50%, -50%)",
+      top: effectiveMobile ? "50%" : "86px",
+      transform: effectiveMobile ? "translate(-50%, -50%)" : "translateX(-50%)",
       background: "linear-gradient(135deg, #f59e0b, #ef4444)",
-      padding: effectiveMobile ? "6px 12px": "10px 20px",
+      padding: effectiveMobile ? "6px 8px" : "10px 20px",
       borderRadius: "10px",
-      fontSize: effectiveMobile ? "13px": "16px",
+      fontSize: effectiveMobile ? "11px" : "16px",
       fontWeight: "700",
       color: "white",
-      zIndex: 1,
-      animation: "shake 0.5s ease-in-out",
+      zIndex: effectiveMobile ? 1 : 101,
+      animation: effectiveMobile ? "shakeMobile 0.5s ease-in-out" : "shakeDesktop 0.5s ease-in-out",
       boxShadow: "0 4px 20px rgba(245, 158, 11, 0.4)",
       border: "2px solid transparent",
       whiteSpace: "nowrap"
@@ -14191,10 +14191,15 @@ useEffect(() => {
           100% { transform: scale(1); opacity: 1; }
         }
         
-        @keyframes shake {
+        @keyframes shakeMobile {
           0%, 100% { transform: translate(-50%, -50%); }
           10%, 30%, 50%, 70%, 90% { transform: translate(calc(-50% - 5px), -50%); }
           20%, 40%, 60%, 80% { transform: translate(calc(-50% + 5px), -50%); }
+        }
+        @keyframes shakeDesktop {
+          0%, 100% { transform: translateX(-50%); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(calc(-50% - 5px)); }
+          20%, 40%, 60%, 80% { transform: translateX(calc(-50% + 5px)); }
         }
         
         * {
