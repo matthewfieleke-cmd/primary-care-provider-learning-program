@@ -9948,6 +9948,7 @@ function PCPLearningApp() {
   };
   const REVIEW_INTERVALS_MS = [24 * 60 * 60 * 1e3, 3 * 24 * 60 * 60 * 1e3, 7 * 24 * 60 * 60 * 1e3];
   const EXPLANATION_MODE_KEY = "pcp-explanation-mode";
+  const VOICE_PREF_KEY = "pcp-preferred-voice";
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [deskHeight, setDeskHeight] = useState(window.innerHeight);
   const [currentView, setCurrentView] = useState("home");
@@ -9989,6 +9990,10 @@ function PCPLearningApp() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [handsFreeMode, setHandsFreeMode] = useState(false);
   const [handsFreePhase, setHandsFreePhase] = useState("idle");
+  const [availableVoices, setAvailableVoices] = useState([]);
+  const [preferredVoiceURI, setPreferredVoiceURI] = useState(() => {
+    try { return window.localStorage.getItem(VOICE_PREF_KEY) || ""; } catch (e) { return ""; }
+  });
   const [isListening, setIsListening] = useState(false);
   const [lastTranscript, setLastTranscript] = useState("");
   const speechUtterRef = useRef(null);
@@ -10052,6 +10057,13 @@ useEffect(() => {
     } catch (e) {
     }
   }, [explanationMode]);
+  useEffect(() => {
+    cachedVoiceRef.current = null;
+    try {
+      if (preferredVoiceURI) window.localStorage.setItem(VOICE_PREF_KEY, preferredVoiceURI);
+      else window.localStorage.removeItem(VOICE_PREF_KEY);
+    } catch (e) {}
+  }, [preferredVoiceURI]);
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -10147,7 +10159,12 @@ useEffect(() => {
 
   useEffect(() => {
     if (!window.speechSynthesis) return;
-    const load = () => { voicesLoadedRef.current = true; };
+    const load = () => {
+      voicesLoadedRef.current = true;
+      cachedVoiceRef.current = null;
+      const voices = window.speechSynthesis.getVoices();
+      setAvailableVoices(voices.filter((v) => v.lang.startsWith("en")));
+    };
     window.speechSynthesis.addEventListener("voiceschanged", load);
     if (window.speechSynthesis.getVoices().length) load();
     return () => window.speechSynthesis.removeEventListener("voiceschanged", load);
@@ -10158,6 +10175,11 @@ useEffect(() => {
     const synth = window.speechSynthesis;
     const voices = synth.getVoices();
     if (!voices.length) return null;
+
+    if (preferredVoiceURI) {
+      const preferred = voices.find((v) => v.voiceURI === preferredVoiceURI);
+      if (preferred) { cachedVoiceRef.current = preferred; return preferred; }
+    }
 
     if (isIOSDevice.current) {
       const iosRanked = [
@@ -13853,6 +13875,19 @@ useEffect(() => {
         boxShadow: handsFreeMode ? "0 2px 8px rgba(220, 38, 38, 0.3)" : "0 2px 8px rgba(37, 99, 235, 0.3)"
       }
     }, handsFreeMode ? "\u23F9 Stop Hands-Free" : "\u{1F3A7} Hands-Free Mode")),
+    window.speechSynthesis && availableVoices.length > 0 && /* @__PURE__ */ React.createElement("select", {
+      value: preferredVoiceURI,
+      onChange: (e) => { setPreferredVoiceURI(e.target.value); },
+      style: {
+        padding: "6px 8px", borderRadius: "8px", fontSize: "12px",
+        border: "1px solid rgba(0,0,0,0.12)", background: "rgba(255,255,255,0.9)",
+        color: "#334155", cursor: "pointer", maxWidth: "160px",
+        appearance: "auto", WebkitAppearance: "menulist"
+      }
+    },
+      /* @__PURE__ */ React.createElement("option", { value: "" }, "Voice: Auto"),
+      availableVoices.map((v) => /* @__PURE__ */ React.createElement("option", { key: v.voiceURI, value: v.voiceURI }, v.name))
+    ),
     handsFreeMode && handsFreePhase === "listening" && !showExplanation && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: "8px", width: "100%", justifyContent: "center", marginTop: "4px" } },
       ["A", "B", "C", "D"].map((letter, idx) => /* @__PURE__ */ React.createElement("button", {
         key: letter,
