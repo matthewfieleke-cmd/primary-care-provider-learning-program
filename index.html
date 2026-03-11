@@ -10540,6 +10540,7 @@ useEffect(() => {
   const buildSpeechText = useCallback((text) => {
     let plain = String(text || "").replace(/\n+/g, ". ").replace(/\s{2,}/g, " ").replace(/---/g, "").trim();
     plain = plain.replace(/[â€¢â—â–ªâ–ºâ€“—]/g, ".").replace(/CORRECT:\s*([A-D])\)\s*/gi, "Correct answer, $1. ").replace(/KEY\s+LEARNING\s+POINTS?:?/gi, "Key learning points.").replace(/\.\s*\./g, ".").replace(/,\s*,/g, ",");
+    if (isOpenAIVoice()) return plain;
     return normalizeMedicalSpeechText(plain);
   }, [normalizeMedicalSpeechText]);
 
@@ -10865,11 +10866,16 @@ useEffect(() => {
     handsFreeRef.current.phase = "reading-options";
     const optionLines = shuffled.options.map((opt, i) => {
       const letter = String.fromCharCode(65 + i);
-      return `${letter}, ${opt.replace(/^[A-D]\)\s*/, "")}`;
+      const clean = opt.replace(/^[A-D]\)\s*/, "");
+      return isOpenAIVoice() ? `Option ${letter}: ${clean}` : `${letter}, ${clean}`;
     });
-    for (const line of optionLines) {
-      if (!handsFreeRef.current.active) return;
-      await speakAndWait(line);
+    if (isOpenAIVoice()) {
+      await speakAndWait("The answer choices are: " + optionLines.join(". ") + ".");
+    } else {
+      for (const line of optionLines) {
+        if (!handsFreeRef.current.active) return;
+        await speakAndWait(line);
+      }
     }
     if (!handsFreeRef.current.active) return;
     const preRec = initRecognition();
