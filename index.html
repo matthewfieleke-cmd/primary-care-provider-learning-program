@@ -9949,6 +9949,9 @@ function PCPLearningApp() {
   const REVIEW_INTERVALS_MS = [24 * 60 * 60 * 1e3, 3 * 24 * 60 * 60 * 1e3, 7 * 24 * 60 * 60 * 1e3];
   const EXPLANATION_MODE_KEY = "pcp-explanation-mode";
   const VOICE_PREF_KEY = "pcp-preferred-voice";
+  const OPENAI_KEY_KEY = "pcp-openai-tts-key";
+  const OPENAI_VOICES = ["alloy", "ash", "ballad", "coral", "echo", "fable", "nova", "onyx", "sage", "shimmer"];
+  const NOVELTY_VOICES = /^(Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Good News|Jester|Junior|Organ|Superstar|Trinoids|Whisper|Wobble|Zarvox)$/i;
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [deskHeight, setDeskHeight] = useState(window.innerHeight);
   const [currentView, setCurrentView] = useState("home");
@@ -9994,6 +9997,10 @@ function PCPLearningApp() {
   const [preferredVoiceURI, setPreferredVoiceURI] = useState(() => {
     try { return window.localStorage.getItem(VOICE_PREF_KEY) || ""; } catch (e) { return ""; }
   });
+  const [openaiKey, setOpenaiKey] = useState(() => {
+    try { return window.localStorage.getItem(OPENAI_KEY_KEY) || ""; } catch (e) { return ""; }
+  });
+  const [showKeyInput, setShowKeyInput] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [lastTranscript, setLastTranscript] = useState("");
   const speechUtterRef = useRef(null);
@@ -10007,6 +10014,8 @@ function PCPLearningApp() {
   const isSafariBrowser = useRef(/^((?!chrome|android).)*safari/i.test(navigator.userAgent));
   const isIOSDevice = useRef(/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
   const preferredVoiceURIRef = useRef((() => { try { return window.localStorage.getItem("pcp-preferred-voice") || ""; } catch(e) { return ""; } })());
+  const openaiKeyRef = useRef((() => { try { return window.localStorage.getItem(OPENAI_KEY_KEY) || ""; } catch(e) { return ""; } })());
+  const openaiAudioRef = useRef(null);
   const handleAnswerRef = useRef(null);
   const nextQuestionRef = useRef(null);
   const getShuffledOptionsRef = useRef(null);
@@ -10058,6 +10067,13 @@ useEffect(() => {
     } catch (e) {
     }
   }, [explanationMode]);
+  useEffect(() => {
+    openaiKeyRef.current = openaiKey;
+    try {
+      if (openaiKey) window.localStorage.setItem(OPENAI_KEY_KEY, openaiKey);
+      else window.localStorage.removeItem(OPENAI_KEY_KEY);
+    } catch (e) {}
+  }, [openaiKey]);
   useEffect(() => {
     preferredVoiceURIRef.current = preferredVoiceURI;
     cachedVoiceRef.current = null;
@@ -10228,11 +10244,43 @@ useEffect(() => {
     return fallback;
   };
 
+  const isOpenAIVoice = () => preferredVoiceURIRef.current.startsWith("openai:");
+  const getOpenAIVoiceName = () => preferredVoiceURIRef.current.replace("openai:", "");
+
   const stopSpeaking = useCallback(() => {
     if (ttsKeepAliveRef.current) { clearInterval(ttsKeepAliveRef.current); ttsKeepAliveRef.current = null; }
     window.speechSynthesis.cancel();
     speechUtterRef.current = null;
+    if (openaiAudioRef.current) {
+      openaiAudioRef.current.pause();
+      openaiAudioRef.current.src = "";
+      openaiAudioRef.current = null;
+    }
     setIsSpeaking(false);
+  }, []);
+
+  const playOpenAIAudio = useCallback((text) => {
+    return new Promise(async (resolve) => {
+      const key = openaiKeyRef.current;
+      if (!key) { resolve(false); return; }
+      try {
+        const resp = await fetch("https://api.openai.com/v1/audio/speech", {
+          method: "POST",
+          headers: { "Authorization": "Bearer " + key, "Content-Type": "application/json" },
+          body: JSON.stringify({ model: "tts-1", voice: getOpenAIVoiceName(), input: text, response_format: "mp3" })
+        });
+        if (!resp.ok) { resolve(false); return; }
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        openaiAudioRef.current = audio;
+        audio.onended = () => { URL.revokeObjectURL(url); openaiAudioRef.current = null; resolve(true); };
+        audio.onerror = () => { URL.revokeObjectURL(url); openaiAudioRef.current = null; resolve(false); };
+        audio.play().catch(() => { URL.revokeObjectURL(url); openaiAudioRef.current = null; resolve(false); });
+      } catch (e) {
+        resolve(false);
+      }
+    });
   }, []);
 
   const normalizeMedicalSpeechText = useCallback((text) => {
@@ -10505,9 +10553,16 @@ useEffect(() => {
   }, []);
 
   const readAloud = useCallback((text) => {
-    if (!text || !window.speechSynthesis) return;
+    if (!text) return;
     if (isSpeaking) { stopSpeaking(); return; }
 
+    if (isOpenAIVoice() && openaiKeyRef.current) {
+      setIsSpeaking(true);
+      playOpenAIAudio(buildSpeechText(text)).then(() => { setIsSpeaking(false); });
+      return;
+    }
+
+    if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(buildSpeechText(text));
     const voice = pickMaleVoice();
@@ -10531,12 +10586,13 @@ useEffect(() => {
       }
     }, 10000);
     window.speechSynthesis.speak(utter);
-  }, [isSpeaking, stopSpeaking, buildSpeechText]);
+  }, [isSpeaking, stopSpeaking, buildSpeechText, playOpenAIAudio]);
 
   useEffect(() => {
     return () => {
       window.speechSynthesis.cancel();
       if (ttsKeepAliveRef.current) { clearInterval(ttsKeepAliveRef.current); ttsKeepAliveRef.current = null; }
+      if (openaiAudioRef.current) { openaiAudioRef.current.pause(); openaiAudioRef.current = null; }
       if (wakeLockRef.current) { try { wakeLockRef.current.release(); } catch(e) {} wakeLockRef.current = null; }
     };
   }, []);
@@ -10583,6 +10639,9 @@ useEffect(() => {
   }, [buildSpeechText]);
 
   const speakSingleChunk = useCallback((chunk) => {
+    if (isOpenAIVoice() && openaiKeyRef.current) {
+      return playOpenAIAudio(chunk);
+    }
     return new Promise((resolve) => {
       const voice = pickMaleVoice();
       let resolved = false;
@@ -10635,10 +10694,17 @@ useEffect(() => {
       }, 8000);
       window.speechSynthesis.speak(utter);
     });
-  }, []);
+  }, [playOpenAIAudio]);
 
   const speakAndWait = useCallback(async (text) => {
-    if (!text || !window.speechSynthesis) return;
+    if (!text) return;
+    if (isOpenAIVoice() && openaiKeyRef.current) {
+      if (!handsFreeRef.current.active) return;
+      const built = buildSpeechText(text);
+      await playOpenAIAudio(built);
+      return;
+    }
+    if (!window.speechSynthesis) return;
     const chunks = splitIntoSpeechChunks(text);
     for (let i = 0; i < chunks.length; i++) {
       if (!handsFreeRef.current.active) return;
@@ -10647,7 +10713,7 @@ useEffect(() => {
         await new Promise(r => setTimeout(r, 30));
       }
     }
-  }, [splitIntoSpeechChunks, speakSingleChunk]);
+  }, [splitIntoSpeechChunks, speakSingleChunk, buildSpeechText, playOpenAIAudio]);
 
   const initRecognition = useCallback(() => {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -13878,18 +13944,55 @@ useEffect(() => {
         boxShadow: handsFreeMode ? "0 2px 8px rgba(220, 38, 38, 0.3)" : "0 2px 8px rgba(37, 99, 235, 0.3)"
       }
     }, handsFreeMode ? "\u23F9 Stop Hands-Free" : "\u{1F3A7} Hands-Free Mode")),
-    window.speechSynthesis && availableVoices.length > 0 && /* @__PURE__ */ React.createElement("select", {
+    /* @__PURE__ */ React.createElement("select", {
       value: preferredVoiceURI,
-      onChange: (e) => { setPreferredVoiceURI(e.target.value); },
+      onChange: (e) => {
+        const val = e.target.value;
+        setPreferredVoiceURI(val);
+        if (val.startsWith("openai:") && !openaiKey) setShowKeyInput(true);
+      },
       style: {
         padding: "6px 8px", borderRadius: "8px", fontSize: "12px",
         border: "1px solid rgba(0,0,0,0.12)", background: "rgba(255,255,255,0.9)",
-        color: "#334155", cursor: "pointer", maxWidth: "160px",
+        color: "#334155", cursor: "pointer", maxWidth: "170px",
         appearance: "auto", WebkitAppearance: "menulist"
       }
     },
       /* @__PURE__ */ React.createElement("option", { value: "" }, "Voice: Auto"),
-      availableVoices.map((v) => /* @__PURE__ */ React.createElement("option", { key: v.voiceURI, value: v.voiceURI }, v.name))
+      /* @__PURE__ */ React.createElement("optgroup", { label: "OpenAI (Natural)" },
+        OPENAI_VOICES.map((v) => /* @__PURE__ */ React.createElement("option", { key: "openai:" + v, value: "openai:" + v }, v[0].toUpperCase() + v.slice(1)))
+      ),
+      availableVoices.filter((v) => !NOVELTY_VOICES.test(v.name)).length > 0 && /* @__PURE__ */ React.createElement("optgroup", { label: "Device" },
+        availableVoices.filter((v) => !NOVELTY_VOICES.test(v.name)).map((v) => /* @__PURE__ */ React.createElement("option", { key: v.voiceURI, value: v.voiceURI }, v.name))
+      )
+    ),
+    preferredVoiceURI.startsWith("openai:") && /* @__PURE__ */ React.createElement("div", { style: {
+      display: "flex", alignItems: "center", gap: "6px", width: "100%"
+    } },
+      !openaiKey || showKeyInput ? /* @__PURE__ */ React.createElement(React.Fragment, null,
+        /* @__PURE__ */ React.createElement("input", {
+          type: "password",
+          placeholder: "Paste OpenAI API key",
+          value: openaiKey,
+          onChange: (e) => setOpenaiKey(e.target.value),
+          style: {
+            flex: 1, padding: "6px 8px", borderRadius: "8px", fontSize: "12px",
+            border: "1px solid rgba(0,0,0,0.15)", background: "white", color: "#334155",
+            minWidth: 0
+          }
+        }),
+        openaiKey && /* @__PURE__ */ React.createElement("button", {
+          onClick: () => setShowKeyInput(false),
+          style: {
+            padding: "4px 10px", borderRadius: "6px", fontSize: "11px", fontWeight: 600,
+            border: "1px solid rgba(16,185,129,0.3)", background: "rgba(16,185,129,0.1)",
+            color: "#059669", cursor: "pointer"
+          }
+        }, "Save")
+      ) : /* @__PURE__ */ React.createElement("span", {
+        onClick: () => setShowKeyInput(true),
+        style: { fontSize: "11px", color: "#059669", cursor: "pointer" }
+      }, "Key saved")
     ),
     handsFreeMode && handsFreePhase === "listening" && !showExplanation && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: "8px", width: "100%", justifyContent: "center", marginTop: "4px" } },
       ["A", "B", "C", "D"].map((letter, idx) => /* @__PURE__ */ React.createElement("button", {
