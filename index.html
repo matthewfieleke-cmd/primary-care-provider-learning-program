@@ -10000,6 +10000,7 @@ function PCPLearningApp() {
   const hfAnswerRef = useRef(null);
   const getExplanationTextRef = useRef(null);
   const isSafariBrowser = useRef(/^((?!chrome|android).)*safari/i.test(navigator.userAgent));
+  const isIOSDevice = useRef(/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
   const handleAnswerRef = useRef(null);
   const nextQuestionRef = useRef(null);
   const getShuffledOptionsRef = useRef(null);
@@ -10157,6 +10158,20 @@ useEffect(() => {
     const synth = window.speechSynthesis;
     const voices = synth.getVoices();
     if (!voices.length) return null;
+
+    if (isIOSDevice.current) {
+      const iosRanked = [
+        (v) => v.lang.startsWith("en") && /premium/i.test(v.name),
+        (v) => v.lang.startsWith("en") && /enhanced/i.test(v.name),
+        (v) => v.lang.startsWith("en") && /premium|enhanced/i.test(v.voiceURI || ""),
+        (v) => v.lang.startsWith("en") && v.default,
+      ];
+      for (const test of iosRanked) {
+        const match = voices.find(test);
+        if (match) { cachedVoiceRef.current = match; return match; }
+      }
+      return null;
+    }
 
     const femaleNames = /female|woman|fiona|kate|serena|moira|tessa|samantha|victoria|zoe|susan|karen|allison|ava|nicky|siri.*female/i;
     const ranked = [
