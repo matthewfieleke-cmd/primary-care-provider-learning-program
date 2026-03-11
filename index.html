@@ -10016,6 +10016,8 @@ function PCPLearningApp() {
   const preferredVoiceURIRef = useRef((() => { try { return window.localStorage.getItem("pcp-preferred-voice") || ""; } catch(e) { return ""; } })());
   const openaiKeyRef = useRef((() => { try { return window.localStorage.getItem(OPENAI_KEY_KEY) || ""; } catch(e) { return ""; } })());
   const openaiAudioRef = useRef(null);
+  const audioCtxRef = useRef(null);
+  const audioSourceRef = useRef(null);
   const handleAnswerRef = useRef(null);
   const nextQuestionRef = useRef(null);
   const getShuffledOptionsRef = useRef(null);
@@ -10247,10 +10249,24 @@ useEffect(() => {
   const isOpenAIVoice = () => preferredVoiceURIRef.current.startsWith("openai:");
   const getOpenAIVoiceName = () => preferredVoiceURIRef.current.replace("openai:", "");
 
+  const ensureAudioContext = () => {
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtxRef.current.state === "suspended") {
+      audioCtxRef.current.resume();
+    }
+    return audioCtxRef.current;
+  };
+
   const stopSpeaking = useCallback(() => {
     if (ttsKeepAliveRef.current) { clearInterval(ttsKeepAliveRef.current); ttsKeepAliveRef.current = null; }
     window.speechSynthesis.cancel();
     speechUtterRef.current = null;
+    if (audioSourceRef.current) {
+      try { audioSourceRef.current.stop(); } catch(e) {}
+      audioSourceRef.current = null;
+    }
     if (openaiAudioRef.current) {
       openaiAudioRef.current.pause();
       openaiAudioRef.current.src = "";
@@ -10263,6 +10279,8 @@ useEffect(() => {
     return new Promise(async (resolve) => {
       const key = openaiKeyRef.current;
       if (!key) { resolve(false); return; }
+      const ctx = audioCtxRef.current;
+      if (!ctx) { resolve(false); return; }
       try {
         const resp = await fetch("https://api.openai.com/v1/audio/speech", {
           method: "POST",
@@ -10270,14 +10288,16 @@ useEffect(() => {
           body: JSON.stringify({ model: "tts-1", voice: getOpenAIVoiceName(), input: text, response_format: "mp3" })
         });
         if (!resp.ok) { resolve(false); return; }
-        const blob = await resp.blob();
-        const url = URL.createObjectURL(blob);
-        const audio = new Audio(url);
-        openaiAudioRef.current = audio;
-        audio.onended = () => { URL.revokeObjectURL(url); openaiAudioRef.current = null; resolve(true); };
-        audio.onerror = () => { URL.revokeObjectURL(url); openaiAudioRef.current = null; resolve(false); };
-        audio.play().catch(() => { URL.revokeObjectURL(url); openaiAudioRef.current = null; resolve(false); });
+        const arrayBuf = await resp.arrayBuffer();
+        const audioBuf = await ctx.decodeAudioData(arrayBuf);
+        const source = ctx.createBufferSource();
+        source.buffer = audioBuf;
+        source.connect(ctx.destination);
+        audioSourceRef.current = source;
+        source.onended = () => { audioSourceRef.current = null; resolve(true); };
+        source.start();
       } catch (e) {
+        audioSourceRef.current = null;
         resolve(false);
       }
     });
@@ -10555,6 +10575,7 @@ useEffect(() => {
   const readAloud = useCallback((text) => {
     if (!text) return;
     if (isSpeaking) { stopSpeaking(); return; }
+    ensureAudioContext();
 
     if (isOpenAIVoice() && openaiKeyRef.current) {
       setIsSpeaking(true);
@@ -10592,7 +10613,9 @@ useEffect(() => {
     return () => {
       window.speechSynthesis.cancel();
       if (ttsKeepAliveRef.current) { clearInterval(ttsKeepAliveRef.current); ttsKeepAliveRef.current = null; }
+      if (audioSourceRef.current) { try { audioSourceRef.current.stop(); } catch(e) {} audioSourceRef.current = null; }
       if (openaiAudioRef.current) { openaiAudioRef.current.pause(); openaiAudioRef.current = null; }
+      if (audioCtxRef.current) { try { audioCtxRef.current.close(); } catch(e) {} audioCtxRef.current = null; }
       if (wakeLockRef.current) { try { wakeLockRef.current.release(); } catch(e) {} wakeLockRef.current = null; }
     };
   }, []);
@@ -10897,6 +10920,7 @@ useEffect(() => {
   }, [speakAndWait, listenForAnswer, initRecognition]);
 
   const startHandsFree = useCallback(async () => {
+    ensureAudioContext();
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) {
       alert("Your browser does not support speech recognition. Please use Chrome, Edge, or Safari 14.5+.");
