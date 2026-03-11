@@ -10006,6 +10006,7 @@ function PCPLearningApp() {
   const getExplanationTextRef = useRef(null);
   const isSafariBrowser = useRef(/^((?!chrome|android).)*safari/i.test(navigator.userAgent));
   const isIOSDevice = useRef(/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+  const preferredVoiceURIRef = useRef((() => { try { return window.localStorage.getItem("pcp-preferred-voice") || ""; } catch(e) { return ""; } })());
   const handleAnswerRef = useRef(null);
   const nextQuestionRef = useRef(null);
   const getShuffledOptionsRef = useRef(null);
@@ -10058,6 +10059,7 @@ useEffect(() => {
     }
   }, [explanationMode]);
   useEffect(() => {
+    preferredVoiceURIRef.current = preferredVoiceURI;
     cachedVoiceRef.current = null;
     try {
       if (preferredVoiceURI) window.localStorage.setItem(VOICE_PREF_KEY, preferredVoiceURI);
@@ -10163,7 +10165,8 @@ useEffect(() => {
       voicesLoadedRef.current = true;
       cachedVoiceRef.current = null;
       const voices = window.speechSynthesis.getVoices();
-      setAvailableVoices(voices.filter((v) => v.lang.startsWith("en")));
+      const enVoices = voices.filter((v) => v.lang.startsWith("en"));
+      setAvailableVoices(enVoices.length > 0 ? enVoices : voices);
     };
     window.speechSynthesis.addEventListener("voiceschanged", load);
     if (window.speechSynthesis.getVoices().length) load();
@@ -10176,8 +10179,8 @@ useEffect(() => {
     const voices = synth.getVoices();
     if (!voices.length) return null;
 
-    if (preferredVoiceURI) {
-      const preferred = voices.find((v) => v.voiceURI === preferredVoiceURI);
+    if (preferredVoiceURIRef.current) {
+      const preferred = voices.find((v) => v.voiceURI === preferredVoiceURIRef.current);
       if (preferred) { cachedVoiceRef.current = preferred; return preferred; }
     }
 
