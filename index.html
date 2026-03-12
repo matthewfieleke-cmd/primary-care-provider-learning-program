@@ -248,6 +248,7 @@ const CATEGORIES = [
     { id: "hip", name: "Hip" },
     { id: "handWristElbow", name: "Hand / Wrist / Elbow" },
     { id: "shoulder", name: "Shoulder" },
+    { id: "hernias", name: "Hernias" },
     { id: "misc", name: "General / Misc" }
   ] },
   { id: 8, name: "Infectious Disease", icon: "virus", color: "#0F766E" },
@@ -316,7 +317,8 @@ const MSK_SUBCAT = {
   481:"misc",482:"shoulder",483:"hip",484:"misc",485:"handWristElbow",486:"knee",487:"misc",
   488:"spine",489:"shoulder",490:"misc",491:"knee",492:"misc",493:"spine",494:"misc",
   495:"footAnkle",496:"shoulder",497:"handWristElbow",498:"knee",499:"misc",500:"knee",
-  501:"spine",502:"handWristElbow",503:"handWristElbow",538:"hip",580:"misc",692:"footAnkle",693:"footAnkle",694:"footAnkle",695:"footAnkle",696:"footAnkle",697:"footAnkle",698:"footAnkle"
+  501:"spine",502:"handWristElbow",503:"handWristElbow",538:"hip",580:"misc",692:"footAnkle",693:"footAnkle",694:"footAnkle",695:"footAnkle",696:"footAnkle",697:"footAnkle",698:"footAnkle",
+  703:"hernias",704:"hernias",705:"hernias",706:"hernias",707:"hernias",708:"hernias"
 };
 const CV_SUBCAT = {
   7:"athero",30:"athero",53:"athero",119:"athero",174:"athero",194:"athero",228:"athero",
@@ -9670,6 +9672,132 @@ const QUESTIONS = [
     "correctAnswer": 0,
     "explanation": "CORRECT: A (Peritonsillar abscess).\n\nPATHOPHYSIOLOGY:\nPeritonsillar abscess usually develops as a complication of acute tonsillitis or progression from peritonsillar cellulitis into the tissue adjacent to the tonsillar capsule. Pus accumulates in the peritonsillar space and creates a localized mass effect on the soft palate and tonsillar pillars. This explains the characteristic unilateral bulge and displacement of the uvula away from the affected side. Local inflammation also irritates surrounding musculature, contributing to trismus and severe odynophagia. If untreated, the infection can worsen dehydration, compromise the airway, or extend into deeper neck spaces.\n\nCLINICAL MANIFESTATIONS:\nThe classic patient is an older child, adolescent, or young adult with severe unilateral sore throat, fever, odynophagia, drooling, and a muffled \"hot potato\" voice. Ipsilateral referred otalgia is common. Examination typically shows trismus, asymmetric peritonsillar swelling, palatal fullness, and uvular deviation away from the involved side. These findings help distinguish peritonsillar abscess from epiglottitis, which is more supraglottic and posture-dependent, and from retropharyngeal abscess, which more often produces neck stiffness, torticollis, or posterior pharyngeal findings rather than focal peritonsillar asymmetry.\n\nDIAGNOSIS:\nDiagnosis is often clinical when the hallmark features cluster together: unilateral throat pain, trismus, muffled voice, and uvular deviation. A careful oropharyngeal examination is usually sufficient when the airway is stable and the examination is straightforward. If the findings are equivocal, or if deep neck extension is a concern, ultrasound or contrast-enhanced CT may help differentiate abscess from cellulitis and from other deep neck infections. Needle aspiration can also confirm the diagnosis because return of pus establishes that a true abscess, rather than cellulitis alone, is present.\n\nMANAGEMENT:\nStandard treatment is drainage plus antibiotics, along with analgesia and hydration. Needle aspiration or incision and drainage are commonly used, and many stable patients can be managed as outpatients if they can tolerate oral intake. Antibiotic therapy should cover the typical organisms associated with tonsillar and oral flora. Corticosteroids are sometimes used to reduce edema and pain and to accelerate symptomatic improvement. Admission is appropriate for airway concern, dehydration, inability to take oral medications, toxicity, or treatment failure. Tonsillectomy is reserved for selected cases, such as recurrence or persistent tonsillar disease.\n\nKEY POINTS:\nPeritonsillar abscess presents with unilateral throat pain, trismus, muffled voice, and uvular deviation in an adolescent or young adult. It is a complication of tonsillitis. Diagnosis is clinical; needle aspiration confirms a true abscess. Treatment is drainage plus antibiotics, with admission for airway compromise or inability to tolerate oral intake.",
     "bulletExplanation": "- CORRECT: A (Peritonsillar abscess).\n- Unilateral peritonsillar swelling, trismus, muffled voice, referred otalgia, and uvular deviation away from the affected side are the hallmark findings.\n- Diagnosis is primarily clinical; needle aspiration or CT can confirm when findings are equivocal.\n- Treatment is drainage (needle aspiration or incision and drainage) plus antibiotics; admit for airway concern or inability to tolerate oral intake."
+  },
+  {
+    "id": 703,
+    "categoryId": 7,
+    "question": "A 65-year-old male presents to the clinic reporting a bulge in his right groin that he first noticed three months ago. He states the bulge occasionally extends down into his scrotum and becomes more prominent when he is working in his garden or lifting heavy bags of soil. The mass is painless but causes a dull, dragging sensation by the end of the day. It disappears entirely when he lies down to sleep. Physical examination is performed with the patient standing. The examiner invaginates the loose skin of the right scrotum with the index finger, advancing it to the superficial inguinal ring. When the patient is instructed to cough, a distinct mass is felt striking the very tip of the examiner's finger.\n\nWhich of the following best describes the anatomic etiology of this patient's condition?",
+    "questionImages": [
+      {
+        "src": "assets/hernia-anatomy.png",
+        "alt": "Anatomy diagram of groin hernias showing direct, indirect, and femoral pathways relative to the inferior epigastric vessels and inguinal canal",
+        "caption": "Groin hernia anatomy: indirect hernia passes through the deep inguinal ring lateral to the inferior epigastric vessels."
+      }
+    ],
+    "options": [
+      "A) Protrusion of abdominal contents through the transversalis fascia, medial to the inferior epigastric vessels.",
+      "B) Protrusion of abdominal contents through the deep inguinal ring, lateral to the inferior epigastric vessels.",
+      "C) Protrusion of abdominal contents through the femoral ring, inferior to the inguinal ligament.",
+      "D) Protrusion of abdominal contents through the obturator canal, compressed against the obturator nerve."
+    ],
+    "correctAnswer": 1,
+    "explanation": "CORRECT: B.\n\nPATHOPHYSIOLOGY:\nIndirect inguinal hernias occur due to the failure of the processus vaginalis to obliterate during fetal development, creating a congenital defect. This leaves a persistent patent tubular tract extending from the peritoneal cavity down into the scrotum. Abdominal contents, such as omentum or bowel, herniate through the deep (internal) inguinal ring, which is anatomically located lateral to the inferior epigastric vessels. The hernia sac follows the spermatic cord within the inguinal canal and exits via the superficial (external) inguinal ring. Increased intra-abdominal pressure from heavy lifting or chronic cough exacerbates this protrusion over time.\n\nCLINICAL MANIFESTATIONS:\nPatients typically present with an intermittent, palpable bulge in the groin that may extend down into the scrotum or labia majora. The swelling characteristically enlarges with increased intra-abdominal pressure, such as during coughing, straining, or standing, and often spontaneously reduces in the supine position. Symptoms range from completely asymptomatic to a dull, dragging discomfort or heavy sensation in the lower abdomen. If the hernia becomes incarcerated, the bulge cannot be reduced, leading to persistent pain. Strangulation manifests with acute, severe localized pain, overlying skin erythema, and signs of mechanical bowel obstruction like nausea and vomiting.\n\nDIAGNOSIS:\nDiagnosis is primarily clinical, relying on a meticulous physical examination. With the patient standing, visual inspection may reveal an obvious groin asymmetry. Palpation involves invaginating the loose scrotal skin with the index finger, advancing it to the superficial inguinal ring, and instructing the patient to perform a Valsalva maneuver or cough. An indirect hernia is typically felt striking the tip of the examiner's finger, whereas a direct hernia strikes the pad. If the clinical diagnosis remains equivocal, especially in obese patients, dynamic ultrasound or computed tomography (CT) of the groin provides definitive anatomical visualization.\n\nMANAGEMENT:\nManagement is largely dictated by the patient's clinical symptoms and the hernia's reducibility. Asymptomatic or minimally symptomatic reducible hernias in adult males may be safely managed with watchful waiting, as the absolute risk of acute strangulation is relatively low. However, symptomatic hernias warrant elective surgical repair to alleviate discomfort and prevent future incarceration. Tension-free mesh hernioplasty, performed via open (Lichtenstein) or minimally invasive (laparoscopic) approaches, represents the current standard of care. Emergent surgical intervention is absolutely mandated for incarcerated hernias demonstrating clinical signs of strangulation to prevent ischemic bowel necrosis and subsequent systemic sepsis.",
+    "bulletExplanation": "- CORRECT: B.\n- This presentation is an indirect inguinal hernia: contents protrude through the deep inguinal ring lateral to the inferior epigastric vessels and can track into the scrotum.\n- Exam clue: indirect hernia impulse is felt at the fingertip during invagination exam; direct hernia is felt against the finger pad.\n- Manage reducible minimally symptomatic hernias with watchful waiting, but symptomatic or complicated hernias need surgical repair (urgent if strangulated)."
+  },
+  {
+    "id": 704,
+    "categoryId": 7,
+    "question": "A 68-year-old female presents with acute abdominal pain, nausea, and a tender bulge in her right groin. Physical examination reveals a non-reducible mass situated inferior to the inguinal ligament and medial to the femoral vein. Which of the following accurately contrasts the anatomical pathway of her current pathology with that of a direct inguinal hernia?",
+    "questionImages": [
+      {
+        "src": "assets/femoral-hernia.png",
+        "alt": "Femoral hernia anatomy showing bowel protrusion below the inguinal ligament and near femoral vessels",
+        "caption": "Femoral hernia: hernia sac traverses the femoral ring inferior to the inguinal ligament."
+      }
+    ],
+    "options": [
+      "A) Her hernia protrudes medial to the inferior epigastric vessels, whereas a direct hernia protrudes lateral to them.",
+      "B) Her hernia sac passes through Hesselbach's triangle, whereas a direct hernia passes through the femoral ring.",
+      "C) Her hernia defect is bordered medially by the lacunar ligament, whereas a direct hernia defect is bordered laterally by the inferior epigastric vessels.",
+      "D) Her hernia passes anterior to the inguinal ligament, whereas a direct hernia passes posterior to the inguinal ligament."
+    ],
+    "correctAnswer": 2,
+    "explanation": "CORRECT: C.\n\nPATHOPHYSIOLOGY:\nFemoral hernias arise when abdominal viscera traverse the femoral ring, a narrow aperture normally containing lymphatic vessels, situated inferior to the inguinal ligament. Its rigid borders, the lacunar ligament medially, femoral vein laterally, inguinal ligament anteriorly, and Cooper's ligament posteriorly, create a high-pressure bottleneck. Conversely, direct inguinal hernias result from acquired weakness in the transversalis fascia forming the posterior floor of Hesselbach's triangle. They protrude directly outward, superior to the inguinal ligament and medial to the inferior epigastric vessels, typically induced by chronic increases in intra-abdominal pressure over a lifetime.\n\nCLINICAL MANIFESTATIONS:\nBoth hernia variants initially manifest as a groin bulge, though their clinical trajectories differ significantly due to anatomical constraints. Direct inguinal hernias usually produce a reducible, diffuse bulging that rarely incarcerates due to the broad, compliant fascial defect. Patients note dull heaviness upon straining. In stark contrast, femoral hernias present as a discrete, globular mass inferior to the inguinal crease. Due to the unyielding margins of the femoral ring, they carry an exceptionally high risk of incarceration and strangulation, frequently presenting acutely with severe local pain, overlying erythema, and mechanical bowel obstruction.\n\nDIAGNOSIS:\nAccurate clinical differentiation hinges on precise identification of anatomical landmarks during the physical examination. A mass located distinctly below the inguinal ligament and medial to the palpable femoral artery pulsation reliably indicates a femoral hernia. A bulge positioned above the inguinal ligament and medial to the deep inguinal ring signifies a direct inguinal hernia. However, clinical exam alone has limitations, particularly in females or obese patients. When physical findings are ambiguous or an acute surgical complication like strangulation is suspected, a contrast-enhanced computed tomography (CT) scan is the gold standard diagnostic modality.\n\nMANAGEMENT:\nThe rigid, narrow anatomy of the femoral canal dictates aggressive management. Because the probability of acute strangulation is exceptionally high, all diagnosed femoral hernias mandate prompt elective surgical repair, typically utilizing a mesh-based preperitoneal approach to obliterate the defect. Conversely, asymptomatic direct inguinal hernias have a broad neck and a low risk of complications, making watchful waiting a safe, evidence-based initial strategy. If a direct hernia becomes symptomatic, elective open or laparoscopic tension-free mesh repair is indicated. Any strangulated hernia, regardless of specific type, requires immediate emergency surgery to salvage ischemic bowel.",
+    "bulletExplanation": "- CORRECT: C.\n- Femoral hernia passes through the femoral ring (below inguinal ligament) where the medial border is the lacunar ligament and the lateral border is the femoral vein.\n- Direct inguinal hernia protrudes through weakened transversalis fascia in Hesselbach's triangle, medial to inferior epigastric vessels (which form its lateral boundary).\n- Femoral hernias have a high incarceration/strangulation risk and generally warrant prompt surgical repair."
+  },
+  {
+    "id": 705,
+    "categoryId": 7,
+    "question": "A 58-year-old obese male (BMI 36) presents to the primary care clinic to evaluate a painless abdominal bulge he has noticed developing over the past four years. He denies any nausea, vomiting, or changes in bowel habits. On physical examination, with the patient lying supine, the clinician instructs him to elevate his head and shoulders off the examination table. A diffuse, non-tender, longitudinal ridge becomes visible extending from the xiphoid process down to the umbilicus. There is no palpable fascial ring. Which of the following statements most accurately describes the etiology or clinical nature of this patient's anatomical presentation?",
+    "questionImages": [
+      {
+        "src": "assets/diastasis-recti.png",
+        "alt": "Midline abdominal ridge consistent with rectus diastasis on partial sit-up maneuver",
+        "caption": "Rectus diastasis appears as a diffuse longitudinal midline ridge without a discrete fascial defect."
+      }
+    ],
+    "options": [
+      "A) It represents a true fascial defect of the anterior rectus sheath requiring elective mesh herniorrhaphy.",
+      "B) It is characterized by an attenuation of the linea alba without a discrete fascial defect, presenting zero risk of bowel strangulation.",
+      "C) The midline protrusion is primarily caused by preperitoneal fat incarcerating through a defect in the transversalis fascia.",
+      "D) The structural anomaly is defined by the lateral displacement of the semilunar lines driven by subcutaneous adiposity."
+    ],
+    "correctAnswer": 1,
+    "explanation": "CORRECT: B.\n\nPATHOPHYSIOLOGY:\nRectus abdominis diastasis in obese middle-aged males stems from chronic, insidious elevation in intra-abdominal pressure, largely driven by accumulation of visceral adipose tissue. This prolonged mechanical stress induces progressive stretching, thinning, and widening of the linea alba, the central aponeurotic confluence of bilateral abdominal wall musculature. Unlike a true ventral hernia, there is no fascial disruption or discrete defect. The structural integrity of the aponeurosis remains intact, albeit attenuated, resulting in lateral displacement of the rectus muscle bellies and a compromised abdominal wall force vector.\n\nCLINICAL MANIFESTATIONS:\nThe hallmark manifestation is a diffuse, longitudinal midline protrusion extending between the xiphoid process and umbilicus. In obese males, this bulge becomes more visible when the patient actively increases intra-abdominal pressure, such as performing a partial sit-up from a supine position. The condition is typically asymptomatic, lacking the localized tenderness or acute pain characteristic of incarcerated hernia. While visceral adiposity often obscures the ridge while standing, the structural laxity can contribute to generalized core weakness, altered truncal biomechanics, and chronic mechanical low back discomfort due to compromised anterior support.\n\nDIAGNOSIS:\nDiagnosis is established through targeted dynamic physical examination. With the patient supine, the clinician palpates the abdominal midline while instructing the patient to raise head and shoulders against gravity. A measurable separation of the medial rectus edges exceeding 2 cm supports rectus diastasis. In obese patients where thick subcutaneous adipose tissue reduces tactile sensitivity, dynamic abdominal wall ultrasound provides objective inter-rectus distance measurement and helps rule out concurrent true ventral or epigastric hernias masked by body habitus.\n\nMANAGEMENT:\nManagement for acquired rectus diastasis in obese male patients is primarily non-operative, prioritizing comprehensive lifestyle modification. The cornerstone is weight loss targeting visceral adiposity to reduce chronic intra-abdominal pressure, coupled with physical therapy emphasizing transverse abdominis activation and core stabilization. Because the linea alba remains contiguous, there is no risk of visceral incarceration, and prophylactic hernia surgery is not indicated. Surgical plication is reserved for select cases with substantial, function-limiting core instability refractory to conservative therapy or when performed concurrently with other abdominal procedures.",
+    "bulletExplanation": "- CORRECT: B.\n- Rectus diastasis is widening/thinning of the linea alba without a true fascial defect, so it is not a true hernia and does not carry bowel strangulation risk.\n- Exam clue is a diffuse midline ridge on head-raise/sit-up maneuver rather than a focal reducible defect with a palpable ring.\n- First-line management is non-operative: weight reduction plus core-stabilization therapy; surgery is reserved for select refractory functional cases."
+  },
+  {
+    "id": 706,
+    "categoryId": 7,
+    "question": "A 52-year-old female with a BMI of 38 and a history of well-controlled type 2 diabetes presents with a painful bulge directly at her umbilicus. The mass is 4 cm in diameter, non-reducible, and associated with intermittent nausea, though she continues to pass flatus. Examination reveals a tender, firm mass protruding exactly through the umbilical ring. Which of the following pathophysiological mechanisms or anatomical features most accurately characterizes her condition?",
+    "questionImages": [
+      {
+        "src": "assets/umbilical-hernia.png",
+        "alt": "Umbilical hernia anatomy with bowel protruding through the umbilical ring",
+        "caption": "Umbilical hernia: acquired fascial defect at the umbilical ring allows protrusion of intra-abdominal contents."
+      }
+    ],
+    "options": [
+      "A) It represents a congenital failure of the processus vaginalis to obliterate, exacerbated by chronic intra-abdominal hypertension.",
+      "B) The defect is located in the decussating fibers of the linea alba, strictly superior to the umbilicus.",
+      "C) It constitutes an acquired fascial defect through the fibromuscular umbilical ring, driven by chronically elevated intra-abdominal pressure.",
+      "D) It involves the herniation of preperitoneal fat through the neurovascular foramina of the anterior rectus sheath."
+    ],
+    "correctAnswer": 2,
+    "explanation": "CORRECT: C.\n\nPATHOPHYSIOLOGY:\nAdult umbilical hernias are primarily acquired defects, distinct from the congenital failure of umbilical ring closure seen in pediatric populations. In adults, the pathology stems from gradual attenuation of cicatricial tissue within the fibromuscular umbilical ring. This degradation is precipitated by chronic elevations in intra-abdominal pressure, commonly driven by central obesity, multiparity, or ascites. Persistent mechanical stress weakens the decussating aponeurotic fibers of the linea alba directly at the umbilical stalk, culminating in a discrete fascial breach that allows intra-abdominal viscera or preperitoneal adipose tissue to protrude into the subcutaneous space.\n\nCLINICAL MANIFESTATIONS:\nPatients typically present with a localized, often progressively enlarging mass protruding directly through the umbilicus. Symptoms exist on a spectrum, ranging from asymptomatic bulges to severe localized pain. Due to the rigid and narrow fibrotic margins of the umbilical ring, these hernias possess a relatively high propensity for incarceration and subsequent strangulation. Patients may endorse episodic sharp periumbilical pain correlating with transient incarceration of omentum or bowel loops. Advanced cases with persistent severe pain, overlying ischemic skin changes, or frank bowel obstruction signify acute strangulation.\n\nDIAGNOSIS:\nDiagnosis of umbilical hernia is fundamentally clinical, achieved through focused physical examination. With the patient supine, the clinician may palpate a distinct fascial defect at the umbilical cicatrix, often with a reducible or incarcerated sac. Valsalva maneuver predictably exaggerates protrusion. While physical exam is highly sensitive for larger defects, obesity can obscure landmarks and limit tactile discrimination. In equivocal scenarios, or when evaluating occult synchronous defects and incarcerated viscera, contrast-enhanced CT provides definitive anatomic detail and helps guide operative planning.\n\nMANAGEMENT:\nDefinitive management is surgical in most adults due to meaningful incarceration risk from the rigid fascial defect. For very small asymptomatic hernias (typically under 1 cm), primary suture repair may be considered in selected patients. For defects larger than 1 to 2 cm, or in patients with recurrence risk factors such as obesity, tension-free mesh hernioplasty is standard of care, commonly via open preperitoneal mesh placement or minimally invasive laparoscopic techniques. In acute strangulation, emergent surgical exploration is mandatory to address ischemic bowel and close the defect.",
+    "bulletExplanation": "- CORRECT: C.\n- Adult umbilical hernias are usually acquired defects at the fibromuscular umbilical ring from chronically increased intra-abdominal pressure (for example obesity and ascites).\n- The narrow rigid ring increases incarceration/strangulation risk, especially when the mass is non-reducible and painful.\n- Most adult umbilical hernias are managed surgically, with mesh repair favored for larger defects or higher recurrence-risk patients."
+  },
+  {
+    "id": 707,
+    "categoryId": 7,
+    "question": "A 47-year-old man reports a small, tender midline bulge between the xiphoid and umbilicus that becomes more noticeable with coughing and straining. Which diagnosis best matches this location and mechanism?",
+    "questionImages": [
+      {
+        "src": "assets/epigastric-hernia.png",
+        "alt": "Epigastric hernia protruding through the linea alba above the umbilicus",
+        "caption": "Epigastric hernia: focal protrusion through the linea alba between the xiphoid and umbilicus."
+      }
+    ],
+    "options": [
+      "A) Indirect inguinal hernia through the deep inguinal ring",
+      "B) Femoral hernia through the femoral ring below the inguinal ligament",
+      "C) Epigastric hernia through a defect in the linea alba above the umbilicus",
+      "D) Umbilical hernia through the umbilical ring at the umbilical cicatrix"
+    ],
+    "correctAnswer": 2,
+    "explanation": "CORRECT: C.\n\nPATHOPHYSIOLOGY:\nEpigastric hernias are ventral hernias that occur through small defects in the linea alba, typically between the xiphoid process and the umbilicus. They are often associated with chronically increased intra-abdominal pressure and weakening of midline aponeurotic fibers. The sac may contain preperitoneal fat, omentum, or occasionally bowel.\n\nCLINICAL MANIFESTATIONS:\nPatients usually describe a focal midline bulge and localized tenderness, often worsened by straining, coughing, lifting, or prolonged standing. Some hernias are asymptomatic; others cause intermittent pain from fat or omental entrapment. Larger, non-reducible, or acutely painful lesions raise concern for incarceration.\n\nDIAGNOSIS:\nDiagnosis is primarily clinical with inspection and palpation during Valsalva maneuver. When body habitus limits exam accuracy or when complications are suspected, ultrasound or CT can define defect size, sac contents, and reducibility.\n\nMANAGEMENT:\nAsymptomatic very small defects can sometimes be observed, but symptomatic or enlarging epigastric hernias are generally managed with elective surgical repair. Mesh reinforcement is commonly used for larger defects or recurrence-risk settings. Emergent surgery is required when strangulation is suspected.",
+    "bulletExplanation": "- CORRECT: C.\n- Epigastric hernias arise through the linea alba in the midline between the xiphoid and umbilicus.\n- They often present as a focal tender bulge that increases with Valsalva or straining.\n- Symptomatic or enlarging defects are typically repaired electively; urgent surgery is needed for strangulation concerns."
+  },
+  {
+    "id": 708,
+    "categoryId": 7,
+    "question": "A 62-year-old female presents with a prominent, asymmetric bulge protruding from a mature midline laparotomy scar. She underwent an open exploratory laparotomy for perforated diverticulitis three years prior, complicated by a severe postoperative superficial surgical site infection. The bulge enlarges upon standing and causes a dull, dragging pelvic ache. Which of the following pathophysiological factors most significantly contributed to the development of this specific hernia?",
+    "questionImages": [
+      {
+        "src": "assets/incisional-hernia.png",
+        "alt": "Incisional hernia protruding through a prior midline abdominal surgical scar",
+        "caption": "Incisional hernia: fascial failure at a prior laparotomy closure site."
+      }
+    ],
+    "options": [
+      "A) Congenital patent processus vaginalis failing to obliterate during embryogenesis.",
+      "B) Failure of fascial healing secondary to impaired collagen cross-linking and localized inflammatory tissue necrosis.",
+      "C) Acquired weakness of the transversalis fascia specifically within the anatomical boundaries of Hesselbach's triangle.",
+      "D) Progressive attenuation of the structurally intact linea alba without discrete disruption of the aponeurosis."
+    ],
+    "correctAnswer": 1,
+    "explanation": "CORRECT: B.\n\nPATHOPHYSIOLOGY:\nIncisional hernias are iatrogenic complications resulting from biomechanical failure of prior surgical fascial closure. The pathophysiology is fundamentally rooted in impaired wound healing. Normal aponeurotic repair requires orchestrated collagen deposition and cross-linking. This process is derailed by local complications such as surgical site infection, hematoma, or excessive suture tension causing focal ischemia. Systemic host factors including malnutrition, poorly controlled diabetes, obesity, or chronic corticosteroid use further impair fibroblast activity and collagen maturation. Mechanical failure then creates a true fascial gap exposed to chronic intra-abdominal pressure.\n\nCLINICAL MANIFESTATIONS:\nPatients characteristically present with an observable, palpable mass protruding through or adjacent to a prior surgical incision. Presentation ranges from small focal defects to large complex eventrations. Symptoms include localized discomfort, dragging sensation, and functional core instability; overlying skin may become attenuated, scarred, or ulcerated over time. Because defects may be broad and adhesions are common after prior surgery, intermittent partial small bowel obstruction may occur.\n\nDIAGNOSIS:\nInitial diagnosis is often clinical based on protrusion through a known scar during standing or Valsalva. However, exam can underestimate true defect size and miss additional satellite defects. Contrast-enhanced CT of the abdomen and pelvis is frequently used for preoperative planning because it defines fascial defect dimensions, sac contents, associated adhesions, and abdominal wall quality.\n\nMANAGEMENT:\nDefinitive management is usually surgical and individualized. Simple primary suture repair alone has high recurrence rates in many incisional defects. Tension-free mesh reinforcement is standard for durable repair, using open, laparoscopic, or robotic techniques based on anatomy, size, contamination risk, and prior operative history. Complex cases may require abdominal wall reconstruction with component separation (including posterior transversus abdominis release) to restore myofascial continuity. Acute strangulation or obstruction requires urgent operative management.",
+    "bulletExplanation": "- CORRECT: B.\n- Incisional hernias result from failed fascial healing at prior surgical closure sites, often driven by infection-related inflammation, tissue ischemia, and impaired collagen maturation.\n- This is distinct from congenital inguinal pathway defects (processus vaginalis), direct inguinal hernia in Hesselbach's triangle, and diastasis recti without fascial disruption.\n- Most symptomatic incisional hernias are repaired with mesh-based, tension-free techniques; urgent surgery is required for strangulation or obstruction."
   }
 ];
 const GERIATRICS_CATEGORY_ID = 19;
@@ -9689,7 +9817,8 @@ const GERIATRICS_EXEMPT = new Set([
   35,329,510,
   183,633,636,
   27,640,641,
-  189,609,611,613
+  189,609,611,613,
+  703,704,708
 ]);
 const isGeriatricsQuestion = (questionText = "") => {
   const text = String(questionText);
