@@ -10086,6 +10086,7 @@ function PCPLearningApp() {
   const OPENAI_KEY_KEY = "pcp-openai-tts-key";
   const OPENAI_VOICES = ["alloy", "ash", "ballad", "coral", "echo", "fable", "nova", "onyx", "sage", "shimmer"];
   const NOVELTY_VOICES = /^(Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Good News|Jester|Junior|Organ|Superstar|Trinoids|Whisper|Wobble|Zarvox)$/i;
+  const HIGH_QUALITY_DEVICE_VOICE = /(Google UK English|Microsoft Aria|Microsoft Jenny|Microsoft Guy|Microsoft Ryan|Microsoft Sonia|Aria|Jenny|Guy|Ryan|Sonia)/i;
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [deskHeight, setDeskHeight] = useState(window.innerHeight);
   const [currentView, setCurrentView] = useState("home");
@@ -10325,7 +10326,21 @@ useEffect(() => {
     return () => window.speechSynthesis.removeEventListener("voiceschanged", load);
   }, []);
 
-  const pickMaleVoice = () => {
+  const rankDeviceVoices = useCallback((voices) => {
+    return (voices || []).filter((v) => v && typeof v.name === "string" && typeof v.lang === "string").filter((v) => v.lang.toLowerCase().startsWith("en")).filter((v) => !NOVELTY_VOICES.test(v.name)).map((v) => {
+      const combined = `${v.name} ${v.voiceURI || ""}`;
+      let score = 100;
+      if (/premium|enhanced/i.test(combined)) score += 40;
+      if (HIGH_QUALITY_DEVICE_VOICE.test(v.name)) score += 25;
+      if (v.default) score += 10;
+      const lang = v.lang.toLowerCase();
+      if (lang === "en-us" || lang === "en-gb") score += 8;
+      const cleanName = v.name.replace(/\s*\(.*?\)\s*/g, " ").replace(/\s+/g, " ").trim();
+      return { voice: v, score, cleanName };
+    }).sort((a, b) => b.score - a.score || a.cleanName.length - b.cleanName.length || a.cleanName.localeCompare(b.cleanName)).map((entry) => entry.voice);
+  }, []);
+  const rankedDeviceVoices = useMemo(() => rankDeviceVoices(availableVoices).slice(0, 10), [availableVoices, rankDeviceVoices]);
+  const pickBestVoice = () => {
     if (cachedVoiceRef.current) return cachedVoiceRef.current;
     const synth = window.speechSynthesis;
     const voices = synth.getVoices();
@@ -10335,49 +10350,10 @@ useEffect(() => {
       const preferred = voices.find((v) => v.voiceURI === preferredVoiceURIRef.current);
       if (preferred) { cachedVoiceRef.current = preferred; return preferred; }
     }
-
-    if (isIOSDevice.current) {
-      const iosRanked = [
-        (v) => v.lang.startsWith("en") && /premium/i.test(v.name),
-        (v) => v.lang.startsWith("en") && /enhanced/i.test(v.name),
-        (v) => v.lang.startsWith("en") && /premium|enhanced/i.test(v.voiceURI || ""),
-        (v) => v.lang.startsWith("en") && v.default,
-      ];
-      for (const test of iosRanked) {
-        const match = voices.find(test);
-        if (match) { cachedVoiceRef.current = match; return match; }
-      }
-      return null;
-    }
-
-    const femaleNames = /female|woman|fiona|kate|serena|moira|tessa|samantha|victoria|zoe|susan|karen|allison|ava|nicky|siri.*female/i;
-    const ranked = [
-      (v) => /Google UK English Male/i.test(v.name),
-      (v) => /Google US English/i.test(v.name) && /male/i.test(v.name),
-      (v) => /Microsoft Guy Online/i.test(v.name),
-      (v) => /Microsoft David Online/i.test(v.name),
-      (v) => /Microsoft Mark Online/i.test(v.name),
-      (v) => /Microsoft David/i.test(v.name),
-      (v) => /Microsoft Mark/i.test(v.name),
-      (v) => /Microsoft Guy/i.test(v.name),
-      (v) => /Daniel/i.test(v.name) && v.lang.startsWith("en") && /premium|enhanced/i.test(v.name),
-      (v) => /Aaron/i.test(v.name) && v.lang.startsWith("en") && /premium|enhanced/i.test(v.name),
-      (v) => /Daniel/i.test(v.name) && v.lang.startsWith("en"),
-      (v) => /Aaron/i.test(v.name) && v.lang.startsWith("en-US"),
-      (v) => /James/i.test(v.name) && v.lang.startsWith("en"),
-      (v) => /\bmale\b/i.test(v.name) && v.lang.startsWith("en"),
-      (v) => /David|Guy|Mark|Tom|Fred|Alex|Rishi|Oliver|Thomas|Gordon|Lee/i.test(v.name) && v.lang.startsWith("en"),
-      (v) => v.lang.startsWith("en-GB") && !femaleNames.test(v.name),
-      (v) => v.lang.startsWith("en-US") && !femaleNames.test(v.name),
-      (v) => v.lang.startsWith("en") && !femaleNames.test(v.name),
-    ];
-    for (const test of ranked) {
-      const match = voices.find(test);
-      if (match) { cachedVoiceRef.current = match; return match; }
-    }
-    const fallback = voices.find((v) => v.lang.startsWith("en")) || voices[0];
-    cachedVoiceRef.current = fallback;
-    return fallback;
+    const ranked = rankDeviceVoices(voices);
+    const fallback = ranked[0] || voices.find((v) => v.lang.toLowerCase().startsWith("en")) || voices[0];
+    cachedVoiceRef.current = fallback || null;
+    return cachedVoiceRef.current;
   };
 
   const isOpenAIVoice = () => preferredVoiceURIRef.current.startsWith("openai:");
@@ -10721,7 +10697,7 @@ useEffect(() => {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(buildSpeechText(text));
-    const voice = pickMaleVoice();
+    const voice = pickBestVoice();
     if (voice) utter.voice = voice;
     utter.rate = 1.0;
     utter.pitch = 1.0;
@@ -10801,7 +10777,7 @@ useEffect(() => {
       return playOpenAIAudio(chunk);
     }
     return new Promise((resolve) => {
-      const voice = pickMaleVoice();
+      const voice = pickBestVoice();
       let resolved = false;
       let safetyTimer = null;
       let startTimer = null;
@@ -12759,6 +12735,12 @@ useEffect(() => {
       )
     );
   };
+  const renderHomeCategoryIcon = (icon, size) => {
+    const inner = renderCategoryIcon(icon, size);
+    const yOffset = icon === "lotion" ? effectiveMobile ? -2 : -1 : 0;
+    if (!yOffset) return inner;
+    return /* @__PURE__ */ React.createElement("span", { style: { display: "inline-flex", transform: `translateY(${yOffset}px)` } }, inner);
+  };
 
   const ExpandableText = ({ text }) => {
     if (!text) return null;
@@ -13835,7 +13817,7 @@ useEffect(() => {
         onClick: () => { if (absDist < 0.45) startCategoryReview(cat.id); }
       },
         /* @__PURE__ */ React.createElement("div", { style: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", gap: "2px" } },
-          /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center", alignItems: "center", height: "24px", flexShrink: 0 } }, renderCategoryIcon(cat.icon, 20)),
+          /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center", alignItems: "center", height: "24px", flexShrink: 0 } }, renderHomeCategoryIcon(cat.icon, 20)),
           /* @__PURE__ */ React.createElement("div", { style: { fontSize: (cat.name === "Musculoskeletal" || cat.name === "Gastroenterology" || cat.name === "Cardiovascular" || cat.name === "Rheumatology") ? "7.5px" : "10px", fontWeight: "500", color: "#334155", lineHeight: "12px", height: "24px", flexShrink: 0, overflow: "hidden", overflowWrap: "break-word", wordBreak: "break-word", textAlign: "center", width: "100%", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" } }, cat.name)),
         /* @__PURE__ */ React.createElement("div", { style: { fontSize: "9px", color: "#64748b", marginTop: "auto", width: "100%", flexShrink: 0 } },
           /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2px" } },
@@ -13911,7 +13893,7 @@ useEffect(() => {
         onClick: () => { if (absDist < 0.45) startCategoryReview(cat.id); }
       },
         /* @__PURE__ */ React.createElement("div", { style: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", gap: "2px" } },
-          /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center", alignItems: "center", height: "24px", flexShrink: 0 } }, renderCategoryIcon(cat.icon, 20)),
+          /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center", alignItems: "center", height: "24px", flexShrink: 0 } }, renderHomeCategoryIcon(cat.icon, 20)),
           /* @__PURE__ */ React.createElement("div", { style: { fontSize: (cat.name === "Musculoskeletal" || cat.name === "Gastroenterology" || cat.name === "Cardiovascular" || cat.name === "Rheumatology") ? "7.5px" : "10px", fontWeight: "500", color: "#334155", lineHeight: "12px", height: "24px", flexShrink: 0, overflow: "hidden", overflowWrap: "break-word", wordBreak: "break-word", textAlign: "center", width: "100%", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" } }, cat.name)),
         /* @__PURE__ */ React.createElement("div", { style: { fontSize: "9px", color: "#64748b", marginTop: "auto", width: "100%", flexShrink: 0 } },
           /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2px" } },
@@ -13935,7 +13917,7 @@ useEffect(() => {
           onMouseLeave: (e) => e.currentTarget.style.transform = "scale(1)"
         },
         /* @__PURE__ */ React.createElement("div", { style: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%" } },
-          /* @__PURE__ */ React.createElement("div", { style: styles.categoryIcon }, renderCategoryIcon(cat.icon, effectiveMobile ? 32 : deskCatIconSize)),
+          /* @__PURE__ */ React.createElement("div", { style: styles.categoryIcon }, renderHomeCategoryIcon(cat.icon, effectiveMobile ? 32 : deskCatIconSize)),
           /* @__PURE__ */ React.createElement("div", { style: styles.categoryName }, cat.name)),
         /* @__PURE__ */ React.createElement("div", { style: {
           fontSize: isDesktopHome ? "clamp(9px, 1.2vh, 12px)" : "11px",
@@ -14121,12 +14103,12 @@ useEffect(() => {
         appearance: "auto", WebkitAppearance: "menulist"
       }
     },
-      /* @__PURE__ */ React.createElement("option", { value: "" }, "Voice: Auto"),
+      /* @__PURE__ */ React.createElement("option", { value: "" }, "Voice: Auto (Best Device)"),
+      rankedDeviceVoices.length > 0 && /* @__PURE__ */ React.createElement("optgroup", { label: "Device" },
+        rankedDeviceVoices.map((v) => /* @__PURE__ */ React.createElement("option", { key: v.voiceURI, value: v.voiceURI }, v.name))
+      ),
       /* @__PURE__ */ React.createElement("optgroup", { label: "OpenAI (Natural)" },
         OPENAI_VOICES.map((v) => /* @__PURE__ */ React.createElement("option", { key: "openai:" + v, value: "openai:" + v }, v[0].toUpperCase() + v.slice(1)))
-      ),
-      availableVoices.filter((v) => !NOVELTY_VOICES.test(v.name)).length > 0 && /* @__PURE__ */ React.createElement("optgroup", { label: "Device" },
-        availableVoices.filter((v) => !NOVELTY_VOICES.test(v.name)).map((v) => /* @__PURE__ */ React.createElement("option", { key: v.voiceURI, value: v.voiceURI }, v.name))
       )
     ),
     preferredVoiceURI.startsWith("openai:") && /* @__PURE__ */ React.createElement("div", { style: {
