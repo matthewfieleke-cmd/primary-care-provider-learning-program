@@ -10085,6 +10085,7 @@ function PCPLearningApp() {
   const VOICE_PREF_KEY = "pcp-preferred-voice";
   const OPENAI_KEY_KEY = "pcp-openai-tts-key";
   const OPENAI_VOICES = ["alloy", "ash", "ballad", "coral", "echo", "fable", "nova", "onyx", "sage", "shimmer"];
+  const OPENAI_FAST_FAIL_MS = 4000;
   const NOVELTY_VOICES = /^(Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Good News|Jester|Junior|Organ|Superstar|Trinoids|Whisper|Wobble|Zarvox)$/i;
   const HIGH_QUALITY_DEVICE_VOICE = /(Google UK English|Microsoft Aria|Microsoft Jenny|Microsoft Guy|Microsoft Ryan|Microsoft Sonia|Aria|Jenny|Guy|Ryan|Sonia)/i;
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -10153,6 +10154,9 @@ function PCPLearningApp() {
   const openaiAudioRef = useRef(null);
   const audioCtxRef = useRef(null);
   const audioSourceRef = useRef(null);
+  const openaiAbortRef = useRef(null);
+  const openaiRequestSeqRef = useRef(0);
+  const handsFreeRunTokenRef = useRef(0);
   const handleAnswerRef = useRef(null);
   const nextQuestionRef = useRef(null);
   const getShuffledOptionsRef = useRef(null);
@@ -10370,6 +10374,11 @@ useEffect(() => {
   };
 
   const stopSpeaking = useCallback(() => {
+    openaiRequestSeqRef.current += 1;
+    if (openaiAbortRef.current) {
+      try { openaiAbortRef.current.abort(); } catch(e) {}
+      openaiAbortRef.current = null;
+    }
     if (ttsKeepAliveRef.current) { clearInterval(ttsKeepAliveRef.current); ttsKeepAliveRef.current = null; }
     window.speechSynthesis.cancel();
     speechUtterRef.current = null;
@@ -10385,33 +10394,54 @@ useEffect(() => {
     setIsSpeaking(false);
   }, []);
 
-  const playOpenAIAudio = useCallback((text) => {
+  const playOpenAIAudio = useCallback((text, options) => {
     return new Promise(async (resolve) => {
       const key = openaiKeyRef.current;
       if (!key) { resolve(false); return; }
       const ctx = audioCtxRef.current;
       if (!ctx) { resolve(false); return; }
+      const fastFailMs = options && Number.isFinite(options.fastFailMs) ? options.fastFailMs : OPENAI_FAST_FAIL_MS;
+      const seq = ++openaiRequestSeqRef.current;
+      const controller = new AbortController();
+      openaiAbortRef.current = controller;
+      let fastFailTimer = null;
       try {
+        if (fastFailMs > 0) {
+          fastFailTimer = setTimeout(() => {
+            try { controller.abort(); } catch(e) {}
+          }, fastFailMs);
+        }
         const resp = await fetch("https://api.openai.com/v1/audio/speech", {
           method: "POST",
+          signal: controller.signal,
           headers: { "Authorization": "Bearer " + key, "Content-Type": "application/json" },
           body: JSON.stringify({ model: "tts-1", voice: getOpenAIVoiceName(), input: text, response_format: "mp3" })
         });
-        if (!resp.ok) { resolve(false); return; }
+        if (fastFailTimer) { clearTimeout(fastFailTimer); fastFailTimer = null; }
+        if (!resp.ok || seq !== openaiRequestSeqRef.current) { resolve(false); return; }
         const arrayBuf = await resp.arrayBuffer();
+        if (seq !== openaiRequestSeqRef.current) { resolve(false); return; }
         const audioBuf = await ctx.decodeAudioData(arrayBuf);
+        if (seq !== openaiRequestSeqRef.current) { resolve(false); return; }
         const source = ctx.createBufferSource();
         source.buffer = audioBuf;
         source.connect(ctx.destination);
         audioSourceRef.current = source;
-        source.onended = () => { audioSourceRef.current = null; resolve(true); };
+        source.onended = () => {
+          if (audioSourceRef.current === source) audioSourceRef.current = null;
+          if (seq === openaiRequestSeqRef.current) resolve(true);
+          else resolve(false);
+        };
         source.start();
       } catch (e) {
+        if (fastFailTimer) { clearTimeout(fastFailTimer); fastFailTimer = null; }
         audioSourceRef.current = null;
         resolve(false);
+      } finally {
+        if (openaiAbortRef.current === controller) openaiAbortRef.current = null;
       }
     });
-  }, []);
+  }, [OPENAI_FAST_FAIL_MS]);
 
   const normalizeMedicalSpeechText = useCallback((text) => {
     if (!text) return "";
@@ -10690,7 +10720,24 @@ useEffect(() => {
 
     if (isOpenAIVoice() && openaiKeyRef.current) {
       setIsSpeaking(true);
-      playOpenAIAudio(buildSpeechText(text)).then(() => { setIsSpeaking(false); });
+      const built = buildSpeechText(text);
+      playOpenAIAudio(built, { fastFailMs: OPENAI_FAST_FAIL_MS }).then((ok) => {
+        if (ok) {
+          setIsSpeaking(false);
+          return;
+        }
+        if (!window.speechSynthesis) { setIsSpeaking(false); return; }
+        window.speechSynthesis.cancel();
+        const fallbackUtter = new SpeechSynthesisUtterance(built);
+        const voice = pickBestVoice();
+        if (voice) fallbackUtter.voice = voice;
+        fallbackUtter.rate = 1.0;
+        fallbackUtter.pitch = 1.0;
+        fallbackUtter.volume = 1;
+        fallbackUtter.onend = () => setIsSpeaking(false);
+        fallbackUtter.onerror = () => setIsSpeaking(false);
+        window.speechSynthesis.speak(fallbackUtter);
+      });
       return;
     }
 
@@ -10718,7 +10765,7 @@ useEffect(() => {
       }
     }, 10000);
     window.speechSynthesis.speak(utter);
-  }, [isSpeaking, stopSpeaking, buildSpeechText, playOpenAIAudio]);
+  }, [isSpeaking, stopSpeaking, buildSpeechText, playOpenAIAudio, OPENAI_FAST_FAIL_MS]);
 
   useEffect(() => {
     return () => {
@@ -10772,10 +10819,26 @@ useEffect(() => {
     return finalChunks.length > 0 ? finalChunks : [built];
   }, [buildSpeechText]);
 
-  const speakSingleChunk = useCallback((chunk) => {
-    if (isOpenAIVoice() && openaiKeyRef.current) {
-      return playOpenAIAudio(chunk);
+  const splitIntoOpenAIChunks = useCallback((text) => {
+    if (!text) return [];
+    const built = buildSpeechText(text);
+    if (built.length <= 220) return [built];
+    const sentences = built.match(/[^.!?]+[.!?]+[\s]*/g) || [built];
+    const chunks = [];
+    let current = "";
+    for (const s of sentences) {
+      if (current.length + s.length > 260 && current.length > 0) {
+        chunks.push(current.trim());
+        current = s;
+      } else {
+        current += s;
+      }
     }
+    if (current.trim()) chunks.push(current.trim());
+    return chunks.length > 0 ? chunks : [built];
+  }, [buildSpeechText]);
+
+  const speakSingleChunk = useCallback((chunk) => {
     return new Promise((resolve) => {
       const voice = pickBestVoice();
       let resolved = false;
@@ -10828,14 +10891,27 @@ useEffect(() => {
       }, 8000);
       window.speechSynthesis.speak(utter);
     });
-  }, [playOpenAIAudio]);
+  }, []);
+
+  const speakOpenAIWithFallback = useCallback(async (text, shouldContinueFn) => {
+    const chunks = splitIntoOpenAIChunks(text);
+    for (let i = 0; i < chunks.length; i++) {
+      if (typeof shouldContinueFn === "function" && !shouldContinueFn()) return false;
+      const ok = await playOpenAIAudio(chunks[i], { fastFailMs: OPENAI_FAST_FAIL_MS });
+      if (!ok) {
+        if (typeof shouldContinueFn === "function" && !shouldContinueFn()) return false;
+        await speakSingleChunk(chunks[i]);
+      }
+      if (i < chunks.length - 1) await new Promise((r) => setTimeout(r, 20));
+    }
+    return true;
+  }, [splitIntoOpenAIChunks, playOpenAIAudio, OPENAI_FAST_FAIL_MS, speakSingleChunk]);
 
   const speakAndWait = useCallback(async (text) => {
     if (!text) return;
     if (isOpenAIVoice() && openaiKeyRef.current) {
       if (!handsFreeRef.current.active) return;
-      const built = buildSpeechText(text);
-      await playOpenAIAudio(built);
+      await speakOpenAIWithFallback(text, () => handsFreeRef.current.active);
       return;
     }
     if (!window.speechSynthesis) return;
@@ -10847,7 +10923,7 @@ useEffect(() => {
         await new Promise(r => setTimeout(r, 30));
       }
     }
-  }, [splitIntoSpeechChunks, speakSingleChunk, buildSpeechText, playOpenAIAudio]);
+  }, [splitIntoSpeechChunks, speakSingleChunk, speakOpenAIWithFallback]);
 
   const initRecognition = useCallback(() => {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -10858,6 +10934,28 @@ useEffect(() => {
     rec.maxAlternatives = 5;
     rec.continuous = !isSafariBrowser.current;
     return rec;
+  }, []);
+
+  const detectAnswerIndex = useCallback((rawText, isFinal) => {
+    const t = String(rawText || "").trim().toUpperCase();
+    if (!t) return null;
+    if (/\bALPHA\b|OPTION\s*A|ANSWER\s*(IS\s*)?A|I(?:\s+THINK|\s+CHOOSE|\s+PICK)?\s*(IT'?S|IS)?\s*A\b/.test(t)) return 0;
+    if (/\bBRAVO\b|OPTION\s*B|ANSWER\s*(IS\s*)?B|I(?:\s+THINK|\s+CHOOSE|\s+PICK)?\s*(IT'?S|IS)?\s*B\b/.test(t)) return 1;
+    if (/\bCHARLIE\b|OPTION\s*C|ANSWER\s*(IS\s*)?C|I(?:\s+THINK|\s+CHOOSE|\s+PICK)?\s*(IT'?S|IS)?\s*C\b/.test(t)) return 2;
+    if (/\bDELTA\b|OPTION\s*D|ANSWER\s*(IS\s*)?D|I(?:\s+THINK|\s+CHOOSE|\s+PICK)?\s*(IT'?S|IS)?\s*D\b/.test(t)) return 3;
+    if (/\bFIRST\b|\bONE\b|\b1ST\b/.test(t)) return 0;
+    if (/\bSECOND\b|\bTWO\b|\b2ND\b/.test(t)) return 1;
+    if (/\bTHIRD\b|\bTHREE\b|\b3RD\b/.test(t)) return 2;
+    if (/\bFOURTH\b|\bFOUR\b|\b4TH\b/.test(t)) return 3;
+    const words = t.split(/\s+/).filter(Boolean);
+    const last = words[words.length - 1] || "";
+    if (words.length <= 4 || isFinal) {
+      if (/^(A|AY|EH|HEY)$/.test(last)) return 0;
+      if (/^(B|BEE|BE)$/.test(last)) return 1;
+      if (/^(C|SEE|SEA)$/.test(last)) return 2;
+      if (/^(D|DEE)$/.test(last)) return 3;
+    }
+    return null;
   }, []);
 
   const listenForAnswer = useCallback((preStartedRec) => {
@@ -10908,27 +11006,8 @@ useEffect(() => {
           for (let j = 0; j < e.results[i].length; j++) {
             const t = e.results[i][j].transcript.trim().toUpperCase();
             if (!answered) setLastTranscript(e.results[i][j].transcript.trim());
-            if (/\bALPHA\b|OPTION\s*A|ANSWER\s*A/.test(t)) { finish(0); return; }
-            if (/\bBRAVO\b|OPTION\s*B|ANSWER\s*B/.test(t)) { finish(1); return; }
-            if (/\bCHARLIE\b|OPTION\s*C|ANSWER\s*C/.test(t)) { finish(2); return; }
-            if (/\bDELTA\b|OPTION\s*D|ANSWER\s*D/.test(t)) { finish(3); return; }
-            const words = t.split(/\s+/).filter(w => w.length > 0);
-            const last = words[words.length - 1] || "";
-            const isShort = words.length <= 2;
-            if (isShort || isFinal) {
-              if (isShort || words.length <= 4) {
-                if (/^(A|AY|EH|HEY)$/.test(last)) { finish(0); return; }
-                if (/^(B|BEE|BE)$/.test(last)) { finish(1); return; }
-                if (/^(C|SEE|SEA)$/.test(last)) { finish(2); return; }
-                if (/^(D|DEE)$/.test(last)) { finish(3); return; }
-              }
-            }
-            if (isFinal) {
-              if (/\bFIRST\b/.test(t)) { finish(0); return; }
-              if (/\bSECOND\b/.test(t)) { finish(1); return; }
-              if (/\bTHIRD\b/.test(t)) { finish(2); return; }
-              if (/\bFOURTH\b/.test(t)) { finish(3); return; }
-            }
+            const idx = detectAnswerIndex(t, isFinal);
+            if (idx !== null) { finish(idx); return; }
           }
         }
       };
@@ -10955,22 +11034,23 @@ useEffect(() => {
 
       hintTimer = setTimeout(() => {
         if (!answered) setLastTranscript("__HINT__");
-      }, 10000);
+      }, 7000);
 
       if (!alreadyRunning) {
         try { rec.start(); } catch(e) { finish(null); }
       }
     });
-  }, [initRecognition]);
+  }, [initRecognition, detectAnswerIndex]);
 
-  const runHandsFreeQuestion = useCallback(async (question, questionIndex, totalQuestions) => {
-    if (!handsFreeRef.current.active) return;
+  const runHandsFreeQuestion = useCallback(async (question, questionIndex, totalQuestions, runToken) => {
+    const isRunActive = () => handsFreeRef.current.active && handsFreeRunTokenRef.current === runToken;
+    if (!isRunActive()) return;
     const shuffled = getShuffledOptionsRef.current ? getShuffledOptionsRef.current(question) : { options: question.options || [], correctIndex: question.correctAnswer || 0 };
 
     setHandsFreePhase("reading-question");
     handsFreeRef.current.phase = "reading-question";
     await speakAndWait(`Question ${questionIndex + 1} of ${totalQuestions}. ${question.question}`);
-    if (!handsFreeRef.current.active) return;
+    if (!isRunActive()) return;
 
     setHandsFreePhase("reading-options");
     handsFreeRef.current.phase = "reading-options";
@@ -10983,11 +11063,11 @@ useEffect(() => {
       await speakAndWait("The answer choices are: " + optionLines.join(". ") + ".");
     } else {
       for (const line of optionLines) {
-        if (!handsFreeRef.current.active) return;
+        if (!isRunActive()) return;
         await speakAndWait(line);
       }
     }
-    if (!handsFreeRef.current.active) return;
+    if (!isRunActive()) return;
     const preRec = initRecognition();
     if (preRec) {
       recognitionRef.current = preRec;
@@ -10995,10 +11075,10 @@ useEffect(() => {
       try { preRec.start(); } catch(e) {}
     }
     await speakAndWait("What is your answer?");
-    if (!handsFreeRef.current.active) return;
+    if (!isRunActive()) return;
 
     const answerIdx = await listenForAnswer(preRec);
-    if (!handsFreeRef.current.active) return;
+    if (!isRunActive()) return;
     if (answerIdx === null) {
       setHandsFreePhase("idle");
       handsFreeRef.current.phase = "idle";
@@ -11017,7 +11097,7 @@ useEffect(() => {
       const correctText = shuffled.options[shuffled.correctIndex].replace(/^[A-D]\)\s*/, "");
       await speakAndWait(`Incorrect. The correct answer is ${correctLetter}, ${correctText}.`);
     }
-    if (!handsFreeRef.current.active) return;
+    if (!isRunActive()) return;
 
     setHandsFreePhase("reading-explanation");
     handsFreeRef.current.phase = "reading-explanation";
@@ -11025,12 +11105,12 @@ useEffect(() => {
     const explainFn = getExplanationTextRef.current;
     const correctedExplanation = explainFn ? explainFn(question, cLetter) : "";
     await speakAndWait(correctedExplanation);
-    if (!handsFreeRef.current.active) return;
+    if (!isRunActive()) return;
 
     setHandsFreePhase("advancing");
     handsFreeRef.current.phase = "advancing";
-    await new Promise((r) => setTimeout(r, 300));
-    if (!handsFreeRef.current.active) return;
+    await new Promise((r) => setTimeout(r, 120));
+    if (!isRunActive()) return;
 
     if (nextQuestionRef.current) nextQuestionRef.current();
   }, [speakAndWait, listenForAnswer, initRecognition]);
@@ -11064,18 +11144,21 @@ useEffect(() => {
     } catch(e) {}
     setHandsFreeMode(true);
     handsFreeRef.current.active = true;
+    const runToken = handsFreeRunTokenRef.current + 1;
+    handsFreeRunTokenRef.current = runToken;
     handsFreeRef.current.phase = "idle";
     setHandsFreePhase("idle");
     setLastTranscript("");
     const question = quizQuestions[currentQuestionIndex];
     if (question && !showExplanation) {
       setTimeout(() => {
-        if (runHandsFreeRef.current) runHandsFreeRef.current(question, currentQuestionIndex, quizQuestions.length);
+        if (runHandsFreeRef.current) runHandsFreeRef.current(question, currentQuestionIndex, quizQuestions.length, runToken);
       }, 100);
     }
   }, [ensureMicPermission, quizQuestions, currentQuestionIndex, showExplanation]);
 
   const stopHandsFree = useCallback(() => {
+    handsFreeRunTokenRef.current += 1;
     handsFreeRef.current.active = false;
     handsFreeRef.current.phase = "idle";
     setHandsFreeMode(false);
@@ -11083,8 +11166,7 @@ useEffect(() => {
     setIsListening(false);
     setLastTranscript("");
     hfAnswerRef.current = null;
-    if (ttsKeepAliveRef.current) { clearInterval(ttsKeepAliveRef.current); ttsKeepAliveRef.current = null; }
-    window.speechSynthesis.cancel();
+    stopSpeaking();
     if (recognitionRef.current) {
       try { recognitionRef.current.abort(); } catch(e) {}
       recognitionRef.current.onresult = null;
@@ -11096,7 +11178,7 @@ useEffect(() => {
       try { wakeLockRef.current.release(); } catch(e) {}
       wakeLockRef.current = null;
     }
-  }, []);
+  }, [stopSpeaking]);
 
   const runHandsFreeRef = useRef(null);
   runHandsFreeRef.current = runHandsFreeQuestion;
@@ -12341,25 +12423,29 @@ useEffect(() => {
   };
   const nextQuestion = () => {
     play("heartbeat");
+    stopSpeaking();
     if (handsFreeRef.current.active) {
+      const runToken = handsFreeRunTokenRef.current + 1;
+      handsFreeRunTokenRef.current = runToken;
       handsFreeRef.current.phase = "idle";
       setHandsFreePhase("idle");
+      if (currentQuestionIndex < quizQuestions.length - 1) {
+        const nextIdx = currentQuestionIndex + 1;
+        const nextQ = quizQuestions[nextIdx];
+        if (nextQ) {
+          setTimeout(() => {
+            if (runHandsFreeRef.current && handsFreeRef.current.active) {
+              runHandsFreeRef.current(nextQ, nextIdx, quizQuestions.length, runToken);
+            }
+          }, 60);
+        }
+      }
     }
     if (currentQuestionIndex < quizQuestions.length - 1) {
       const nextIdx = currentQuestionIndex + 1;
       setCurrentQuestionIndex((prev) => prev + 1);
       setSelectedAnswer(null);
       setShowExplanation(false);
-      if (handsFreeRef.current.active) {
-        const nextQ = quizQuestions[nextIdx];
-        if (nextQ) {
-          setTimeout(() => {
-            if (runHandsFreeRef.current && handsFreeRef.current.active) {
-              runHandsFreeRef.current(nextQ, nextIdx, quizQuestions.length);
-            }
-          }, 100);
-        }
-      }
     } else {
       if (handsFreeMode) stopHandsFree();
       setCurrentView("quiz-complete");
@@ -12558,6 +12644,8 @@ useEffect(() => {
   };
   const goHome = () => {
     play("click");
+    stopSpeaking();
+    if (handsFreeMode) stopHandsFree();
     if (gameTimerRef.current) {
       clearInterval(gameTimerRef.current);
     }
