@@ -10907,18 +10907,22 @@ useEffect(() => {
     return true;
   }, [splitIntoOpenAIChunks, playOpenAIAudio, OPENAI_FAST_FAIL_MS, speakSingleChunk]);
 
-  const speakAndWait = useCallback(async (text) => {
+  const speakAndWait = useCallback(async (text, shouldContinueFn) => {
     if (!text) return;
+    const canContinue = typeof shouldContinueFn === "function"
+      ? shouldContinueFn
+      : () => handsFreeRef.current.active;
+    if (!canContinue()) return;
     if (isOpenAIVoice() && openaiKeyRef.current) {
-      if (!handsFreeRef.current.active) return;
-      await speakOpenAIWithFallback(text, () => handsFreeRef.current.active);
+      await speakOpenAIWithFallback(text, canContinue);
       return;
     }
     if (!window.speechSynthesis) return;
     const chunks = splitIntoSpeechChunks(text);
     for (let i = 0; i < chunks.length; i++) {
-      if (!handsFreeRef.current.active) return;
+      if (!canContinue()) return;
       await speakSingleChunk(chunks[i]);
+      if (!canContinue()) return;
       if (i < chunks.length - 1) {
         await new Promise(r => setTimeout(r, 30));
       }
@@ -11049,7 +11053,7 @@ useEffect(() => {
 
     setHandsFreePhase("reading-question");
     handsFreeRef.current.phase = "reading-question";
-    await speakAndWait(`Question ${questionIndex + 1} of ${totalQuestions}. ${question.question}`);
+    await speakAndWait(`Question ${questionIndex + 1} of ${totalQuestions}. ${question.question}`, isRunActive);
     if (!isRunActive()) return;
 
     setHandsFreePhase("reading-options");
@@ -11060,11 +11064,11 @@ useEffect(() => {
       return isOpenAIVoice() ? `Option ${letter}: ${clean}` : `${letter}, ${clean}`;
     });
     if (isOpenAIVoice()) {
-      await speakAndWait("The answer choices are: " + optionLines.join(". ") + ".");
+      await speakAndWait("The answer choices are: " + optionLines.join(". ") + ".", isRunActive);
     } else {
       for (const line of optionLines) {
         if (!isRunActive()) return;
-        await speakAndWait(line);
+        await speakAndWait(line, isRunActive);
       }
     }
     if (!isRunActive()) return;
@@ -11074,7 +11078,7 @@ useEffect(() => {
       preRec.onend = () => { try { preRec.start(); } catch(e) {} };
       try { preRec.start(); } catch(e) {}
     }
-    await speakAndWait("What is your answer?");
+    await speakAndWait("What is your answer?", isRunActive);
     if (!isRunActive()) return;
 
     const answerIdx = await listenForAnswer(preRec);
@@ -11091,11 +11095,11 @@ useEffect(() => {
     setHandsFreePhase("reading-result");
     handsFreeRef.current.phase = "reading-result";
     if (isCorrect) {
-      await speakAndWait("Correct!");
+      await speakAndWait("Correct!", isRunActive);
     } else {
       const correctLetter = String.fromCharCode(65 + shuffled.correctIndex);
       const correctText = shuffled.options[shuffled.correctIndex].replace(/^[A-D]\)\s*/, "");
-      await speakAndWait(`Incorrect. The correct answer is ${correctLetter}, ${correctText}.`);
+      await speakAndWait(`Incorrect. The correct answer is ${correctLetter}, ${correctText}.`, isRunActive);
     }
     if (!isRunActive()) return;
 
@@ -11104,7 +11108,7 @@ useEffect(() => {
     const cLetter = String.fromCharCode(65 + shuffled.correctIndex);
     const explainFn = getExplanationTextRef.current;
     const correctedExplanation = explainFn ? explainFn(question, cLetter) : "";
-    await speakAndWait(correctedExplanation);
+    await speakAndWait(correctedExplanation, isRunActive);
     if (!isRunActive()) return;
 
     setHandsFreePhase("advancing");
