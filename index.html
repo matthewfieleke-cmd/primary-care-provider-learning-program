@@ -12956,7 +12956,7 @@ useEffect(() => {
       background: effectiveMobile ? "#f1f5f9" : "linear-gradient(180deg, #f8fafc 0%, #eef2f7 55%, #e9edf4 100%)",
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
       color: "#1e293b",
-      padding: effectiveMobile ? "12px 12px calc(20px + env(safe-area-inset-bottom, 0px))" : isDesktopHome ? "clamp(12px, 2vh, 24px)" : "24px",
+      padding: effectiveMobile ? "8px 8px calc(16px + env(safe-area-inset-bottom, 0px))" : isDesktopHome ? "clamp(12px, 2vh, 24px)" : "24px",
       position: "relative",
       overflow: isDesktopHome ? "hidden auto" : "hidden",
       display: (effectiveMobile || isDesktopHome) ? "flex" : undefined,
@@ -12990,7 +12990,7 @@ useEffect(() => {
     mobileHomeStack: {
       display: "flex",
       flexDirection: "column",
-      gap: "12px",
+      gap: "8px",
       paddingBottom: "8px"
     },
     header: {
@@ -13000,15 +13000,15 @@ useEffect(() => {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: effectiveMobile ? currentView === "home" ? "12px" : "10px" : isDesktopHome ? "clamp(14px, 2vh, 28px)" : "24px",
-      padding: effectiveMobile ? "12px 14px" : isDesktopHome ? "clamp(14px, 1.8vh, 22px) clamp(18px, 2vw, 28px)" : "12px 16px",
-      background: effectiveMobile ? "#ffffff" : isDesktopHome ? "linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(239, 246, 255, 0.90))" : "rgba(255, 255, 255, 0.88)",
+      marginBottom: effectiveMobile ? currentView === "home" ? "8px" : "10px" : isDesktopHome ? "clamp(14px, 2vh, 28px)" : "24px",
+      padding: effectiveMobile ? "14px 16px" : isDesktopHome ? "clamp(14px, 1.8vh, 22px) clamp(18px, 2vw, 28px)" : "12px 16px",
+      background: effectiveMobile ? "linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(239, 246, 255, 0.90))" : isDesktopHome ? "linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(239, 246, 255, 0.90))" : "rgba(255, 255, 255, 0.88)",
       backdropFilter: effectiveMobile ? "none" : "blur(14px)",
       borderRadius: effectiveMobile ? "14px": isDesktopHome ? "22px" : "16px",
       border: effectiveMobile ? "1px solid rgba(15, 23, 42, 0.12)" : isDesktopHome ? "1px solid rgba(148, 163, 184, 0.24)" : "1px solid rgba(15, 23, 42, 0.10)",
       boxShadow: effectiveMobile ? "none" : isDesktopHome ? "0 18px 44px rgba(15, 23, 42, 0.10)" : "0 8px 28px rgba(15, 23, 42, 0.09)",
       flexWrap: "wrap",
-      gap: effectiveMobile ? "10px": isDesktopHome ? "18px" : "12px"
+      gap: effectiveMobile ? "12px": isDesktopHome ? "18px" : "12px"
     },
     logo: {
       display: "flex",
@@ -13184,7 +13184,7 @@ useEffect(() => {
       background: effectiveMobile ? "#ffffff" : "rgba(255, 255, 255, 0.98)",
       backdropFilter: effectiveMobile ? "none" : "blur(10px)",
       borderRadius: effectiveMobile ? "14px": "16px",
-      padding: effectiveMobile ? "12px": "24px",
+      padding: effectiveMobile ? "14px": "24px",
       marginBottom: effectiveMobile ? "0": isDesktopHome ? "18px" : "16px",
       border: effectiveMobile ? "1px solid rgba(15, 23, 42, 0.12)" : "1px solid rgba(15, 23, 42, 0.08)",
       boxShadow: effectiveMobile ? "none" : "0 10px 24px rgba(15, 23, 42, 0.07)"
@@ -13346,14 +13346,14 @@ useEffect(() => {
       display: "flex",
       justifyContent: "center",
       alignItems: "center",
-      height: effectiveMobile ? "34px" : isDesktopHome ? "clamp(32px, 7vh, 96px)" : "60px",
+      height: effectiveMobile ? "40px" : isDesktopHome ? "clamp(32px, 7vh, 96px)" : "60px",
       width: "100%"
     },
     categoryName: {
-      fontSize: effectiveMobile ? "11px" : isDesktopHome ? "clamp(11px, 1.8vh, 18px)" : "13px",
+      fontSize: effectiveMobile ? "12px" : isDesktopHome ? "clamp(11px, 1.8vh, 18px)" : "13px",
       fontWeight: "500",
       color: "#334155",
-      minHeight: effectiveMobile ? "20px" : isDesktopHome ? "clamp(18px, 2.5vh, 32px)" : "28px",
+      minHeight: effectiveMobile ? "24px" : isDesktopHome ? "clamp(18px, 2.5vh, 32px)" : "28px",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -13362,7 +13362,7 @@ useEffect(() => {
     clinicalPearlCard: {
       background: effectiveMobile ? "#ffffff" : "rgba(255, 255, 255, 0.95)",
       borderRadius: effectiveMobile ? "14px" : "12px",
-      padding: effectiveMobile ? "14px 16px" : isDesktopHome ? "clamp(8px, 1.2vh, 18px) clamp(10px, 1.5vw, 20px)" : "10px 14px",
+      padding: effectiveMobile ? "10px 14px" : isDesktopHome ? "clamp(8px, 1.2vh, 18px) clamp(10px, 1.5vw, 20px)" : "10px 14px",
       border: effectiveMobile ? "1px solid rgba(15, 23, 42, 0.12)" : "1px solid rgba(15, 23, 42, 0.08)",
       borderLeft: "3px solid #64748b",
       boxShadow: effectiveMobile ? "none" : "0 6px 16px rgba(15, 23, 42, 0.06)",
@@ -13378,11 +13378,11 @@ useEffect(() => {
       letterSpacing: "0.08em",
       textTransform: "uppercase",
       color: "#94a3b8",
-      marginBottom: effectiveMobile ? "8px" : isDesktopHome ? "clamp(4px, 0.6vh, 8px)" : "6px"
+      marginBottom: effectiveMobile ? "6px" : isDesktopHome ? "clamp(4px, 0.6vh, 8px)" : "6px"
     },
     clinicalPearlText: effectiveMobile ? {
-      fontSize: "13px",
-      lineHeight: "1.55",
+      fontSize: "12.5px",
+      lineHeight: "1.45",
       color: "#334155",
       fontWeight: "400"
     } : {
@@ -13401,7 +13401,7 @@ useEffect(() => {
       fontWeight: "600",
       cursor: "pointer",
       padding: "4px 0",
-      marginTop: effectiveMobile ? "10px" : isDesktopHome ? "clamp(4px, 0.6vh, 10px)" : "8px",
+      marginTop: effectiveMobile ? "6px" : isDesktopHome ? "clamp(4px, 0.6vh, 10px)" : "8px",
       alignSelf: "flex-end",
       display: "flex",
       alignItems: "center",
@@ -13882,14 +13882,14 @@ useEffect(() => {
         /* @__PURE__ */ React.createElement("p", { style: { marginTop: "8px", fontSize: "13px", color: "#475569", lineHeight: 1.4 } }, highlightText(q.question.substring(0, 120) + (q.question.length > 120 ? "..." : ""), searchQuery))
       );
     }))),
-    /* @__PURE__ */ React.createElement("div", { style: styles.card }, /* @__PURE__ */ React.createElement("h2", { style: { marginBottom: "12px", marginTop: 0, fontSize: "18px", color: "#1e293b" } }, "Study by Category"), renderInfiniteWheel(CATEGORIES, catWheelPos, 100, (cat, idx, dist, absDist, rawIdx) => {
+    /* @__PURE__ */ React.createElement("div", { style: styles.card }, /* @__PURE__ */ React.createElement("h2", { style: { marginBottom: "12px", marginTop: 0, fontSize: "18px", color: "#1e293b" } }, "Study by Category"), renderInfiniteWheel(CATEGORIES, catWheelPos, 116, (cat, idx, dist, absDist, rawIdx) => {
       const catQuestions = QUESTIONS.filter((q) => q.categoryId === cat.id).length;
       const catAnswered = categoryAnsweredCounts[cat.id] || { answered: 0, correct: 0 };
       const answeredPercent = catQuestions > 0 ? Math.round(catAnswered.answered / catQuestions * 100) : 0;
       const correctPercent = catAnswered.answered > 0 ? Math.round(catAnswered.correct / catAnswered.answered * 100) : 0;
       return /* @__PURE__ */ React.createElement("div", {
         key: rawIdx,
-        style: { ...styles.wheelItemBase(dist, absDist, { tileWidth: 24, scaleFactor: 0.25, minScale: 0.35, maxDist: 3.5, gap: 0.8, tileHeight: 78 }), background: "rgba(255, 255, 255, 0.95)", borderRadius: "10px", padding: "7px 6px 3px", border: "1px solid rgba(15, 23, 42, 0.08)", borderTop: "3px solid " + cat.color + "cc", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", gap: "0px", overflow: "hidden", cursor: absDist < 0.45 ? "pointer" : "default", boxShadow: absDist < 0.55 ? "0 10px 24px rgba(15, 23, 42, 0.13)" : "0 3px 10px rgba(15, 23, 42, 0.05)" },
+        style: { ...styles.wheelItemBase(dist, absDist, { tileWidth: 28, scaleFactor: 0.25, minScale: 0.35, maxDist: 3.5, gap: 0.8, tileHeight: 90 }), background: "rgba(255, 255, 255, 0.95)", borderRadius: "10px", padding: "7px 6px 3px", border: "1px solid rgba(15, 23, 42, 0.08)", borderTop: "3px solid " + cat.color + "cc", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", gap: "0px", overflow: "hidden", cursor: absDist < 0.45 ? "pointer" : "default", boxShadow: absDist < 0.55 ? "0 10px 24px rgba(15, 23, 42, 0.13)" : "0 3px 10px rgba(15, 23, 42, 0.05)" },
         onClick: () => { if (absDist < 0.45) startCategoryReview(cat.id); }
       },
         /* @__PURE__ */ React.createElement("div", { style: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", gap: "2px" } },
@@ -13958,14 +13958,14 @@ useEffect(() => {
         /* @__PURE__ */ React.createElement("p", { style: { marginTop: "8px", fontSize: effectiveMobile ? "13px": "13px", color: "#475569", lineHeight: 1.4 } }, highlightText(q.question.substring(0, 120) + (q.question.length > 120 ? "..." : ""), searchQuery))
       );
     }))),
-    /* @__PURE__ */ React.createElement("div", { style: { ...styles.card, ...(isDesktopHome ? { flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden", padding: "clamp(8px, 1.2vh, 16px)" } : {}) } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: effectiveMobile ? "12px" : isDesktopHome ? "clamp(6px, 1vh, 16px)" : "16px" } }, /* @__PURE__ */ React.createElement("h2", { style: { margin: 0, fontSize: effectiveMobile ? "18px" : isDesktopHome ? "clamp(15px, 2vh, 20px)" : "19px", color: "#1e293b" } }, "Study by Category"), !effectiveMobile && hasAnyProgress && /* @__PURE__ */ React.createElement("button", { style: { background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: "12px", fontWeight: "500", opacity: 0.7, transition: "opacity 0.15s ease", padding: "4px 8px" }, onClick: resetAllProgress, onMouseEnter: (e) => { e.currentTarget.style.opacity = "1"; }, onMouseLeave: (e) => { e.currentTarget.style.opacity = "0.7"; } }, "Reset All Progress")), effectiveMobile ? renderInfiniteWheel(CATEGORIES, catWheelPos, 100, (cat, idx, dist, absDist, rawIdx) => {
+    /* @__PURE__ */ React.createElement("div", { style: { ...styles.card, ...(isDesktopHome ? { flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden", padding: "clamp(8px, 1.2vh, 16px)" } : {}) } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: effectiveMobile ? "12px" : isDesktopHome ? "clamp(6px, 1vh, 16px)" : "16px" } }, /* @__PURE__ */ React.createElement("h2", { style: { margin: 0, fontSize: effectiveMobile ? "18px" : isDesktopHome ? "clamp(15px, 2vh, 20px)" : "19px", color: "#1e293b" } }, "Study by Category"), !effectiveMobile && hasAnyProgress && /* @__PURE__ */ React.createElement("button", { style: { background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: "12px", fontWeight: "500", opacity: 0.7, transition: "opacity 0.15s ease", padding: "4px 8px" }, onClick: resetAllProgress, onMouseEnter: (e) => { e.currentTarget.style.opacity = "1"; }, onMouseLeave: (e) => { e.currentTarget.style.opacity = "0.7"; } }, "Reset All Progress")), effectiveMobile ? renderInfiniteWheel(CATEGORIES, catWheelPos, 116, (cat, idx, dist, absDist, rawIdx) => {
       const catQuestions = QUESTIONS.filter((q) => q.categoryId === cat.id).length;
       const catAnswered = categoryAnsweredCounts[cat.id] || { answered: 0, correct: 0 };
       const answeredPercent = catQuestions > 0 ? Math.round(catAnswered.answered / catQuestions * 100) : 0;
       const correctPercent = catAnswered.answered > 0 ? Math.round(catAnswered.correct / catAnswered.answered * 100) : 0;
       return /* @__PURE__ */ React.createElement("div", {
         key: rawIdx,
-        style: { ...styles.wheelItemBase(dist, absDist, { tileWidth: 24, scaleFactor: 0.25, minScale: 0.35, maxDist: 3.5, gap: 0.8, tileHeight: 78 }), background: "rgba(255, 255, 255, 0.95)", borderRadius: "10px", padding: "7px 6px 3px", border: "1px solid rgba(15, 23, 42, 0.08)", borderTop: "3px solid " + cat.color + "cc", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", gap: "0px", overflow: "hidden", cursor: absDist < 0.45 ? "pointer" : "default", boxShadow: absDist < 0.55 ? "0 10px 24px rgba(15, 23, 42, 0.13)" : "0 3px 10px rgba(15, 23, 42, 0.05)" },
+        style: { ...styles.wheelItemBase(dist, absDist, { tileWidth: 28, scaleFactor: 0.25, minScale: 0.35, maxDist: 3.5, gap: 0.8, tileHeight: 90 }), background: "rgba(255, 255, 255, 0.95)", borderRadius: "10px", padding: "7px 6px 3px", border: "1px solid rgba(15, 23, 42, 0.08)", borderTop: "3px solid " + cat.color + "cc", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", gap: "0px", overflow: "hidden", cursor: absDist < 0.45 ? "pointer" : "default", boxShadow: absDist < 0.55 ? "0 10px 24px rgba(15, 23, 42, 0.13)" : "0 3px 10px rgba(15, 23, 42, 0.05)" },
         onClick: () => { if (absDist < 0.45) startCategoryReview(cat.id); }
       },
         /* @__PURE__ */ React.createElement("div", { style: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", gap: "2px" } },
