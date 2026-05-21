@@ -1,0 +1,77 @@
+[
+  {
+    "id": 814,
+    "categoryId": 16,
+    "subcat": "screening",
+    "question": "A 48-year-old woman with average breast cancer risk asks about mammography screening. She has no BRCA mutation, prior chest radiation, or prior breast cancer. Which recommendation aligns with the 2024 USPSTF update?",
+    "options": [
+      "A) Begin biennial screening mammography at age 50 only; screening before 50 is never recommended",
+      "B) Offer biennial screening mammography starting at age 40 for women at average risk, continuing through at least age 74, with individualized decisions for ages 75 and older",
+      "C) Annual MRI only without mammography for all average-risk women",
+      "D) Screening mammography once at age 65 then stop regardless of health status"
+    ],
+    "correctAnswer": 1,
+    "explanation": "CORRECT: B (Offer biennial screening mammography starting at age 40 for women at average risk, continuing through at least age 74, with individualized decisions for ages 75 and older).\n\nCLINICAL MANIFESTATIONS:\nBreast cancer often presents asymptomatically on screening; when symptomatic may cause palpable mass, skin dimpling, nipple discharge, or axillary adenopathy. Average-risk women benefit from early detection when treatment is less morbid and mortality lower. Younger-onset cancers occur and motivated USPSTF to lower starting age.\n\nPATHOPHYSIOLOGY:\nMost breast cancers are invasive ductal or lobular carcinomas arising from epithelial proliferation influenced by hormonal, genetic, and environmental factors. Screening detects preclinical disease before palpability.\n\nDIAGNOSTIC APPROACH:\nUSPSTF 2024 (Grade B): biennial screening mammography for women 40–74 at average risk. Ages 75+: individualized based on health, life expectancy, prior screening history. High-risk women (BRCA, strong family history, chest radiation age 10–30, prior atypical hyperplasia) need earlier MRI/mammography per ACS/NCCN—not this protocol. Clinical breast exam alone is insufficient screening.\n\nMANAGEMENT:\nShared decision-making discusses benefits (mortality reduction, especially 40–49 with smaller absolute benefit), harms (false positives, callbacks, overdiagnosis, anxiety), and breast density notification laws in many states (may warrant supplemental imaging per guidelines). Ensure follow-up for BI-RADS 0/4/5. Continue screening unless limited life expectancy (<10 years) or patient preference after informed discussion.\n\nPrimary care orders mammography, tracks results, and coordinates diagnostic workup for abnormalities.\n\nKEY POINTS:\nUSPSTF 2024: biennial mammography from age 40–74 for average-risk women—not wait until 50 only. MRI-only or single mammogram at 65 is not standard. High-risk patients need enhanced protocols.",
+    "bulletExplanation": "- CORRECT: B (Biennial mammography starting at age 40 through at least 74).\n- 2024 USPSTF recommends biennial screening mammography for average-risk women beginning at age 40.\n- Continue through at least age 74; individualize for women 75 and older.\n- Age 50-only start, MRI-only, or one-time screening at 65 do not match current guidance."
+  },
+  {
+    "id": 815,
+    "categoryId": 16,
+    "subcat": "screening",
+    "question": "A 35-year-old man born in a country with high hepatitis B prevalence has no prior HBV testing. He is asymptomatic. Which screening approach is most appropriate?",
+    "options": [
+      "A) No screening unless liver enzymes are elevated",
+      "B) One-time hepatitis B surface antigen (HBsAg), anti-HBs, and total anti-HBc testing per USPSTF to identify chronic infection, immunity, or susceptibility",
+      "C) Hepatitis B screening only for persons over age 65",
+      "D) Screen only if patient requests hepatitis C testing"
+    ],
+    "correctAnswer": 1,
+    "explanation": "CORRECT: B (One-time hepatitis B surface antigen [HBsAg], anti-HBs, and total anti-HBc testing per USPSTF to identify chronic infection, immunity, or susceptibility).\n\nCLINICAL MANIFESTATIONS:\nChronic hepatitis B (CHB) is often asymptomatic for decades yet causes cirrhosis and hepatocellular carcinoma. Patients born in endemic regions (Asia, Africa, Pacific Islands, Eastern Europe) have higher prevalence. Normal ALT does not exclude active disease or need for treatment.\n\nPATHOPHYSIOLOGY:\nHBV replicates in hepatocytes; chronic infection defined by HBsAg ≥6 months. Immune tolerance, immune active, inactive carrier, and resolved phases determine monitoring and antiviral need. Integration into host genome contributes to carcinogenesis even on treatment.\n\nDIAGNOSTIC APPROACH:\nUSPSTF 2020 recommends screening adolescents and adults at increased risk including those born in countries with ≥2% HBsAg prevalence, HIV-positive persons, injection drug users, household contacts of HBV-infected persons, and men who have sex with men. Triple panel: HBsAg (current infection), anti-HBs (immunity from vaccine or recovery), anti-HBc (past exposure). Interpretation distinguishes susceptible (all negative), vaccinated (anti-HBs alone positive), resolved (anti-HBc + anti-HBs), chronic (HBsAg positive).\n\nMANAGEMENT:\nChronic HBV: hepatology referral, HBV DNA, ALT, fibrosis assessment, HCC surveillance with ultrasound ± AFP in indicated patients, antiviral therapy (tenofovir/entecavir) when criteria met. Vaccinate susceptible household contacts; counsel on alcohol avoidance. Screen does not depend on elevated LFTs or age >65.\n\nPrimary care implements one-time risk-based screening and linkage to care.\n\nKEY POINTS:\nHBV screening: one-time HBsAg, anti-HBs, anti-HBc for high-prevalence birth country—not wait for abnormal LFTs. Distinct from HCV screening. Age 65 cutoff is incorrect.",
+    "bulletExplanation": "- CORRECT: B (One-time HBsAg, anti-HBs, anti-HBc for high-risk patient).\n- USPSTF recommends HBV screening for people born in high-prevalence countries regardless of symptoms.\n- Triple serology identifies chronic infection, immunity, or need for vaccination.\n- Normal liver enzymes or age limits do not exclude indicated screening."
+  },
+  {
+    "id": 816,
+    "categoryId": 16,
+    "subcat": "nutrition",
+    "question": "A 58-year-old woman with type 2 diabetes and hyperlipidemia asks about dietary pattern to reduce cardiovascular risk beyond medications. She is willing to change eating habits. Which recommendation has the strongest evidence in primary prevention?",
+    "options": [
+      "A) Very low-carbohydrate ketogenic diet with unlimited saturated fat",
+      "B) Mediterranean-style dietary pattern emphasizing vegetables, fruits, whole grains, legumes, nuts, olive oil, and fish; limiting processed meats and refined carbohydrates",
+      "C) Strict juice-only cleanse for 30 days",
+      "D) Eliminate all dietary fat including nuts and olive oil"
+    ],
+    "correctAnswer": 1,
+    "explanation": "CORRECT: B (Mediterranean-style dietary pattern emphasizing vegetables, fruits, whole grains, legumes, nuts, olive oil, and fish; limiting processed meats and refined carbohydrates).\n\nCLINICAL MANIFESTATIONS:\nPatients with diabetes and dyslipidemia carry elevated ASCVD risk requiring lifestyle plus pharmacotherapy. Dietary counseling in primary care significantly affects weight, glycemic control, blood pressure, and lipid profiles when sustained patterns are adopted—not short-term fad diets.\n\nPATHOPHYSIOLOGY:\nMediterranean diet components reduce inflammation, improve insulin sensitivity, and favorably alter lipoproteins (lower LDL, higher HDL function) through monounsaturated fats, polyphenols, fiber, and omega-3 fatty acids. Processed meats and refined carbohydrates increase cardiometabolic risk via sodium, advanced glycation products, and glycemic load.\n\nDIAGNOSTIC APPROACH:\nAssess current diet, readiness to change, food security, and cultural preferences. Review medications (statins, GLP-1, SGLT2i) that complement diet. BMI, BP, A1c, and lipids track response. Refer registered dietitian when complex or poorly controlled.\n\nMANAGEMENT:\nPREDIMED and numerous cohort studies support Mediterranean diet for primary and secondary cardiovascular prevention and diabetes management. Practical counseling: half plate non-starchy vegetables, whole grains, fatty fish twice weekly, olive oil as primary fat, limit red/processed meat and sugar-sweetened beverages. Very low-carb/ketogenic diets may improve short-term glycemia but long-term cardiovascular effects depend on fat quality—unlimited saturated fat is not recommended. Juice cleanses and zero-fat diets are unsupported and potentially harmful.\n\nCoordinate with diabetes self-management education.\n\nKEY POINTS:\nMediterranean dietary pattern has strongest evidence for cardiometabolic risk reduction in primary care—not juice cleanses or unlimited saturated fat keto. Emphasize sustainable pattern over restrictive fads.",
+    "bulletExplanation": "- CORRECT: B (Mediterranean-style diet with vegetables, whole grains, olive oil, fish).\n- Mediterranean dietary pattern has robust evidence for cardiovascular and diabetes risk reduction.\n- Limit processed meats and refined carbohydrates; include nuts and healthy fats.\n- Juice cleanses, zero-fat diets, or unlimited saturated fat keto are not evidence-based primary prevention."
+  },
+  {
+    "id": 817,
+    "categoryId": 16,
+    "subcat": "exerciseLifestyle",
+    "question": "A 47-year-old man drinks 5 beers nightly and scores 18 on the AUDIT questionnaire ( hazardous drinking). He wants to cut down but is not alcohol-dependent with withdrawal history. Which evidence-based primary care intervention is most appropriate?",
+    "options": [
+      "A) Brief intervention using motivational interviewing and structured brief counseling; consider naltrexone or acamprosate if goal is reduction/abstinence with ongoing support",
+      "B) Immediate inpatient detoxification for all AUDIT scores above 10",
+      "C) No discussion of alcohol because patient has not requested referral",
+      "D) Prescribe benzodiazepines daily for long-term anxiety related to drinking"
+    ],
+    "correctAnswer": 0,
+    "explanation": "CORRECT: A (Brief intervention using motivational interviewing and structured brief counseling; consider naltrexone or acamprosate if goal is reduction/abstinence with ongoing support).\n\nCLINICAL MANIFESTATIONS:\nHazardous drinking (AUDIT ≥8 men, ≥7 women) increases risk of liver disease, hypertension, cancer, injury, and depression yet often unrecognized in primary care. This patient acknowledges desire to cut down—ideal for brief intervention. Absence of withdrawal history makes outpatient management appropriate.\n\nPATHOPHYSIOLOGY:\nAlcohol use disorder exists on a spectrum from hazardous use to dependence with withdrawal. Chronic intake affects GABA/glutamate balance; dependence with withdrawal requires medically supervised detox—not this case.\n\nDIAGNOSTIC APPROACH:\nAUDIT and AUDIT-C screen quantity and consequences. Assess DSM-5 criteria for severity, CAGE/AUDIT for tracking. Labs: AST/ALT, GGT, CBC (MCV), CMP. Evaluate comorbid depression/anxiety, sleep disorders, and polysubstance use. CIWA-Ar if withdrawal suspected.\n\nMANAGEMENT:\nUSPSTF recommends screening and brief behavioral counseling in adults. SBIRT model: Screen, Brief intervention, Referral to treatment. Motivational interviewing explores ambivalence and sets SMART goals. Pharmacotherapy: naltrexone (reduces craving, relapse) or acamprosate (abstinence support) for moderate-severe AUD without contraindications; disulfiram if highly motivated. Inpatient detox reserved for severe dependence, withdrawal risk, or failed outpatient trials—not AUDIT 18 alone without dependence. Long-term benzodiazepines worsen alcohol outcomes.\n\nFollow-up visits monitor consumption, liver health, and mental health.\n\nKEY POINTS:\nHazardous drinking: brief intervention plus consider naltrexone/acamprosate—not mandatory inpatient detox or ignoring AUDIT. Daily benzodiazepines are harmful long-term strategy.",
+    "bulletExplanation": "- CORRECT: A (Brief motivational intervention; consider naltrexone or acamprosate).\n- AUDIT score 18 indicates hazardous drinking warranting SBIRT-style counseling in primary care.\n- Outpatient brief intervention and pharmacotherapy appropriate without withdrawal history.\n- Inpatient detox for all scores, avoiding discussion, or chronic benzodiazepines are incorrect."
+  },
+  {
+    "id": 818,
+    "categoryId": 16,
+    "subcat": "misc",
+    "question": "A 44-year-old man with BMI 32, fasting glucose 110 mg/dL, and HbA1c 6.0% has no diabetes diagnosis. He is sedentary and asks how to prevent progression to type 2 diabetes. Which recommendation has the strongest evidence?",
+    "options": [
+      "A) Metformin 1000 mg daily alone without lifestyle change as first-line for all prediabetes",
+      "B) Intensive lifestyle modification program targeting ≥7% weight loss and ≥150 minutes/week moderate physical activity (Diabetes Prevention Program model), with metformin considered if lifestyle not achieved or high-risk features",
+      "C) No intervention until HbA1c reaches 6.5%",
+      "D) Strict fasting diet under 800 kcal/day indefinitely without medical supervision"
+    ],
+    "correctAnswer": 1,
+    "explanation": "CORRECT: B (Intensive lifestyle modification program targeting ≥7% weight loss and ≥150 minutes/week moderate physical activity [Diabetes Prevention Program model], with metformin considered if lifestyle not achieved or high-risk features).\n\nCLINICAL MANIFESTATIONS:\nPrediabetes (IFG 100–125, HbA1c 5.7–6.4%, or OGTT 140–199) identifies patients at high short-term risk of type 2 diabetes and cardiovascular disease. Many are asymptomatic; primary care detection enables prevention before complications.\n\nPATHOPHYSIOLOGY:\nInsulin resistance and beta-cell dysfunction progress over years; weight gain and inactivity accelerate decline. Lifestyle changes improve insulin sensitivity and preserve beta-cell function more effectively than observation.\n\nDIAGNOSTIC APPROACH:\nConfirm prediabetes with repeat testing. Assess cardiovascular risk, fatty liver, OSA, and family history. Identify patients who may benefit most from pharmacotherapy (BMI ≥35, age <60, history of gestational diabetes, rising A1c despite lifestyle).\n\nMANAGEMENT:\nDiabetes Prevention Program (DPP) demonstrated 58% relative risk reduction with lifestyle intervention (7% weight loss, 150 min/week moderate activity) versus 31% with metformin alone. ADA recommends structured DPP or equivalent for all prediabetes. Metformin adjunct for high-risk when lifestyle insufficient—not monotherapy replacing lifestyle. Waiting until diabetes threshold misses prevention window. Very-low-calorie diets require medical supervision and are not first-line.\n\nRefer to CDC-recognized DPP programs when available; track weight, activity, and A1c annually.\n\nKEY POINTS:\nPrediabetes: DPP-style lifestyle (7% weight loss, 150 min/week activity) is first-line—stronger evidence than metformin alone. Do not defer until diabetes diagnostic criteria met.",
+    "bulletExplanation": "- CORRECT: B (DPP lifestyle program first; metformin if needed for high-risk).\n- Prediabetes (A1c 6.0%, IFG 110) warrants intensive lifestyle intervention per DPP evidence.\n- Target ≥7% weight loss and ≥150 minutes/week moderate activity.\n- Metformin alone without lifestyle, waiting for diabetes, or unsupervised extreme fasting are incorrect."
+  }
+]
