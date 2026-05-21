@@ -12301,7 +12301,12 @@ useEffect(() => {
   };
   const startQuiz = (count) => {
     play("click");
-    resetQuizState(shuffleArray(QUESTIONS).slice(0, count), "quiz");
+    const unanswered = QUESTIONS.filter((q) => !(q.id in progress.answeredQuestions));
+    if (unanswered.length === 0) {
+      alert("You've answered every question! Use Review Incorrect or study by category to keep practicing.");
+      return;
+    }
+    resetQuizState(shuffleArray(unanswered).slice(0, count), "quiz");
   };
   const startCategoryReview = (categoryId) => {
     play("click");
