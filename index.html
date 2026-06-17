@@ -10763,7 +10763,7 @@ const QUESTIONS = [
     "correctAnswer": 1,
     "explanation": "CORRECT: B (Interview adolescent confidentially per state law, assess safety, develop treatment plan with agreed disclosure for safety concerns, and involve parent when appropriate).\n\nCLINICAL MANIFESTATIONS:\nAdolescent depression often presents with mood change, anhedonia, school decline, and social withdrawal. Positive confidential screening warrants private assessment even when suicidality denied initially—risk may emerge with trust. Minor consent laws vary by state for mental health treatment but safety exceptions universally permit breaching confidentiality for imminent harm.\n\nPATHOPHYSIOLOGY:\nAdolescent brain development (prefrontal cortical maturation lagging limbic reactivity) increases vulnerability to mood disorders and impulsive behavior under stress. Untreated depression raises suicide risk, substance use, and academic failure. Early identification and treatment (therapy ± SSRI) improve outcomes; fluoxetine is FDA-approved for adolescent depression with monitoring.\n\nDIAGNOSTIC APPROACH:\nUse HEADSS psychosocial interview (Home, Education, Activities, Drugs, Sexuality, Suicide/depression) in private. Screen suicide with direct questions (frequency, plan, intent, access to means). Assess bipolar family history before SSRI. Know state minor consent statutes and clinic confidentiality policies. Document capacity and safety plan.\n\nMANAGEMENT:\nProvide confidential counseling within legal limits; involve parent/guardian for safety (active suicidality, abuse) or with adolescent agreement for treatment support. Initiate evidence-based psychotherapy (CBT); consider SSRI (fluoxetine first-line in teens) for moderate-severe depression with close follow-up first 4 weeks for activation/suicidality monitoring—not prescribe without follow-up. Safety planning and crisis resources (988, text lines). Cannot refuse mental health discussion due to parent presence requirement alone.\n\nKnow state laws on minor consent for mental health and reproductive care. Document safety plan with crisis numbers. Involve school counselor with permission when academic decline present. Fluoxetine monitoring visits weekly x4 then biweekly when initiating in adolescents per FDA guidance.\n\n988 Suicide and Crisis Lifeline and local mobile crisis teams should be in safety plan for adolescents.\n\nMinor consent laws vary—document what adolescent consents to share with parent. Positive depression screen with school decline warrants safety plan even without active SI. Warm handoff to therapist within 2 weeks; SSRI if moderate-severe with black box monitoring schedule.\n\nDocument confidential portion of visit separately per clinic policy. Safety contract with adolescent listing warning signs and crisis resources. Involve parent in treatment when teen consents or safety mandates disclosure.\n\nAdolescent depression requires confidential assessment with safety planning.\n\nKEY POINTS:\nAdolescent positive depression screen: confidential interview, safety assessment, treatment with follow-up—disclose to parent when safety requires or teen agrees. Do not block care requiring parent in room for entire visit or disclose everything automatically. SSRI without monitoring plan is unsafe.",
     "bulletExplanation": "- CORRECT: B (Confidential HEADSS/safety assessment; involve parent when appropriate).\n- Positive adolescent depression screen needs private evaluation and safety assessment despite denied suicidality.\n- Follow state confidentiality rules; breach for imminent harm; engage parent with teen agreement when possible.\n- Do not require parent for all mental health discussion or prescribe SSRI without follow-up monitoring."
-  },
+  },
 /* BATCH 4 NEW QUESTIONS (794-818) — IMAGE-READY IDs: 796,801,802,804,809,811 */
       {
     "id": 794,
@@ -11286,7 +11286,11 @@ function PCPLearningApp() {
   const VOICE_PREF_KEY = "pcp-preferred-voice";
   const OPENAI_KEY_KEY = "pcp-openai-tts-key";
   const OPENAI_VOICES = ["alloy", "ash", "ballad", "coral", "echo", "fable", "nova", "onyx", "sage", "shimmer"];
-  const OPENAI_FAST_FAIL_MS = 4000;
+  const OPENAI_TTS_MODEL = "tts-1-hd";
+  const OPENAI_TTS_TIMEOUT_MS = 45000;
+  const OPENAI_TTS_MAX_CHARS = 3800;
+  const OPENAI_TTS_RETRIES = 3;
+  const OPENAI_TTS_RETRY_DELAY_MS = 1200;
   const NOVELTY_VOICES = /^(Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Good News|Jester|Junior|Organ|Superstar|Trinoids|Whisper|Wobble|Zarvox)$/i;
   const HIGH_QUALITY_DEVICE_VOICE = /(Google UK English|Microsoft Aria|Microsoft Jenny|Microsoft Guy|Microsoft Ryan|Microsoft Sonia|Aria|Jenny|Guy|Ryan|Sonia)/i;
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -11356,7 +11360,7 @@ function PCPLearningApp() {
   const audioCtxRef = useRef(null);
   const audioSourceRef = useRef(null);
   const openaiAbortRef = useRef(null);
-  const openaiRequestSeqRef = useRef(0);
+  const ttsGenerationRef = useRef(0);
   const handsFreeRunTokenRef = useRef(0);
   const handleAnswerRef = useRef(null);
   const nextQuestionRef = useRef(null);
@@ -11575,7 +11579,7 @@ useEffect(() => {
   };
 
   const stopSpeaking = useCallback(() => {
-    openaiRequestSeqRef.current += 1;
+    ttsGenerationRef.current += 1;
     if (openaiAbortRef.current) {
       try { openaiAbortRef.current.abort(); } catch(e) {}
       openaiAbortRef.current = null;
@@ -11595,54 +11599,60 @@ useEffect(() => {
     setIsSpeaking(false);
   }, []);
 
-  const playOpenAIAudio = useCallback((text, options) => {
-    return new Promise(async (resolve) => {
-      const key = openaiKeyRef.current;
-      if (!key) { resolve(false); return; }
+  const fetchOpenAITTSBuffer = useCallback(async (text, generation) => {
+    const key = openaiKeyRef.current;
+    if (!key || generation !== ttsGenerationRef.current) return null;
+    const ctx = audioCtxRef.current;
+    if (!ctx) return null;
+    const controller = new AbortController();
+    openaiAbortRef.current = controller;
+    let timeoutTimer = null;
+    try {
+      if (OPENAI_TTS_TIMEOUT_MS > 0) {
+        timeoutTimer = setTimeout(() => {
+          try { controller.abort(); } catch(e) {}
+        }, OPENAI_TTS_TIMEOUT_MS);
+      }
+      const resp = await fetch("https://api.openai.com/v1/audio/speech", {
+        method: "POST",
+        signal: controller.signal,
+        headers: { "Authorization": "Bearer " + key, "Content-Type": "application/json" },
+        body: JSON.stringify({ model: OPENAI_TTS_MODEL, voice: getOpenAIVoiceName(), input: text, response_format: "mp3" })
+      });
+      if (timeoutTimer) { clearTimeout(timeoutTimer); timeoutTimer = null; }
+      if (generation !== ttsGenerationRef.current || !resp.ok) return null;
+      const arrayBuf = await resp.arrayBuffer();
+      if (generation !== ttsGenerationRef.current) return null;
+      return await ctx.decodeAudioData(arrayBuf);
+    } catch (e) {
+      return null;
+    } finally {
+      if (timeoutTimer) clearTimeout(timeoutTimer);
+      if (openaiAbortRef.current === controller) openaiAbortRef.current = null;
+    }
+  }, []);
+
+  const playAudioBuffer = useCallback((audioBuf, generation) => {
+    return new Promise((resolve) => {
+      if (generation !== ttsGenerationRef.current) { resolve(false); return; }
       const ctx = audioCtxRef.current;
-      if (!ctx) { resolve(false); return; }
-      const fastFailMs = options && Number.isFinite(options.fastFailMs) ? options.fastFailMs : OPENAI_FAST_FAIL_MS;
-      const seq = ++openaiRequestSeqRef.current;
-      const controller = new AbortController();
-      openaiAbortRef.current = controller;
-      let fastFailTimer = null;
+      if (!ctx || !audioBuf) { resolve(false); return; }
       try {
-        if (fastFailMs > 0) {
-          fastFailTimer = setTimeout(() => {
-            try { controller.abort(); } catch(e) {}
-          }, fastFailMs);
-        }
-        const resp = await fetch("https://api.openai.com/v1/audio/speech", {
-          method: "POST",
-          signal: controller.signal,
-          headers: { "Authorization": "Bearer " + key, "Content-Type": "application/json" },
-          body: JSON.stringify({ model: "tts-1", voice: getOpenAIVoiceName(), input: text, response_format: "mp3" })
-        });
-        if (fastFailTimer) { clearTimeout(fastFailTimer); fastFailTimer = null; }
-        if (!resp.ok || seq !== openaiRequestSeqRef.current) { resolve(false); return; }
-        const arrayBuf = await resp.arrayBuffer();
-        if (seq !== openaiRequestSeqRef.current) { resolve(false); return; }
-        const audioBuf = await ctx.decodeAudioData(arrayBuf);
-        if (seq !== openaiRequestSeqRef.current) { resolve(false); return; }
         const source = ctx.createBufferSource();
         source.buffer = audioBuf;
         source.connect(ctx.destination);
         audioSourceRef.current = source;
         source.onended = () => {
           if (audioSourceRef.current === source) audioSourceRef.current = null;
-          if (seq === openaiRequestSeqRef.current) resolve(true);
-          else resolve(false);
+          resolve(generation === ttsGenerationRef.current);
         };
-        source.start();
+        source.start(0);
       } catch (e) {
-        if (fastFailTimer) { clearTimeout(fastFailTimer); fastFailTimer = null; }
         audioSourceRef.current = null;
         resolve(false);
-      } finally {
-        if (openaiAbortRef.current === controller) openaiAbortRef.current = null;
       }
     });
-  }, [OPENAI_FAST_FAIL_MS]);
+  }, []);
 
   const normalizeMedicalSpeechText = useCallback((text) => {
     if (!text) return "";
@@ -11914,31 +11924,67 @@ useEffect(() => {
     return false;
   }, []);
 
-  const readAloud = useCallback((text) => {
+  const splitIntoOpenAIChunks = useCallback((text) => {
+    if (!text) return [];
+    const built = buildSpeechText(text);
+    if (built.length <= OPENAI_TTS_MAX_CHARS) return [built];
+    const sentences = built.match(/[^.!?]+[.!?]+[\s]*/g) || [built];
+    const chunks = [];
+    let current = "";
+    for (const s of sentences) {
+      if (current.length + s.length > OPENAI_TTS_MAX_CHARS && current.length > 0) {
+        chunks.push(current.trim());
+        current = s;
+      } else {
+        current += s;
+      }
+    }
+    if (current.trim()) chunks.push(current.trim());
+    return chunks.length > 0 ? chunks : [built];
+  }, [buildSpeechText]);
+
+  const speakOpenAISequenced = useCallback(async (text, shouldContinueFn) => {
+    const generation = ttsGenerationRef.current;
+    const canContinue = () => {
+      if (generation !== ttsGenerationRef.current) return false;
+      return typeof shouldContinueFn !== "function" || shouldContinueFn();
+    };
+    if (!canContinue()) return false;
+    const chunks = splitIntoOpenAIChunks(text);
+    if (!chunks.length) return true;
+    let prefetch = fetchOpenAITTSBuffer(chunks[0], generation);
+    for (let i = 0; i < chunks.length; i++) {
+      if (!canContinue()) return false;
+      let buffer = null;
+      for (let attempt = 0; attempt < OPENAI_TTS_RETRIES; attempt++) {
+        buffer = await prefetch;
+        if (buffer) break;
+        if (!canContinue()) return false;
+        if (attempt < OPENAI_TTS_RETRIES - 1) {
+          await new Promise((r) => setTimeout(r, OPENAI_TTS_RETRY_DELAY_MS * (attempt + 1)));
+          prefetch = fetchOpenAITTSBuffer(chunks[i], generation);
+        }
+      }
+      if (!buffer) return false;
+      if (i + 1 < chunks.length) {
+        prefetch = fetchOpenAITTSBuffer(chunks[i + 1], generation);
+      }
+      const ok = await playAudioBuffer(buffer, generation);
+      if (!ok) return false;
+    }
+    return true;
+  }, [splitIntoOpenAIChunks, fetchOpenAITTSBuffer, playAudioBuffer]);
+
+  const readAloud = useCallback(async (text) => {
     if (!text) return;
     if (isSpeaking) { stopSpeaking(); return; }
     ensureAudioContext();
 
     if (isOpenAIVoice() && openaiKeyRef.current) {
       setIsSpeaking(true);
-      const built = buildSpeechText(text);
-      playOpenAIAudio(built, { fastFailMs: OPENAI_FAST_FAIL_MS }).then((ok) => {
-        if (ok) {
-          setIsSpeaking(false);
-          return;
-        }
-        if (!window.speechSynthesis) { setIsSpeaking(false); return; }
-        window.speechSynthesis.cancel();
-        const fallbackUtter = new SpeechSynthesisUtterance(built);
-        const voice = pickBestVoice();
-        if (voice) fallbackUtter.voice = voice;
-        fallbackUtter.rate = 1.0;
-        fallbackUtter.pitch = 1.0;
-        fallbackUtter.volume = 1;
-        fallbackUtter.onend = () => setIsSpeaking(false);
-        fallbackUtter.onerror = () => setIsSpeaking(false);
-        window.speechSynthesis.speak(fallbackUtter);
-      });
+      const generation = ttsGenerationRef.current;
+      await speakOpenAISequenced(text, () => generation === ttsGenerationRef.current);
+      setIsSpeaking(false);
       return;
     }
 
@@ -11966,7 +12012,7 @@ useEffect(() => {
       }
     }, 10000);
     window.speechSynthesis.speak(utter);
-  }, [isSpeaking, stopSpeaking, buildSpeechText, playOpenAIAudio, OPENAI_FAST_FAIL_MS]);
+  }, [isSpeaking, stopSpeaking, buildSpeechText, speakOpenAISequenced]);
 
   useEffect(() => {
     return () => {
@@ -12018,25 +12064,6 @@ useEffect(() => {
       }
     }
     return finalChunks.length > 0 ? finalChunks : [built];
-  }, [buildSpeechText]);
-
-  const splitIntoOpenAIChunks = useCallback((text) => {
-    if (!text) return [];
-    const built = buildSpeechText(text);
-    if (built.length <= 220) return [built];
-    const sentences = built.match(/[^.!?]+[.!?]+[\s]*/g) || [built];
-    const chunks = [];
-    let current = "";
-    for (const s of sentences) {
-      if (current.length + s.length > 260 && current.length > 0) {
-        chunks.push(current.trim());
-        current = s;
-      } else {
-        current += s;
-      }
-    }
-    if (current.trim()) chunks.push(current.trim());
-    return chunks.length > 0 ? chunks : [built];
   }, [buildSpeechText]);
 
   const speakSingleChunk = useCallback((chunk) => {
@@ -12094,20 +12121,6 @@ useEffect(() => {
     });
   }, []);
 
-  const speakOpenAIWithFallback = useCallback(async (text, shouldContinueFn) => {
-    const chunks = splitIntoOpenAIChunks(text);
-    for (let i = 0; i < chunks.length; i++) {
-      if (typeof shouldContinueFn === "function" && !shouldContinueFn()) return false;
-      const ok = await playOpenAIAudio(chunks[i], { fastFailMs: OPENAI_FAST_FAIL_MS });
-      if (!ok) {
-        if (typeof shouldContinueFn === "function" && !shouldContinueFn()) return false;
-        await speakSingleChunk(chunks[i]);
-      }
-      if (i < chunks.length - 1) await new Promise((r) => setTimeout(r, 20));
-    }
-    return true;
-  }, [splitIntoOpenAIChunks, playOpenAIAudio, OPENAI_FAST_FAIL_MS, speakSingleChunk]);
-
   const speakAndWait = useCallback(async (text, shouldContinueFn) => {
     if (!text) return;
     const canContinue = typeof shouldContinueFn === "function"
@@ -12115,7 +12128,7 @@ useEffect(() => {
       : () => handsFreeRef.current.active;
     if (!canContinue()) return;
     if (isOpenAIVoice() && openaiKeyRef.current) {
-      await speakOpenAIWithFallback(text, canContinue);
+      await speakOpenAISequenced(text, canContinue);
       return;
     }
     if (!window.speechSynthesis) return;
@@ -12128,7 +12141,7 @@ useEffect(() => {
         await new Promise(r => setTimeout(r, 30));
       }
     }
-  }, [splitIntoSpeechChunks, speakSingleChunk, speakOpenAIWithFallback]);
+  }, [splitIntoSpeechChunks, speakSingleChunk, speakOpenAISequenced]);
 
   const initRecognition = useCallback(() => {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
