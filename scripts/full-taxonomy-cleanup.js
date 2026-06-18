@@ -116,8 +116,8 @@ function classifyWithin(categoryId, subcat, q, t) {
       if (has(t, /\b(obesity|bmi|weight loss|metabolic|semaglutide)\b/)) return assign(4, "obesity");
       return assign(4, subcat);
     case 5:
-      if (has(t, /\b(ckd|egfr|albuminuria|proteinuria|aki|creatinine|kidney|renal|nephrotic|glomerul|hematuria|hyperkalemia|polycystic|nephrology)\b/)) return assign(5, "nephrology");
-      if (has(t, /\b(stone|nephrolithiasis|ureteral|flank pain|radiolucent)\b/)) return assign(5, "stone");
+      if (has(s, /\b(stone|nephrolithiasis|ureteral stone|renal stone|kidney stone|flank pain|radiolucent|calcium oxalate|uric acid stone|staghorn)\b/)) return assign(5, "stone");
+      if (has(s, /\b(ckd|egfr|albuminuria|proteinuria|aki|creatinine|kidney|renal|nephrotic|glomerul|hematuria|hyperkalemia|polycystic|nephrology)\b/)) return assign(5, "nephrology");
       if (has(t, /\b(testicular|scrotal|varicocele|hydrocele|epididymitis|torsion|priapism|inguinal hernia)\b/)) return assign(5, "scrotal");
       if (has(t, /\b(bph|luts|prostate|psa|urinary retention|incontinence|overactive bladder|stress incontinence|urge incontinence|sildenafil|erectile)\b/)) return assign(5, "luts");
       return assign(5, subcat);
