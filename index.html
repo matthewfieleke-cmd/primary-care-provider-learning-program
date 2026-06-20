@@ -17058,7 +17058,7 @@ useEffect(() => {
         },
         /* @__PURE__ */ React.createElement("div", { style: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%" } },
           /* @__PURE__ */ React.createElement("div", { style: styles.categoryIcon }, renderHomeCategoryIcon(cat.icon, effectiveMobile ? 32 : deskCatIconSize)),
-          /* @__PURE__ */ React.createElement("div", { style: styles.categoryName }, cat.name)),
+          /* @__PURE__ */ React.createElement("div", { style: { ...styles.categoryName, ...(isDesktopHome && cat.name === "Urology/Nephrology" ? { fontSize: "clamp(9px, 1.45vh, 14px)", whiteSpace: "nowrap" } : {}) } }, cat.name)),
         /* @__PURE__ */ React.createElement("div", { style: {
           fontSize: isDesktopHome ? "clamp(9px, 1.2vh, 12px)" : "11px",
           color: "#64748b",
