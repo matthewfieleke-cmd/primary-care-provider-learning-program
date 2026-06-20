@@ -187,11 +187,11 @@ const CATEGORIES = [
     { id: "obesity", name: "Obesity / Metabolism" },
     { id: "misc", name: "General / Misc" }
   ] },
-  { id: 5, name: "Urology", icon: "kidneys", color: "#F4A261", subcategories: [
+  { id: 5, name: "Urology/Nephrology", icon: "kidneys", color: "#F4A261", subcategories: [
     { id: "luts", name: "Lower Urinary Tract / Prostate" },
     { id: "stone", name: "Nephrolithiasis" },
     { id: "scrotal", name: "Scrotal / Testicular" },
-    { id: "nephrology", name: "Nephrology / CKD" },
+    { id: "nephrology", name: "CKD / Electrolytes" },
     { id: "misc", name: "General / Misc" }
   ] },
   { id: 6, name: "Neurology", icon: "neuro", color: "#9B5DE5", subcategories: [
@@ -15736,7 +15736,7 @@ useEffect(() => {
         telophase: 1.95,   // Oncology (slightly larger)
         pancreas: 2.18,    // Endocrine (slightly larger again)
         womens: 1.47,      // Women's Health (slightly smaller)
-        kidneys: 1.5,      // Urology
+        kidneys: 1.5,      // Urology/Nephrology
         wizard: 1.5        // Geriatrics
       };
       const mult = multipliers[icon];
@@ -16411,10 +16411,15 @@ useEffect(() => {
       fontWeight: "500",
       color: "#334155",
       minHeight: effectiveMobile ? "24px" : isDesktopHome ? "clamp(18px, 2.5vh, 32px)" : "28px",
+      width: "100%",
+      padding: "0 2px",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      lineHeight: "1.2"
+      lineHeight: "1.2",
+      textAlign: "center",
+      overflowWrap: "break-word",
+      wordBreak: "break-word"
     },
     clinicalPearlCard: {
       background: effectiveMobile ? "#ffffff" : "rgba(255, 255, 255, 0.95)",
@@ -16953,7 +16958,7 @@ useEffect(() => {
       },
         /* @__PURE__ */ React.createElement("div", { style: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", gap: "3px" } },
           /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center", alignItems: "center", height: "30px", flexShrink: 0 } }, renderHomeCategoryIcon(cat.icon, 24)),
-          /* @__PURE__ */ React.createElement("div", { style: { fontSize: (cat.name === "Musculoskeletal" || cat.name === "Gastroenterology" || cat.name === "Cardiovascular" || cat.name === "Rheumatology") ? "9px" : "11px", fontWeight: "500", color: "#334155", lineHeight: "13px", height: "26px", flexShrink: 0, overflow: "hidden", overflowWrap: "break-word", wordBreak: "break-word", textAlign: "center", width: "100%", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" } }, cat.name)),
+          /* @__PURE__ */ React.createElement("div", { style: { fontSize: (cat.name === "Musculoskeletal" || cat.name === "Gastroenterology" || cat.name === "Cardiovascular" || cat.name === "Rheumatology" || cat.name === "Urology/Nephrology" || cat.name === "Infectious Disease") ? "9px" : "11px", fontWeight: "500", color: "#334155", lineHeight: "13px", height: "26px", flexShrink: 0, overflow: "hidden", overflowWrap: "break-word", wordBreak: "break-word", textAlign: "center", width: "100%", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" } }, cat.name)),
         /* @__PURE__ */ React.createElement("div", { style: { fontSize: "9px", color: "#64748b", marginTop: "auto", width: "100%", flexShrink: 0 } },
           /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2px" } },
             /* @__PURE__ */ React.createElement("span", null, catAnswered.answered, "/", catQuestions),
@@ -17029,7 +17034,7 @@ useEffect(() => {
       },
         /* @__PURE__ */ React.createElement("div", { style: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", gap: "3px" } },
           /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center", alignItems: "center", height: "30px", flexShrink: 0 } }, renderHomeCategoryIcon(cat.icon, 24)),
-          /* @__PURE__ */ React.createElement("div", { style: { fontSize: (cat.name === "Musculoskeletal" || cat.name === "Gastroenterology" || cat.name === "Cardiovascular" || cat.name === "Rheumatology") ? "9px" : "11px", fontWeight: "500", color: "#334155", lineHeight: "13px", height: "26px", flexShrink: 0, overflow: "hidden", overflowWrap: "break-word", wordBreak: "break-word", textAlign: "center", width: "100%", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" } }, cat.name)),
+          /* @__PURE__ */ React.createElement("div", { style: { fontSize: (cat.name === "Musculoskeletal" || cat.name === "Gastroenterology" || cat.name === "Cardiovascular" || cat.name === "Rheumatology" || cat.name === "Urology/Nephrology" || cat.name === "Infectious Disease") ? "9px" : "11px", fontWeight: "500", color: "#334155", lineHeight: "13px", height: "26px", flexShrink: 0, overflow: "hidden", overflowWrap: "break-word", wordBreak: "break-word", textAlign: "center", width: "100%", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" } }, cat.name)),
         /* @__PURE__ */ React.createElement("div", { style: { fontSize: "9px", color: "#64748b", marginTop: "auto", width: "100%", flexShrink: 0 } },
           /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2px" } },
             /* @__PURE__ */ React.createElement("span", null, catAnswered.answered, "/", catQuestions),
