@@ -1,0 +1,8 @@
+[
+  {
+    "id": "openai-ash",
+    "label": "OpenAI Ash (Offline)",
+    "manifestUrl": "assets/tts/openai-ash/manifest.json",
+    "questionCount": 187
+  }
+]

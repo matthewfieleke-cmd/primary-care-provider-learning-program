@@ -1,7 +1,9 @@
-// Service Worker — network-first with offline fallback
-// Ensures users always get the latest version when online.
+// Service Worker — shell network-first; TTS audio cache-first with bulk install preload
 
-const CACHE_NAME = "pcp-learning-v11";
+const CACHE_NAME = "pcp-learning-v15";
+const TTS_PRECACHE_MANIFEST = "assets/tts/handsfree/precache-urls.json";
+const TTS_BATCH_SIZE = 25;
+
 const OFFLINE_URLS = [
   "index.html",
   "/",
@@ -86,15 +88,61 @@ const OFFLINE_URLS = [
   "assets/svt-reentry-diagram.png",
   "assets/umbilical-hernia.png",
   "assets/varicocele-anatomy.png",
-  "assets/venous-ulcer.png"
+  "assets/venous-ulcer.png",
+  "assets/tts/bundles.json",
+  "assets/tts/handsfree/manifest.json",
+  TTS_PRECACHE_MANIFEST
 ];
 
-// Install: pre-cache the shell so the app works offline
+function isTtsAssetRequest(request) {
+  try {
+    return new URL(request.url).pathname.includes("/assets/tts/");
+  } catch {
+    return false;
+  }
+}
+
+async function precacheTtsAudio(cache) {
+  let listResp;
+  try {
+    listResp = await fetch(TTS_PRECACHE_MANIFEST);
+  } catch {
+    return { ok: 0, total: 0 };
+  }
+  if (!listResp.ok) return { ok: 0, total: 0 };
+
+  let data;
+  try {
+    data = await listResp.json();
+  } catch {
+    return { ok: 0, total: 0 };
+  }
+
+  const urls = Array.isArray(data.urls) ? data.urls : [];
+  let ok = 0;
+  for (let i = 0; i < urls.length; i += TTS_BATCH_SIZE) {
+    const batch = urls.slice(i, i + TTS_BATCH_SIZE);
+    const results = await Promise.allSettled(
+      batch.map(async (url) => {
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        await cache.put(url, resp);
+      })
+    );
+    ok += results.filter((r) => r.status === "fulfilled").length;
+  }
+  return { ok, total: urls.length };
+}
+
+// Install: pre-cache shell, then bulk-download all Ash TTS clips listed in precache-urls.json
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(OFFLINE_URLS))
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.addAll(OFFLINE_URLS);
+      await precacheTtsAudio(cache);
+    })()
   );
-  // Activate immediately — don't wait for old tabs to close
   self.skipWaiting();
 });
 
@@ -109,19 +157,32 @@ self.addEventListener("activate", (event) => {
       )
     )
   );
-  // Take control of all open tabs immediately
   self.clients.claim();
 });
 
-// Fetch: always try network first, fall back to cache
+// Fetch: TTS = cache-first; everything else = network-first with offline fallback
 self.addEventListener("fetch", (event) => {
-  // Only handle GET requests
   if (event.request.method !== "GET") return;
+
+  if (isTtsAssetRequest(event.request)) {
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        if (cached) return cached;
+        return fetch(event.request).then((networkResponse) => {
+          if (networkResponse && networkResponse.ok) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return networkResponse;
+        });
+      })
+    );
+    return;
+  }
 
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
-        // Got a fresh response — update the cache and serve it
         if (networkResponse && networkResponse.ok) {
           const clone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -130,9 +191,6 @@ self.addEventListener("fetch", (event) => {
         }
         return networkResponse;
       })
-      .catch(() => {
-        // Network failed — serve from cache (offline mode)
-        return caches.match(event.request);
-      })
+      .catch(() => caches.match(event.request))
   );
 });

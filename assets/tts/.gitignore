@@ -1,0 +1,5 @@
+# Legacy Piper wav clips and local test bundles — not shipped
+*.wav
+en_US-ryan-high/
+openai-ash-mini-test/
+openai-cedar-mini-test/

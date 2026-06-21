@@ -11837,7 +11837,7 @@ const QUESTIONS = [
     "correctAnswer": 1,
     "explanation": "CORRECT: B (Intensive lifestyle modification program targeting ≥7% weight loss and ≥150 minutes/week moderate physical activity [Diabetes Prevention Program model], with metformin considered if lifestyle not achieved or high-risk features).\n\nCLINICAL MANIFESTATIONS:\nPrediabetes (IFG 100–125, HbA1c 5.7–6.4%, or OGTT 140–199) identifies patients at high short-term risk of type 2 diabetes and cardiovascular disease. Many are asymptomatic; primary care detection enables prevention before complications.\n\nPATHOPHYSIOLOGY:\nInsulin resistance and beta-cell dysfunction progress over years; weight gain and inactivity accelerate decline. Lifestyle changes improve insulin sensitivity and preserve beta-cell function more effectively than observation.\n\nDIAGNOSTIC APPROACH:\nConfirm prediabetes with repeat testing. Assess cardiovascular risk, fatty liver, OSA, and family history. Identify patients who may benefit most from pharmacotherapy (BMI ≥35, age <60, history of gestational diabetes, rising A1c despite lifestyle).\n\nMANAGEMENT:\nDiabetes Prevention Program (DPP) demonstrated 58% relative risk reduction with lifestyle intervention (7% weight loss, 150 min/week moderate activity) versus 31% with metformin alone. ADA recommends structured DPP or equivalent for all prediabetes. Metformin adjunct for high-risk when lifestyle insufficient—not monotherapy replacing lifestyle. Waiting until diabetes threshold misses prevention window. Very-low-calorie diets require medical supervision and are not first-line.\n\nRefer to CDC-recognized DPP programs when available; track weight, activity, and A1c annually.\n\nCDC-recognized Diabetes Prevention Program delivers structured lifestyle curriculum over 12 months. Metformin 850 mg BID considered when BMI ≥35, age <60, or prior gestational diabetes if lifestyle insufficient. Repeat A1c annually in prediabetes; diagnose diabetes if A1c ≥6.5% on two occasions. Weight loss medications (GLP-1) may adjunct selected patients with obesity and prediabetes.\n\nTrack weight and activity minutes at follow-up visits every 3–6 months. Prediabetes also warrants BP and lipid management for ASCVD prevention. Community DPP programs improve access versus referral-only model. Bariatric surgery discussion when BMI ≥35 with comorbidities failing lifestyle.\n\nIdentify prediabetes on problem list and track A1c in registry-based outreach programs. Group lifestyle classes match DPP format and improve social support. Metformin gastrointestinal side effects minimized with slow titration and take with food. Celebrate incremental weight loss—5% loss produces meaningful metabolic benefit.\n\nPrimary care enrolls eligible patients in DPP or equivalent and rechecks A1c every 6–12 months to detect progression to diabetes early.\n\nGroup DPP classes improve weight loss maintenance versus individual counseling alone in some trials. Screen for prediabetes in adults with BMI ≥25 and additional risk factors (family history, GDM history, PCOS). Cardiovascular risk assessment (ASCVD calculator) complements diabetes prevention in prediabetes population.\n\nKEY POINTS:\nPrediabetes: DPP-style lifestyle (7% weight loss, 150 min/week activity) is first-line—stronger evidence than metformin alone. Do not defer until diabetes diagnostic criteria met.",
     "bulletExplanation": "- CORRECT: B (DPP lifestyle program first; metformin if needed for high-risk).\n- Prediabetes (A1c 6.0%, IFG 110) warrants intensive lifestyle intervention per DPP evidence.\n- Target ≥7% weight loss and ≥150 minutes/week moderate activity.\n- Metformin alone without lifestyle, waiting for diabetes, or unsupervised extreme fasting are incorrect."
-  },
+  },
 /* BATCH 5 NEW QUESTIONS (819-885) — FM RESIDENCY EXPANSION */
       {
     "id": 819,
@@ -12480,7 +12480,7 @@ const QUESTIONS = [
     "correctAnswer": 0,
     "explanation": "CORRECT: A (Nephrotic syndrome).\n\nCLINICAL MANIFESTATIONS:\nNephrotic syndrome presents with heavy proteinuria, edema, foamy urine, hypoalbuminemia, and hyperlipidemia. Edema often begins around the eyes or ankles and can progress to anasarca, ascites, or pleural effusions. Hematuria may occur in some causes, but red blood cell casts and prominent inflammatory sediment suggest nephritic disease instead. Patients may also present with venous thromboembolism or infections.\n\nPATHOPHYSIOLOGY:\nNephrotic syndrome results from podocyte or glomerular basement membrane injury that markedly increases albumin permeability. Loss of albumin lowers plasma oncotic pressure, contributing to edema, while renal sodium retention further expands extracellular volume. The liver increases lipoprotein production, causing hyperlipidemia and lipiduria. Loss of antithrombin III and other anticoagulant proteins increases thrombosis risk, especially with severe hypoalbuminemia.\n\nDIAGNOSTIC APPROACH:\nQuantify proteinuria with urine protein-to-creatinine ratio, albumin-to-creatinine ratio, or 24-hour urine collection when needed. Check serum creatinine/eGFR, albumin, lipid panel, urinalysis microscopy, A1c, hepatitis B/C, HIV, ANA/complements when indicated, serum/urine protein electrophoresis in appropriate patients, and medication history. Common adult causes include diabetic kidney disease, focal segmental glomerulosclerosis, membranous nephropathy, minimal change disease, amyloidosis, lupus, infections, malignancy-associated disease, and NSAID-related disease. Nephrology referral is usually appropriate for new nephrotic-range proteinuria.\n\nMANAGEMENT:\nTreat the underlying cause and reduce complications. Use sodium restriction and loop diuretics for edema, ACE inhibitor or ARB therapy when appropriate to reduce proteinuria, statin therapy based on cardiovascular risk, vaccination review, and thrombosis risk assessment. Immunosuppression is cause-specific and should not be started blindly. Monitor kidney function, potassium, albumin, and response to therapy.\n\nKEY POINTS:\nProteinuria around 6 g/day, edema, hypoalbuminemia, and hyperlipidemia define nephrotic syndrome. The bland urine sediment distinguishes it from nephritic syndrome. Evaluation should identify the cause and prevent edema, thrombosis, and kidney progression. If edema or hypertension worsens after alkali, reassess dose, sodium intake, and alternative strategies rather than abandoning acidosis management without a plan.",
     "bulletExplanation": "- CORRECT: A (Nephrotic syndrome).\n- Heavy proteinuria, foamy urine, edema, hypoalbuminemia, and hyperlipidemia are classic.\n- Bland sediment helps distinguish from nephritic disease.\n- New nephrotic-range proteinuria generally needs nephrology evaluation."
-  },
+  },
 /* BATCH 6 NEW QUESTIONS (886-919) — FM TAXONOMY EXPANSION */
       {
     "id": 886,
@@ -13069,16 +13069,8 @@ function PCPLearningApp() {
   };
   const REVIEW_INTERVALS_MS = [24 * 60 * 60 * 1e3, 3 * 24 * 60 * 60 * 1e3, 7 * 24 * 60 * 60 * 1e3];
   const EXPLANATION_MODE_KEY = "pcp-explanation-mode";
-  const VOICE_PREF_KEY = "pcp-preferred-voice";
-  const OPENAI_KEY_KEY = "pcp-openai-tts-key";
-  const OPENAI_VOICES = ["alloy", "ash", "ballad", "coral", "echo", "fable", "nova", "onyx", "sage", "shimmer"];
-  const OPENAI_TTS_MODEL = "tts-1-hd";
-  const OPENAI_TTS_TIMEOUT_MS = 45000;
-  const OPENAI_TTS_MAX_CHARS = 3800;
-  const OPENAI_TTS_RETRIES = 3;
-  const OPENAI_TTS_RETRY_DELAY_MS = 1200;
-  const NOVELTY_VOICES = /^(Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Good News|Jester|Junior|Organ|Superstar|Trinoids|Whisper|Wobble|Zarvox)$/i;
-  const HIGH_QUALITY_DEVICE_VOICE = /(Google UK English|Microsoft Aria|Microsoft Jenny|Microsoft Guy|Microsoft Ryan|Microsoft Sonia|Aria|Jenny|Guy|Ryan|Sonia)/i;
+  const ASH_BUNDLE_ID = "openai-ash";
+  const CEDAR_BUNDLE_ID = "openai-cedar";
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [deskHeight, setDeskHeight] = useState(window.innerHeight);
   const [currentView, setCurrentView] = useState("home");
@@ -13120,33 +13112,21 @@ function PCPLearningApp() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [handsFreeMode, setHandsFreeMode] = useState(false);
   const [handsFreePhase, setHandsFreePhase] = useState("idle");
-  const [availableVoices, setAvailableVoices] = useState([]);
-  const [preferredVoiceURI, setPreferredVoiceURI] = useState(() => {
-    try { return window.localStorage.getItem(VOICE_PREF_KEY) || ""; } catch (e) { return ""; }
-  });
-  const [openaiKey, setOpenaiKey] = useState(() => {
-    try { return window.localStorage.getItem(OPENAI_KEY_KEY) || ""; } catch (e) { return ""; }
-  });
-  const [showKeyInput, setShowKeyInput] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [lastTranscript, setLastTranscript] = useState("");
-  const speechUtterRef = useRef(null);
   const handsFreeRef = useRef({ active: false, phase: "idle" });
   const recognitionRef = useRef(null);
   const micPermissionPrimedRef = useRef(false);
-  const ttsKeepAliveRef = useRef(null);
   const wakeLockRef = useRef(null);
   const hfAnswerRef = useRef(null);
   const getExplanationTextRef = useRef(null);
   const isSafariBrowser = useRef(/^((?!chrome|android).)*safari/i.test(navigator.userAgent));
   const isIOSDevice = useRef(/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
-  const preferredVoiceURIRef = useRef((() => { try { return window.localStorage.getItem("pcp-preferred-voice") || ""; } catch(e) { return ""; } })());
-  const openaiKeyRef = useRef((() => { try { return window.localStorage.getItem(OPENAI_KEY_KEY) || ""; } catch(e) { return ""; } })());
-  const openaiAudioRef = useRef(null);
+  const pregenManifestRef = useRef(null);
+  const pregenAudioRef = useRef(null);
   const audioCtxRef = useRef(null);
-  const audioSourceRef = useRef(null);
-  const openaiAbortRef = useRef(null);
   const ttsGenerationRef = useRef(0);
+  const [pregenManifest, setPregenManifest] = useState(null);
   const handsFreeRunTokenRef = useRef(0);
   const handleAnswerRef = useRef(null);
   const nextQuestionRef = useRef(null);
@@ -13200,20 +13180,35 @@ useEffect(() => {
     }
   }, [explanationMode]);
   useEffect(() => {
-    openaiKeyRef.current = openaiKey;
-    try {
-      if (openaiKey) window.localStorage.setItem(OPENAI_KEY_KEY, openaiKey);
-      else window.localStorage.removeItem(OPENAI_KEY_KEY);
-    } catch (e) {}
-  }, [openaiKey]);
-  useEffect(() => {
-    preferredVoiceURIRef.current = preferredVoiceURI;
-    cachedVoiceRef.current = null;
-    try {
-      if (preferredVoiceURI) window.localStorage.setItem(VOICE_PREF_KEY, preferredVoiceURI);
-      else window.localStorage.removeItem(VOICE_PREF_KEY);
-    } catch (e) {}
-  }, [preferredVoiceURI]);
+    const mergeHandsFreeManifests = (ash, cedar) => {
+      const questions = {};
+      for (const [id, entry] of Object.entries(ash?.questions || {})) {
+        questions[id] = { bundle: ASH_BUNDLE_ID, categoryId: entry.categoryId, files: entry.files };
+      }
+      for (const [id, entry] of Object.entries(cedar?.questions || {})) {
+        questions[id] = { bundle: CEDAR_BUNDLE_ID, categoryId: entry.categoryId, files: entry.files };
+      }
+      return {
+        version: 2,
+        type: "hybrid",
+        sharedBundle: CEDAR_BUNDLE_ID,
+        shared: cedar?.shared || {},
+        questions
+      };
+    };
+    Promise.all([
+      fetch("assets/tts/openai-ash/manifest.json").then((r) => (r.ok ? r.json() : null)),
+      fetch("assets/tts/openai-cedar/manifest.json").then((r) => (r.ok ? r.json() : null))
+    ])
+      .then(([ash, cedar]) => {
+        const data = mergeHandsFreeManifests(ash, cedar);
+        if (data.questions && Object.keys(data.questions).length) {
+          pregenManifestRef.current = data;
+          setPregenManifest(data);
+        }
+      })
+      .catch(() => {});
+  }, []);
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -13304,55 +13299,35 @@ useEffect(() => {
     setShowIntro(false);
   };
 
-  const cachedVoiceRef = useRef(null);
-  const voicesLoadedRef = useRef(false);
-
-  useEffect(() => {
-    if (!window.speechSynthesis) return;
-    const load = () => {
-      voicesLoadedRef.current = true;
-      cachedVoiceRef.current = null;
-      const voices = window.speechSynthesis.getVoices();
-      const enVoices = voices.filter((v) => v.lang.startsWith("en"));
-      setAvailableVoices(enVoices.length > 0 ? enVoices : voices);
-    };
-    window.speechSynthesis.addEventListener("voiceschanged", load);
-    if (window.speechSynthesis.getVoices().length) load();
-    return () => window.speechSynthesis.removeEventListener("voiceschanged", load);
-  }, []);
-
-  const rankDeviceVoices = useCallback((voices) => {
-    return (voices || []).filter((v) => v && typeof v.name === "string" && typeof v.lang === "string").filter((v) => v.lang.toLowerCase().startsWith("en")).filter((v) => !NOVELTY_VOICES.test(v.name)).map((v) => {
-      const combined = `${v.name} ${v.voiceURI || ""}`;
-      let score = 100;
-      if (/premium|enhanced/i.test(combined)) score += 40;
-      if (HIGH_QUALITY_DEVICE_VOICE.test(v.name)) score += 25;
-      if (v.default) score += 10;
-      const lang = v.lang.toLowerCase();
-      if (lang === "en-us" || lang === "en-gb") score += 8;
-      const cleanName = v.name.replace(/\s*\(.*?\)\s*/g, " ").replace(/\s+/g, " ").trim();
-      return { voice: v, score, cleanName };
-    }).sort((a, b) => b.score - a.score || a.cleanName.length - b.cleanName.length || a.cleanName.localeCompare(b.cleanName)).map((entry) => entry.voice);
-  }, []);
-  const rankedDeviceVoices = useMemo(() => rankDeviceVoices(availableVoices).slice(0, 10), [availableVoices, rankDeviceVoices]);
-  const pickBestVoice = () => {
-    if (cachedVoiceRef.current) return cachedVoiceRef.current;
-    const synth = window.speechSynthesis;
-    const voices = synth.getVoices();
-    if (!voices.length) return null;
-
-    if (preferredVoiceURIRef.current) {
-      const preferred = voices.find((v) => v.voiceURI === preferredVoiceURIRef.current);
-      if (preferred) { cachedVoiceRef.current = preferred; return preferred; }
-    }
-    const ranked = rankDeviceVoices(voices);
-    const fallback = ranked[0] || voices.find((v) => v.lang.toLowerCase().startsWith("en")) || voices[0];
-    cachedVoiceRef.current = fallback || null;
-    return cachedVoiceRef.current;
+  const questionHasPregen = (questionId) => {
+    const m = pregenManifestRef.current;
+    if (!m?.questions) return false;
+    const q = m.questions[String(questionId)];
+    const expl = q?.files?.explanation;
+    return !!(q?.files?.question && expl && (Array.isArray(expl) ? expl.length : true));
   };
-
-  const isOpenAIVoice = () => preferredVoiceURIRef.current.startsWith("openai:");
-  const getOpenAIVoiceName = () => preferredVoiceURIRef.current.replace("openai:", "");
+  const resolvePregenAudioUrls = (lookup) => {
+    const m = pregenManifestRef.current;
+    if (!m || !lookup) return [];
+    let rel = null;
+    let bundleId = m.sharedBundle || CEDAR_BUNDLE_ID;
+    if (lookup.progress != null && lookup.total != null) {
+      const key = "progress-" + lookup.progress + "-of-" + lookup.total;
+      rel = m.shared?.progress?.[key];
+      bundleId = m.sharedBundle || CEDAR_BUNDLE_ID;
+    } else if (lookup.shared) {
+      rel = m.shared?.[lookup.shared];
+      bundleId = m.sharedBundle || CEDAR_BUNDLE_ID;
+    } else if (lookup.qid != null && lookup.seg) {
+      const q = m.questions?.[String(lookup.qid)];
+      rel = q?.files?.[lookup.seg];
+      bundleId = q?.bundle || CEDAR_BUNDLE_ID;
+    }
+    if (!rel) return [];
+    const toUrl = (r) => "assets/tts/" + bundleId + "/" + r;
+    if (Array.isArray(rel)) return rel.map(toUrl);
+    return [toUrl(rel)];
+  };
 
   const ensureAudioContext = () => {
     if (!audioCtxRef.current) {
@@ -13366,79 +13341,47 @@ useEffect(() => {
 
   const stopSpeaking = useCallback(() => {
     ttsGenerationRef.current += 1;
-    if (openaiAbortRef.current) {
-      try { openaiAbortRef.current.abort(); } catch(e) {}
-      openaiAbortRef.current = null;
-    }
-    if (ttsKeepAliveRef.current) { clearInterval(ttsKeepAliveRef.current); ttsKeepAliveRef.current = null; }
-    window.speechSynthesis.cancel();
-    speechUtterRef.current = null;
-    if (audioSourceRef.current) {
-      try { audioSourceRef.current.stop(); } catch(e) {}
-      audioSourceRef.current = null;
-    }
-    if (openaiAudioRef.current) {
-      openaiAudioRef.current.pause();
-      openaiAudioRef.current.src = "";
-      openaiAudioRef.current = null;
+    if (pregenAudioRef.current) {
+      pregenAudioRef.current.pause();
+      pregenAudioRef.current.src = "";
+      pregenAudioRef.current = null;
     }
     setIsSpeaking(false);
   }, []);
 
-  const fetchOpenAITTSBuffer = useCallback(async (text, generation) => {
-    const key = openaiKeyRef.current;
-    if (!key || generation !== ttsGenerationRef.current) return null;
-    const ctx = audioCtxRef.current;
-    if (!ctx) return null;
-    const controller = new AbortController();
-    openaiAbortRef.current = controller;
-    let timeoutTimer = null;
-    try {
-      if (OPENAI_TTS_TIMEOUT_MS > 0) {
-        timeoutTimer = setTimeout(() => {
-          try { controller.abort(); } catch(e) {}
-        }, OPENAI_TTS_TIMEOUT_MS);
-      }
-      const resp = await fetch("https://api.openai.com/v1/audio/speech", {
-        method: "POST",
-        signal: controller.signal,
-        headers: { "Authorization": "Bearer " + key, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: OPENAI_TTS_MODEL, voice: getOpenAIVoiceName(), input: text, response_format: "mp3" })
-      });
-      if (timeoutTimer) { clearTimeout(timeoutTimer); timeoutTimer = null; }
-      if (generation !== ttsGenerationRef.current || !resp.ok) return null;
-      const arrayBuf = await resp.arrayBuffer();
-      if (generation !== ttsGenerationRef.current) return null;
-      return await ctx.decodeAudioData(arrayBuf);
-    } catch (e) {
-      return null;
-    } finally {
-      if (timeoutTimer) clearTimeout(timeoutTimer);
-      if (openaiAbortRef.current === controller) openaiAbortRef.current = null;
-    }
-  }, []);
-
-  const playAudioBuffer = useCallback((audioBuf, generation) => {
+  const playPregenAudio = useCallback((url, shouldContinueFn) => {
     return new Promise((resolve) => {
-      if (generation !== ttsGenerationRef.current) { resolve(false); return; }
-      const ctx = audioCtxRef.current;
-      if (!ctx || !audioBuf) { resolve(false); return; }
-      try {
-        const source = ctx.createBufferSource();
-        source.buffer = audioBuf;
-        source.connect(ctx.destination);
-        audioSourceRef.current = source;
-        source.onended = () => {
-          if (audioSourceRef.current === source) audioSourceRef.current = null;
-          resolve(generation === ttsGenerationRef.current);
-        };
-        source.start(0);
-      } catch (e) {
-        audioSourceRef.current = null;
-        resolve(false);
-      }
+      const generation = ttsGenerationRef.current;
+      const canContinue = () => {
+        if (generation !== ttsGenerationRef.current) return false;
+        return typeof shouldContinueFn !== "function" || shouldContinueFn();
+      };
+      if (!url || !canContinue()) { resolve(false); return; }
+      ensureAudioContext();
+      const audio = new Audio(url);
+      pregenAudioRef.current = audio;
+      let settled = false;
+      const done = (ok) => {
+        if (settled) return;
+        settled = true;
+        if (pregenAudioRef.current === audio) pregenAudioRef.current = null;
+        resolve(ok);
+      };
+      audio.onended = () => done(canContinue());
+      audio.onerror = () => done(false);
+      audio.play().then(() => {}).catch(() => done(false));
     });
   }, []);
+
+  const playPregenAudioSequence = useCallback(async (urls, shouldContinueFn) => {
+    const list = Array.isArray(urls) ? urls : (urls ? [urls] : []);
+    for (let i = 0; i < list.length; i++) {
+      if (!list[i]) continue;
+      const ok = await playPregenAudio(list[i], shouldContinueFn);
+      if (!ok) return false;
+    }
+    return list.length > 0;
+  }, [playPregenAudio]);
 
   const normalizeMedicalSpeechText = useCallback((text) => {
     if (!text) return "";
@@ -13674,13 +13617,6 @@ useEffect(() => {
     return normalized;
   }, []);
 
-  const buildSpeechText = useCallback((text) => {
-    let plain = String(text || "").replace(/\n+/g, ". ").replace(/\s{2,}/g, " ").replace(/---/g, "").trim();
-    plain = plain.replace(/[•●▪►–—]/g, ".").replace(/CORRECT:\s*([A-D])\)\s*/gi, "Correct answer, $1. ").replace(/KEY\s+LEARNING\s+POINTS?:?/gi, "Key learning points.").replace(/\.\s*\./g, ".").replace(/,\s*,/g, ",");
-    if (isOpenAIVoice()) return plain;
-    return normalizeMedicalSpeechText(plain);
-  }, [normalizeMedicalSpeechText]);
-
   const ensureMicPermission = useCallback(async () => {
     if (micPermissionPrimedRef.current && !isSafariBrowser.current) return true;
     const hasMediaDevices = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
@@ -13710,102 +13646,21 @@ useEffect(() => {
     return false;
   }, []);
 
-  const splitIntoOpenAIChunks = useCallback((text) => {
-    if (!text) return [];
-    const built = buildSpeechText(text);
-    if (built.length <= OPENAI_TTS_MAX_CHARS) return [built];
-    const sentences = built.match(/[^.!?]+[.!?]+[\s]*/g) || [built];
-    const chunks = [];
-    let current = "";
-    for (const s of sentences) {
-      if (current.length + s.length > OPENAI_TTS_MAX_CHARS && current.length > 0) {
-        chunks.push(current.trim());
-        current = s;
-      } else {
-        current += s;
-      }
-    }
-    if (current.trim()) chunks.push(current.trim());
-    return chunks.length > 0 ? chunks : [built];
-  }, [buildSpeechText]);
-
-  const speakOpenAISequenced = useCallback(async (text, shouldContinueFn) => {
-    const generation = ttsGenerationRef.current;
-    const canContinue = () => {
-      if (generation !== ttsGenerationRef.current) return false;
-      return typeof shouldContinueFn !== "function" || shouldContinueFn();
-    };
-    if (!canContinue()) return false;
-    const chunks = splitIntoOpenAIChunks(text);
-    if (!chunks.length) return true;
-    let prefetch = fetchOpenAITTSBuffer(chunks[0], generation);
-    for (let i = 0; i < chunks.length; i++) {
-      if (!canContinue()) return false;
-      let buffer = null;
-      for (let attempt = 0; attempt < OPENAI_TTS_RETRIES; attempt++) {
-        buffer = await prefetch;
-        if (buffer) break;
-        if (!canContinue()) return false;
-        if (attempt < OPENAI_TTS_RETRIES - 1) {
-          await new Promise((r) => setTimeout(r, OPENAI_TTS_RETRY_DELAY_MS * (attempt + 1)));
-          prefetch = fetchOpenAITTSBuffer(chunks[i], generation);
-        }
-      }
-      if (!buffer) return false;
-      if (i + 1 < chunks.length) {
-        prefetch = fetchOpenAITTSBuffer(chunks[i + 1], generation);
-      }
-      const ok = await playAudioBuffer(buffer, generation);
-      if (!ok) return false;
-    }
-    return true;
-  }, [splitIntoOpenAIChunks, fetchOpenAITTSBuffer, playAudioBuffer]);
-
-  const readAloud = useCallback(async (text) => {
-    if (!text) return;
+  const readAloud = useCallback(async (pregenLookup) => {
+    if (!pregenLookup) return;
     if (isSpeaking) { stopSpeaking(); return; }
     ensureAudioContext();
-
-    if (isOpenAIVoice() && openaiKeyRef.current) {
-      setIsSpeaking(true);
-      const generation = ttsGenerationRef.current;
-      await speakOpenAISequenced(text, () => generation === ttsGenerationRef.current);
-      setIsSpeaking(false);
-      return;
-    }
-
-    if (!window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const utter = new SpeechSynthesisUtterance(buildSpeechText(text));
-    const voice = pickBestVoice();
-    if (voice) utter.voice = voice;
-    utter.rate = 1.0;
-    utter.pitch = 1.0;
-    utter.volume = 1;
-    const cleanupKeepAlive = () => {
-      if (ttsKeepAliveRef.current) { clearInterval(ttsKeepAliveRef.current); ttsKeepAliveRef.current = null; }
-    };
-    utter.onend = () => { cleanupKeepAlive(); speechUtterRef.current = null; setIsSpeaking(false); };
-    utter.onerror = () => { cleanupKeepAlive(); speechUtterRef.current = null; setIsSpeaking(false); };
-
-    speechUtterRef.current = utter;
     setIsSpeaking(true);
-    if (ttsKeepAliveRef.current) clearInterval(ttsKeepAliveRef.current);
-    ttsKeepAliveRef.current = setInterval(() => {
-      if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
-        window.speechSynthesis.pause();
-        window.speechSynthesis.resume();
-      }
-    }, 10000);
-    window.speechSynthesis.speak(utter);
-  }, [isSpeaking, stopSpeaking, buildSpeechText, speakOpenAISequenced]);
+    const generation = ttsGenerationRef.current;
+    const canContinue = () => generation === ttsGenerationRef.current;
+    const urls = resolvePregenAudioUrls(pregenLookup);
+    if (urls.length) await playPregenAudioSequence(urls, canContinue);
+    setIsSpeaking(false);
+  }, [isSpeaking, stopSpeaking, playPregenAudioSequence]);
 
   useEffect(() => {
     return () => {
-      window.speechSynthesis.cancel();
-      if (ttsKeepAliveRef.current) { clearInterval(ttsKeepAliveRef.current); ttsKeepAliveRef.current = null; }
-      if (audioSourceRef.current) { try { audioSourceRef.current.stop(); } catch(e) {} audioSourceRef.current = null; }
-      if (openaiAudioRef.current) { openaiAudioRef.current.pause(); openaiAudioRef.current = null; }
+      if (pregenAudioRef.current) { pregenAudioRef.current.pause(); pregenAudioRef.current.src = ""; pregenAudioRef.current = null; }
       if (audioCtxRef.current) { try { audioCtxRef.current.close(); } catch(e) {} audioCtxRef.current = null; }
       if (wakeLockRef.current) { try { wakeLockRef.current.release(); } catch(e) {} wakeLockRef.current = null; }
     };
@@ -13815,119 +13670,18 @@ useEffect(() => {
     if (!showExplanation && isSpeaking && !handsFreeRef.current.active) stopSpeaking();
   }, [showExplanation, isSpeaking, stopSpeaking]);
 
-  const splitIntoSpeechChunks = useCallback((text) => {
-    if (!text) return [];
-    const built = buildSpeechText(text);
-    if (built.length <= 300) return [built];
-    const sentences = built.match(/[^.!?]+[.!?]+[\s]*/g) || [built];
-    const chunks = [];
-    let current = "";
-    for (const s of sentences) {
-      if (current.length + s.length > 300 && current.length > 0) {
-        chunks.push(current.trim());
-        current = s;
-      } else {
-        current += s;
-      }
-    }
-    if (current.trim()) chunks.push(current.trim());
-    const finalChunks = [];
-    for (const chunk of chunks) {
-      if (chunk.length <= 300) {
-        finalChunks.push(chunk);
-      } else {
-        const parts = chunk.split(/(?<=[,;])\s+/);
-        let sub = "";
-        for (const p of parts) {
-          if (sub.length + p.length > 300 && sub.length > 0) {
-            finalChunks.push(sub.trim());
-            sub = p;
-          } else {
-            sub += (sub ? " " : "") + p;
-          }
-        }
-        if (sub.trim()) finalChunks.push(sub.trim());
-      }
-    }
-    return finalChunks.length > 0 ? finalChunks : [built];
-  }, [buildSpeechText]);
-
-  const speakSingleChunk = useCallback((chunk) => {
-    return new Promise((resolve) => {
-      const voice = pickBestVoice();
-      let resolved = false;
-      let safetyTimer = null;
-      let startTimer = null;
-      let keepAlive = null;
-      const done = (success) => {
-        if (resolved) return;
-        resolved = true;
-        if (safetyTimer) clearTimeout(safetyTimer);
-        if (startTimer) clearTimeout(startTimer);
-        if (keepAlive) { clearInterval(keepAlive); keepAlive = null; }
-        resolve(success !== false);
-      };
-      const makeUtterance = () => {
-        const u = new SpeechSynthesisUtterance(chunk);
-        if (voice) u.voice = voice;
-        u.rate = 1.0; u.pitch = 1.0; u.volume = 1;
-        return u;
-      };
-      let started = false;
-      const utter = makeUtterance();
-      utter.onstart = () => { started = true; };
-      utter.onend = () => done(true);
-      utter.onerror = (e) => {
-        if (e && e.error === "interrupted") return;
-        done(false);
-      };
-      safetyTimer = setTimeout(() => {
-        if (!resolved) { window.speechSynthesis.cancel(); done(false); }
-      }, Math.max(10000, chunk.length * 100));
-      startTimer = setTimeout(() => {
-        if (!started && !resolved) {
-          utter.onend = null;
-          utter.onerror = null;
-          utter.onstart = null;
-          window.speechSynthesis.cancel();
-          const retry = makeUtterance();
-          retry.onstart = () => { started = true; };
-          retry.onend = () => done(true);
-          retry.onerror = () => done(false);
-          window.speechSynthesis.speak(retry);
-        }
-      }, 500);
-      keepAlive = setInterval(() => {
-        if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
-          window.speechSynthesis.pause();
-          window.speechSynthesis.resume();
-        }
-      }, 8000);
-      window.speechSynthesis.speak(utter);
-    });
-  }, []);
-
-  const speakAndWait = useCallback(async (text, shouldContinueFn) => {
-    if (!text) return;
+  const speakAndWait = useCallback(async (text, shouldContinueFn, pregenLookup) => {
+    if (!pregenLookup) return;
     const canContinue = typeof shouldContinueFn === "function"
       ? shouldContinueFn
       : () => handsFreeRef.current.active;
     if (!canContinue()) return;
-    if (isOpenAIVoice() && openaiKeyRef.current) {
-      await speakOpenAISequenced(text, canContinue);
-      return;
-    }
-    if (!window.speechSynthesis) return;
-    const chunks = splitIntoSpeechChunks(text);
-    for (let i = 0; i < chunks.length; i++) {
-      if (!canContinue()) return;
-      await speakSingleChunk(chunks[i]);
-      if (!canContinue()) return;
-      if (i < chunks.length - 1) {
-        await new Promise(r => setTimeout(r, 30));
-      }
-    }
-  }, [splitIntoSpeechChunks, speakSingleChunk, speakOpenAISequenced]);
+    const pregenUrls = resolvePregenAudioUrls(pregenLookup);
+    if (!pregenUrls.length) return;
+    setIsSpeaking(true);
+    await playPregenAudioSequence(pregenUrls, canContinue);
+    setIsSpeaking(false);
+  }, [playPregenAudioSequence]);
 
   const initRecognition = useCallback(() => {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -14046,30 +13800,38 @@ useEffect(() => {
     });
   }, [initRecognition, detectAnswerIndex]);
 
+  const getHandsFreeOptions = useCallback((question) => ({
+    options: question.options || [],
+    correctIndex: Number.isInteger(question.correctAnswer) ? question.correctAnswer : 0,
+    indexMap: (question.options || []).map((_, i) => i)
+  }), []);
+
   const runHandsFreeQuestion = useCallback(async (question, questionIndex, totalQuestions, runToken) => {
     const isRunActive = () => handsFreeRef.current.active && handsFreeRunTokenRef.current === runToken;
     if (!isRunActive()) return;
-    const shuffled = getShuffledOptionsRef.current ? getShuffledOptionsRef.current(question) : { options: question.options || [], correctIndex: question.correctAnswer || 0 };
+    if (!questionHasPregen(question.id)) {
+      alert("Audio is not ready for this question yet.");
+      return;
+    }
+    const shuffled = getHandsFreeOptions(question);
+    const qid = question.id;
+    const qNum = questionIndex + 1;
+
+    setHandsFreePhase("reading-progress");
+    handsFreeRef.current.phase = "reading-progress";
+    await speakAndWait(null, isRunActive, { progress: qNum, total: totalQuestions });
+    if (!isRunActive()) return;
 
     setHandsFreePhase("reading-question");
     handsFreeRef.current.phase = "reading-question";
-    await speakAndWait(`Question ${questionIndex + 1} of ${totalQuestions}. ${question.question}`, isRunActive);
+    await speakAndWait(null, isRunActive, { qid, seg: "question" });
     if (!isRunActive()) return;
 
     setHandsFreePhase("reading-options");
     handsFreeRef.current.phase = "reading-options";
-    const optionLines = shuffled.options.map((opt, i) => {
-      const letter = String.fromCharCode(65 + i);
-      const clean = opt.replace(/^[A-D]\)\s*/, "");
-      return isOpenAIVoice() ? `Option ${letter}: ${clean}` : `${letter}, ${clean}`;
-    });
-    if (isOpenAIVoice()) {
-      await speakAndWait("The answer choices are: " + optionLines.join(". ") + ".", isRunActive);
-    } else {
-      for (const line of optionLines) {
-        if (!isRunActive()) return;
-        await speakAndWait(line, isRunActive);
-      }
+    for (let i = 0; i < shuffled.options.length; i++) {
+      if (!isRunActive()) return;
+      await speakAndWait(null, isRunActive, { qid, seg: "opt-" + i });
     }
     if (!isRunActive()) return;
     const preRec = initRecognition();
@@ -14078,7 +13840,7 @@ useEffect(() => {
       preRec.onend = () => { try { preRec.start(); } catch(e) {} };
       try { preRec.start(); } catch(e) {}
     }
-    await speakAndWait("What is your answer?", isRunActive);
+    await speakAndWait(null, isRunActive, { shared: "prompt" });
     if (!isRunActive()) return;
 
     const answerIdx = await listenForAnswer(preRec);
@@ -14095,20 +13857,15 @@ useEffect(() => {
     setHandsFreePhase("reading-result");
     handsFreeRef.current.phase = "reading-result";
     if (isCorrect) {
-      await speakAndWait("Correct!", isRunActive);
+      await speakAndWait(null, isRunActive, { shared: "correct" });
     } else {
-      const correctLetter = String.fromCharCode(65 + shuffled.correctIndex);
-      const correctText = shuffled.options[shuffled.correctIndex].replace(/^[A-D]\)\s*/, "");
-      await speakAndWait(`Incorrect. The correct answer is ${correctLetter}, ${correctText}.`, isRunActive);
+      await speakAndWait(null, isRunActive, { qid, seg: "incorrect" });
     }
     if (!isRunActive()) return;
 
     setHandsFreePhase("reading-explanation");
     handsFreeRef.current.phase = "reading-explanation";
-    const cLetter = String.fromCharCode(65 + shuffled.correctIndex);
-    const explainFn = getExplanationTextRef.current;
-    const correctedExplanation = explainFn ? explainFn(question, cLetter) : "";
-    await speakAndWait(correctedExplanation, isRunActive);
+    await speakAndWait(null, isRunActive, { qid, seg: "explanation" });
     if (!isRunActive()) return;
 
     setHandsFreePhase("advancing");
@@ -14117,7 +13874,7 @@ useEffect(() => {
     if (!isRunActive()) return;
 
     if (nextQuestionRef.current) nextQuestionRef.current();
-  }, [speakAndWait, listenForAnswer, initRecognition]);
+  }, [speakAndWait, listenForAnswer, initRecognition, getHandsFreeOptions]);
 
   const startHandsFree = useCallback(async () => {
     ensureAudioContext();
@@ -14125,16 +13882,6 @@ useEffect(() => {
     if (!SpeechRec) {
       alert("Your browser does not support speech recognition. Please use Chrome, Edge, or Safari 14.5+.");
       return;
-    }
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-      const warmup = new SpeechSynthesisUtterance(" ");
-      warmup.volume = 0;
-      warmup.onend = () => {};
-      warmup.onerror = () => {};
-      window.speechSynthesis.speak(warmup);
-      await new Promise(r => setTimeout(r, 100));
-      window.speechSynthesis.cancel();
     }
     const hasMicPermission = await ensureMicPermission();
     if (!hasMicPermission) {
@@ -14543,26 +14290,13 @@ useEffect(() => {
   const shuffledOptionsRef = useRef({});
   const getShuffledOptions = useCallback((question) => {
     if (!question) return { options: question?.options || [], correctIndex: 0, indexMap: [] };
-    const cacheKey = question.id + "-" + currentQuestionIndex;
-    if (shuffledOptionsRef.current[cacheKey]) return shuffledOptionsRef.current[cacheKey];
-    const indices = question.options.map((_, i) => i);
-    for (let i = indices.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [indices[i], indices[j]] = [indices[j], indices[i]];
-    }
-    const result = {
-      options: indices.map((i) => question.options[i]),
-      correctIndex: indices.indexOf(question.correctAnswer),
-      indexMap: indices
-      // indexMap[displayPos] = originalPos
+    const options = question.options || [];
+    return {
+      options,
+      correctIndex: Number.isInteger(question.correctAnswer) ? question.correctAnswer : 0,
+      indexMap: options.map((_, i) => i)
     };
-    const keys = Object.keys(shuffledOptionsRef.current);
-    if (keys.length > 5) {
-      delete shuffledOptionsRef.current[keys[0]];
-    }
-    shuffledOptionsRef.current[cacheKey] = result;
-    return result;
-  }, [currentQuestionIndex]);
+  }, []);
   getShuffledOptionsRef.current = getShuffledOptions;
   const fixExplanationLetter = (text, correctLetter) => {
     if (!text || !correctLetter) return text;
@@ -17229,56 +16963,6 @@ useEffect(() => {
         boxShadow: handsFreeMode ? "0 2px 8px rgba(220, 38, 38, 0.3)" : "0 2px 8px rgba(37, 99, 235, 0.3)"
       }
     }, handsFreeMode ? "\u23F9 Stop Hands-Free" : "\u{1F3A7} Hands-Free Mode")),
-    /* @__PURE__ */ React.createElement("select", {
-      value: preferredVoiceURI,
-      onChange: (e) => {
-        const val = e.target.value;
-        setPreferredVoiceURI(val);
-        if (val.startsWith("openai:") && !openaiKey) setShowKeyInput(true);
-      },
-      style: {
-        padding: "6px 8px", borderRadius: "8px", fontSize: "12px",
-        border: "1px solid rgba(0,0,0,0.12)", background: "rgba(255,255,255,0.9)",
-        color: "#334155", cursor: "pointer", maxWidth: "170px",
-        appearance: "auto", WebkitAppearance: "menulist"
-      }
-    },
-      /* @__PURE__ */ React.createElement("option", { value: "" }, "Voice: Auto (Best Device)"),
-      rankedDeviceVoices.length > 0 && /* @__PURE__ */ React.createElement("optgroup", { label: "Device" },
-        rankedDeviceVoices.map((v) => /* @__PURE__ */ React.createElement("option", { key: v.voiceURI, value: v.voiceURI }, v.name))
-      ),
-      /* @__PURE__ */ React.createElement("optgroup", { label: "OpenAI (Natural)" },
-        OPENAI_VOICES.map((v) => /* @__PURE__ */ React.createElement("option", { key: "openai:" + v, value: "openai:" + v }, v[0].toUpperCase() + v.slice(1)))
-      )
-    ),
-    preferredVoiceURI.startsWith("openai:") && /* @__PURE__ */ React.createElement("div", { style: {
-      display: "flex", alignItems: "center", gap: "6px", width: "100%"
-    } },
-      !openaiKey || showKeyInput ? /* @__PURE__ */ React.createElement(React.Fragment, null,
-        /* @__PURE__ */ React.createElement("input", {
-          type: "password",
-          placeholder: "Paste OpenAI API key",
-          value: openaiKey,
-          onChange: (e) => setOpenaiKey(e.target.value),
-          style: {
-            flex: 1, padding: "6px 8px", borderRadius: "8px", fontSize: "12px",
-            border: "1px solid rgba(0,0,0,0.15)", background: "white", color: "#334155",
-            minWidth: 0
-          }
-        }),
-        openaiKey && /* @__PURE__ */ React.createElement("button", {
-          onClick: () => setShowKeyInput(false),
-          style: {
-            padding: "4px 10px", borderRadius: "6px", fontSize: "11px", fontWeight: 600,
-            border: "1px solid rgba(16,185,129,0.3)", background: "rgba(16,185,129,0.1)",
-            color: "#059669", cursor: "pointer"
-          }
-        }, "Save")
-      ) : /* @__PURE__ */ React.createElement("span", {
-        onClick: () => setShowKeyInput(true),
-        style: { fontSize: "11px", color: "#059669", cursor: "pointer" }
-      }, "Key saved")
-    ),
     handsFreeMode && handsFreePhase === "listening" && !showExplanation && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: "8px", width: "100%", justifyContent: "center", marginTop: "4px" } },
       ["A", "B", "C", "D"].map((letter, idx) => /* @__PURE__ */ React.createElement("button", {
         key: letter,
@@ -17333,10 +17017,10 @@ useEffect(() => {
         }
       },
       isBookmarked(currentQuestion.id) ? "Bookmarked": "\u{1F3F7}\uFE0F Bookmark"
-    ), window.speechSynthesis && /* @__PURE__ */ React.createElement(
+    ), questionHasPregen(currentQuestion.id) && /* @__PURE__ */ React.createElement(
       "button",
       {
-        onClick: () => readAloud(getExplanationText(currentQuestion, String.fromCharCode(65 + getShuffledOptions(currentQuestion).correctIndex))),
+        onClick: () => readAloud({ qid: currentQuestion.id, seg: "explanation" }),
         "aria-label": isSpeaking ? "Stop reading": "Read aloud",
         style: {
           display: "inline-flex",
@@ -17417,7 +17101,7 @@ useEffect(() => {
     } }, /* @__PURE__ */ React.createElement("span", { style: styles.categoryBadge(cat.color) }, /* @__PURE__ */ React.createElement("span", { style: { display: "inline-flex", alignItems: "center", marginRight: "6px" } }, renderBadgeCategoryIcon(cat.icon)), cat.name), /* @__PURE__ */ React.createElement("span", { style: {
       color: answer.isCorrect ? "#10b981": "#ef4444",
       fontWeight: "600"
-    } }, answer.isCorrect ? "\u2705 Correct": "\u274C Incorrect")), /* @__PURE__ */ React.createElement("p", { style: { fontSize: "14px", marginBottom: "8px", color: "#334155" } }, answer.question.question), revQImgs.length > 0 && /* @__PURE__ */ React.createElement("div", { style: {...styles.quizImageGroup, marginBottom: "10px" } }, revQImgs.map((img, imgIdx) => /* @__PURE__ */ React.createElement("figure", { key: `${answer.question.id}-grqimg-${imgIdx}`, style: styles.quizImageCard }, /* @__PURE__ */ React.createElement("img", { src: img.src, alt: img.alt, style: styles.quizImage, loading: "lazy", decoding: "async" }), !!img.caption && /* @__PURE__ */ React.createElement("figcaption", { style: styles.quizImageCaption }, img.caption)))), /* @__PURE__ */ React.createElement("p", { style: { fontSize: "12px", color: "#475569" } }, /* @__PURE__ */ React.createElement("strong", null, "Your answer:"), " ", (answer.userAnswerText || answer.question.options[answer.userAnswer]).replace(/^[A-D]\)\s*/, "")), !answer.isCorrect && /* @__PURE__ */ React.createElement("p", { style: { fontSize: "12px", color: "#059669" } }, /* @__PURE__ */ React.createElement("strong", null, "Correct answer:"), " ", (answer.correctAnswerText || answer.question.options[answer.question.correctAnswer]).replace(/^[A-D]\)\s*/, "")), /* @__PURE__ */ React.createElement("details", { style: { marginTop: "8px" } }, /* @__PURE__ */ React.createElement("summary", { style: { fontSize: "12px", color: "#2563eb", cursor: "pointer", fontWeight: 500 } }, "Show Explanation"), /* @__PURE__ */ React.createElement("div", { style: { marginTop: "8px" } }, /* @__PURE__  */ React.createElement("button", { onClick: () => toggleBookmark(answer.question.id), style: { display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 10px", marginTop: "0px", marginBottom: "8px", background: isBookmarked(answer.question.id) ? "rgba(234, 179, 8, 0.15)": "rgba(0,0,0,0.04)", border: isBookmarked(answer.question.id) ? "1px solid rgba(234, 179, 8, 0.4)": "1px solid rgba(0,0,0,0.08)", borderRadius: "8px", cursor: "pointer", fontSize: "12px", color: isBookmarked(answer.question.id) ? "#b45309": "#64748b", fontWeight: isBookmarked(answer.question.id) ? 600: 400 } }, isBookmarked(answer.question.id) ? "Bookmarked": "\u{1F3F7}\uFE0F Bookmark"), window.speechSynthesis && /* @__PURE__ */ React.createElement("button", { onClick: () => readAloud(getExplanationText(answer.question, answer.shuffledCorrectLetter)), "aria-label": isSpeaking ? "Stop reading": "Read aloud", style: { display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", marginBottom: "8px", marginLeft: "8px", background: isSpeaking ? "rgba(37, 99, 235, 0.12)": "rgba(0,0,0,0.04)", border: isSpeaking ? "1px solid rgba(37, 99, 235, 0.35)": "1px solid rgba(0,0,0,0.08)", borderRadius: "8px", cursor: "pointer", fontSize: "12px", color: isSpeaking ? "#1d4ed8": "#64748b", fontWeight: isSpeaking ? 600: 400, transition: "all 0.2s ease" } }, isSpeaking ? "\u{1F50A} Stop": "\u{1F50A} Read Aloud"), revEImgs.length > 0 && /* @__PURE__ */ React.createElement("div", { style: {...styles.quizImageGroup, marginTop: "10px", marginBottom: "10px" } }, revEImgs.map((img, imgIdx) => /* @__PURE__ */ React.createElement("figure", { key: `${answer.question.id}-greimg-${imgIdx}`, style: styles.quizImageCard }, /* @__PURE__ */ React.createElement("img", { src: img.src, alt: img.alt, style: styles.quizImage, loading: "lazy", decoding: "async" }), !!img.caption && /* @__PURE__ */ React.createElement("figcaption", { style: styles.quizImageCaption }, img.caption)))), /* @__PURE__ */ React.createElement(ExpandableText, { text: getExplanationText(answer.question, answer.shuffledCorrectLetter) }))));
+    } }, answer.isCorrect ? "\u2705 Correct": "\u274C Incorrect")), /* @__PURE__ */ React.createElement("p", { style: { fontSize: "14px", marginBottom: "8px", color: "#334155" } }, answer.question.question), revQImgs.length > 0 && /* @__PURE__ */ React.createElement("div", { style: {...styles.quizImageGroup, marginBottom: "10px" } }, revQImgs.map((img, imgIdx) => /* @__PURE__ */ React.createElement("figure", { key: `${answer.question.id}-grqimg-${imgIdx}`, style: styles.quizImageCard }, /* @__PURE__ */ React.createElement("img", { src: img.src, alt: img.alt, style: styles.quizImage, loading: "lazy", decoding: "async" }), !!img.caption && /* @__PURE__ */ React.createElement("figcaption", { style: styles.quizImageCaption }, img.caption)))), /* @__PURE__ */ React.createElement("p", { style: { fontSize: "12px", color: "#475569" } }, /* @__PURE__ */ React.createElement("strong", null, "Your answer:"), " ", (answer.userAnswerText || answer.question.options[answer.userAnswer]).replace(/^[A-D]\)\s*/, "")), !answer.isCorrect && /* @__PURE__ */ React.createElement("p", { style: { fontSize: "12px", color: "#059669" } }, /* @__PURE__ */ React.createElement("strong", null, "Correct answer:"), " ", (answer.correctAnswerText || answer.question.options[answer.question.correctAnswer]).replace(/^[A-D]\)\s*/, "")), /* @__PURE__ */ React.createElement("details", { style: { marginTop: "8px" } }, /* @__PURE__ */ React.createElement("summary", { style: { fontSize: "12px", color: "#2563eb", cursor: "pointer", fontWeight: 500 } }, "Show Explanation"), /* @__PURE__ */ React.createElement("div", { style: { marginTop: "8px" } }, /* @__PURE__  */ React.createElement("button", { onClick: () => toggleBookmark(answer.question.id), style: { display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 10px", marginTop: "0px", marginBottom: "8px", background: isBookmarked(answer.question.id) ? "rgba(234, 179, 8, 0.15)": "rgba(0,0,0,0.04)", border: isBookmarked(answer.question.id) ? "1px solid rgba(234, 179, 8, 0.4)": "1px solid rgba(0,0,0,0.08)", borderRadius: "8px", cursor: "pointer", fontSize: "12px", color: isBookmarked(answer.question.id) ? "#b45309": "#64748b", fontWeight: isBookmarked(answer.question.id) ? 600: 400 } }, isBookmarked(answer.question.id) ? "Bookmarked": "\u{1F3F7}\uFE0F Bookmark"), questionHasPregen(answer.question.id) && /* @__PURE__ */ React.createElement("button", { onClick: () => readAloud({ qid: answer.question.id, seg: "explanation" }), "aria-label": isSpeaking ? "Stop reading": "Read aloud", style: { display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", marginBottom: "8px", marginLeft: "8px", background: isSpeaking ? "rgba(37, 99, 235, 0.12)": "rgba(0,0,0,0.04)", border: isSpeaking ? "1px solid rgba(37, 99, 235, 0.35)": "1px solid rgba(0,0,0,0.08)", borderRadius: "8px", cursor: "pointer", fontSize: "12px", color: isSpeaking ? "#1d4ed8": "#64748b", fontWeight: isSpeaking ? 600: 400, transition: "all 0.2s ease" } }, isSpeaking ? "\u{1F50A} Stop": "\u{1F50A} Read Aloud"), revEImgs.length > 0 && /* @__PURE__ */ React.createElement("div", { style: {...styles.quizImageGroup, marginTop: "10px", marginBottom: "10px" } }, revEImgs.map((img, imgIdx) => /* @__PURE__ */ React.createElement("figure", { key: `${answer.question.id}-greimg-${imgIdx}`, style: styles.quizImageCard }, /* @__PURE__ */ React.createElement("img", { src: img.src, alt: img.alt, style: styles.quizImage, loading: "lazy", decoding: "async" }), !!img.caption && /* @__PURE__ */ React.createElement("figcaption", { style: styles.quizImageCaption }, img.caption)))), /* @__PURE__ */ React.createElement(ExpandableText, { text: getExplanationText(answer.question, answer.shuffledCorrectLetter) }))));
   })), /* @__PURE__ */ React.createElement("button", { style: {...styles.nextBtn, ...(!effectiveMobile ? { flexShrink: 0, marginTop: "20px" } : {})}, onClick: goHome }, "Return Home"));
   const renderQuizComplete = () => {
     const correct = quizResults.filter((r) => r.isCorrect).length;
