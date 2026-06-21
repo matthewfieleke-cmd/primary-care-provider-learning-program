@@ -120,6 +120,23 @@ function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
+/** Resilient write for OneDrive/AV file locks (transient EBUSY/UNKNOWN/EPERM). */
+function writeFileWithRetry(filePath, data, attempts = 8) {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      fs.writeFileSync(filePath, data);
+      return;
+    } catch (e) {
+      const code = e && e.code;
+      const transient = code === "EBUSY" || code === "UNKNOWN" || code === "EPERM" || code === "EACCES";
+      if (!transient || i === attempts - 1) throw e;
+      const waitMs = 300 * (i + 1);
+      const end = Date.now() + waitMs;
+      while (Date.now() < end) { /* sync backoff */ }
+    }
+  }
+}
+
 function manifestPath(bundleId) {
   return path.join(TTS_ROOT, bundleId, "manifest.json");
 }
@@ -165,14 +182,14 @@ function writePrecacheUrls(bundleId, manifest) {
     generatedAt: new Date().toISOString(),
     urls
   };
-  fs.writeFileSync(path.join(bundleRoot, "precache-urls.json"), JSON.stringify(out, null, 2) + "\n");
+  writeFileWithRetry(path.join(bundleRoot, "precache-urls.json"), JSON.stringify(out, null, 2) + "\n");
   return urls.length;
 }
 
 function saveManifest(bundleId, manifest, skipBundles) {
   const p = manifestPath(bundleId);
   ensureDir(path.dirname(p));
-  fs.writeFileSync(p, JSON.stringify(manifest, null, 2) + "\n");
+  writeFileWithRetry(p, JSON.stringify(manifest, null, 2) + "\n");
   if (!skipBundles) updateBundlesRegistry(bundleId, manifest);
   writePrecacheUrls(bundleId, manifest);
 }
@@ -420,7 +437,7 @@ async function main() {
   if (args.progressOnly || args.sharedOnly) {
     if (!args.dryRun) {
       console.log(`\nDone. Manifest: ${manifestPath(bundleId)}`);
-      console.log("Run: node scripts/build-handsfree-manifest.js");
+      console.log(`Precache: assets/tts/${bundleId}/precache-urls.json`);
     }
     return;
   }
@@ -495,7 +512,7 @@ async function main() {
 
   if (!args.dryRun) {
     console.log(`\nDone. Manifest: ${manifestPath(bundleId)}`);
-    console.log("Run: node scripts/build-handsfree-manifest.js");
+    console.log(`Precache: assets/tts/${bundleId}/precache-urls.json`);
   }
 }
 

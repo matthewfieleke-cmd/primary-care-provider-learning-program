@@ -13069,7 +13069,6 @@ function PCPLearningApp() {
   };
   const REVIEW_INTERVALS_MS = [24 * 60 * 60 * 1e3, 3 * 24 * 60 * 60 * 1e3, 7 * 24 * 60 * 60 * 1e3];
   const EXPLANATION_MODE_KEY = "pcp-explanation-mode";
-  const ASH_BUNDLE_ID = "openai-ash";
   const CEDAR_BUNDLE_ID = "openai-cedar";
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [deskHeight, setDeskHeight] = useState(window.innerHeight);
@@ -13180,29 +13179,22 @@ useEffect(() => {
     }
   }, [explanationMode]);
   useEffect(() => {
-    const mergeHandsFreeManifests = (ash, cedar) => {
-      const questions = {};
-      for (const [id, entry] of Object.entries(ash?.questions || {})) {
-        questions[id] = { bundle: ASH_BUNDLE_ID, categoryId: entry.categoryId, files: entry.files };
-      }
-      for (const [id, entry] of Object.entries(cedar?.questions || {})) {
-        questions[id] = { bundle: CEDAR_BUNDLE_ID, categoryId: entry.categoryId, files: entry.files };
-      }
-      return {
-        version: 2,
-        type: "hybrid",
-        sharedBundle: CEDAR_BUNDLE_ID,
-        shared: cedar?.shared || {},
-        questions
-      };
-    };
-    Promise.all([
-      fetch("assets/tts/openai-ash/manifest.json").then((r) => (r.ok ? r.json() : null)),
-      fetch("assets/tts/openai-cedar/manifest.json").then((r) => (r.ok ? r.json() : null))
-    ])
-      .then(([ash, cedar]) => {
-        const data = mergeHandsFreeManifests(ash, cedar);
-        if (data.questions && Object.keys(data.questions).length) {
+    fetch("assets/tts/openai-cedar/manifest.json")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((cedar) => {
+        if (!cedar?.questions) return;
+        const questions = {};
+        for (const [id, entry] of Object.entries(cedar.questions)) {
+          questions[id] = { bundle: CEDAR_BUNDLE_ID, categoryId: entry.categoryId, files: entry.files };
+        }
+        const data = {
+          version: 3,
+          type: "cedar",
+          sharedBundle: CEDAR_BUNDLE_ID,
+          shared: cedar.shared || {},
+          questions
+        };
+        if (Object.keys(questions).length) {
           pregenManifestRef.current = data;
           setPregenManifest(data);
         }
@@ -13816,6 +13808,11 @@ useEffect(() => {
     const shuffled = getHandsFreeOptions(question);
     const qid = question.id;
     const qNum = questionIndex + 1;
+    const HF_PAUSE_MS = 600;
+    const HF_SHORT_PAUSE_MS = 400;
+    const hfPause = async (ms) => {
+      await new Promise((r) => setTimeout(r, ms));
+    };
 
     setHandsFreePhase("reading-progress");
     handsFreeRef.current.phase = "reading-progress";
@@ -13826,12 +13823,17 @@ useEffect(() => {
     handsFreeRef.current.phase = "reading-question";
     await speakAndWait(null, isRunActive, { qid, seg: "question" });
     if (!isRunActive()) return;
+    await hfPause(HF_PAUSE_MS);
+    if (!isRunActive()) return;
 
     setHandsFreePhase("reading-options");
     handsFreeRef.current.phase = "reading-options";
     for (let i = 0; i < shuffled.options.length; i++) {
       if (!isRunActive()) return;
       await speakAndWait(null, isRunActive, { qid, seg: "opt-" + i });
+      if (!isRunActive()) return;
+      await hfPause(HF_PAUSE_MS);
+      if (!isRunActive()) return;
     }
     if (!isRunActive()) return;
     const preRec = initRecognition();
@@ -13854,6 +13856,9 @@ useEffect(() => {
     if (handleAnswerRef.current) handleAnswerRef.current(answerIdx);
     const isCorrect = answerIdx === shuffled.correctIndex;
 
+    await hfPause(HF_SHORT_PAUSE_MS);
+    if (!isRunActive()) return;
+
     setHandsFreePhase("reading-result");
     handsFreeRef.current.phase = "reading-result";
     if (isCorrect) {
@@ -13862,19 +13867,26 @@ useEffect(() => {
       await speakAndWait(null, isRunActive, { qid, seg: "incorrect" });
     }
     if (!isRunActive()) return;
+    await hfPause(HF_SHORT_PAUSE_MS);
+    if (!isRunActive()) return;
 
     setHandsFreePhase("reading-explanation");
     handsFreeRef.current.phase = "reading-explanation";
-    await speakAndWait(null, isRunActive, { qid, seg: "explanation" });
+    const explanationUrls = resolvePregenAudioUrls({ qid, seg: "explanation" });
+    if (explanationUrls.length) {
+      setIsSpeaking(true);
+      await playPregenAudioSequence(explanationUrls, isRunActive);
+      setIsSpeaking(false);
+    }
     if (!isRunActive()) return;
 
     setHandsFreePhase("advancing");
     handsFreeRef.current.phase = "advancing";
-    await new Promise((r) => setTimeout(r, 120));
+    await hfPause(HF_PAUSE_MS);
     if (!isRunActive()) return;
 
     if (nextQuestionRef.current) nextQuestionRef.current();
-  }, [speakAndWait, listenForAnswer, initRecognition, getHandsFreeOptions]);
+  }, [speakAndWait, listenForAnswer, initRecognition, getHandsFreeOptions, playPregenAudioSequence]);
 
   const startHandsFree = useCallback(async () => {
     ensureAudioContext();

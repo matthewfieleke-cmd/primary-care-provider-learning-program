@@ -1,7 +1,7 @@
 // Service Worker — shell network-first; TTS audio cache-first with bulk install preload
 
-const CACHE_NAME = "pcp-learning-v15";
-const TTS_PRECACHE_MANIFEST = "assets/tts/handsfree/precache-urls.json";
+const CACHE_NAME = "pcp-learning-v16";
+const TTS_PRECACHE_MANIFEST = "assets/tts/openai-cedar/precache-urls.json";
 const TTS_BATCH_SIZE = 25;
 
 const OFFLINE_URLS = [
@@ -89,8 +89,7 @@ const OFFLINE_URLS = [
   "assets/umbilical-hernia.png",
   "assets/varicocele-anatomy.png",
   "assets/venous-ulcer.png",
-  "assets/tts/bundles.json",
-  "assets/tts/handsfree/manifest.json",
+  "assets/tts/openai-cedar/manifest.json",
   TTS_PRECACHE_MANIFEST
 ];
 
