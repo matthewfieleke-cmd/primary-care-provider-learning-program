@@ -13350,17 +13350,30 @@ useEffect(() => {
       };
       if (!url || !canContinue()) { resolve(false); return; }
       ensureAudioContext();
-      const audio = new Audio(url);
-      pregenAudioRef.current = audio;
+      // Reuse a single <audio> element across the whole session. iOS Safari
+      // becomes unreliable when many new Audio() elements are created in one
+      // session (later clips like the explanation silently fail to play).
+      let audio = pregenAudioRef.current;
+      if (!audio) {
+        audio = new Audio();
+        audio.preload = "auto";
+        pregenAudioRef.current = audio;
+      }
       let settled = false;
       const done = (ok) => {
         if (settled) return;
         settled = true;
-        if (pregenAudioRef.current === audio) pregenAudioRef.current = null;
+        audio.onended = null;
+        audio.onerror = null;
         resolve(ok);
       };
       audio.onended = () => done(canContinue());
       audio.onerror = () => done(false);
+      try {
+        audio.pause();
+        audio.src = url;
+        audio.load();
+      } catch (e) {}
       audio.play().then(() => {}).catch(() => done(false));
     });
   }, []);
