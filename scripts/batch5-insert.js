@@ -324,7 +324,7 @@ function finalValidate() {
     throw new Error("UTI recategorization failed");
   }
   if (!html.includes('const startQuiz = (count) =>')) throw new Error("startQuiz missing");
-  if (!html.includes('const unanswered = QUESTIONS.filter((q) => !(q.id in progress.answeredQuestions));')) {
+  if (!html.includes("const getEligibleQuestions = (prog")) {
     throw new Error("New-question-only quiz semantics changed");
   }
 }

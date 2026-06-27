@@ -13062,6 +13062,8 @@ function PCPLearningApp() {
   const DEFAULT_PROGRESS = {
     answeredQuestions: {},
     incorrectQuestions: [],
+    cycleAnsweredQuestions: {},
+    cycleIncorrectQuestions: [],
     categoryProgress: {},
     gameHighScore: 0,
     bookmarkedQuestions: [],
@@ -13218,6 +13220,8 @@ useEffect(() => {
           setProgress({...DEFAULT_PROGRESS,...parsed,
             answeredQuestions: parsed?.answeredQuestions || {},
             incorrectQuestions: Array.isArray(parsed?.incorrectQuestions) ? parsed.incorrectQuestions: [],
+            cycleAnsweredQuestions: parsed?.cycleAnsweredQuestions || {},
+            cycleIncorrectQuestions: Array.isArray(parsed?.cycleIncorrectQuestions) ? parsed.cycleIncorrectQuestions: [],
             categoryProgress: parsed?.categoryProgress || {},
             gameHighScore: Number.isFinite(parsed?.gameHighScore) ? parsed.gameHighScore : 0,
             bookmarkedQuestions: Array.isArray(parsed?.bookmarkedQuestions) ? parsed.bookmarkedQuestions: [],
@@ -13255,6 +13259,11 @@ useEffect(() => {
         }
       });
       const newIncorrect = (prev.incorrectQuestions || []).filter((id) => !catQuestionIds.has(id));
+      const newCycleAnswered = {};
+      Object.entries(prev.cycleAnsweredQuestions || {}).forEach(([qId, isCorrect]) => {
+        if (!catQuestionIds.has(parseInt(qId))) newCycleAnswered[qId] = isCorrect;
+      });
+      const newCycleIncorrect = (prev.cycleIncorrectQuestions || []).filter((id) => !catQuestionIds.has(id));
       const newSpacedReview = {};
       Object.entries(prev.spacedReview || {}).forEach(([qId, val]) => {
         if (!catQuestionIds.has(parseInt(qId))) newSpacedReview[qId] = val;
@@ -13265,6 +13274,8 @@ useEffect(() => {
       const updated = {...prev,
         answeredQuestions: newAnswered,
         incorrectQuestions: newIncorrect,
+        cycleAnsweredQuestions: newCycleAnswered,
+        cycleIncorrectQuestions: newCycleIncorrect,
         spacedReview: newSpacedReview,
         bookmarkedQuestions: newBookmarks,
         categoryProgress: newCategoryProgress
@@ -14290,6 +14301,22 @@ useEffect(() => {
         total: (prevCat.total || 0) + 1,
         correct: (prevCat.correct || 0) + (isCorrect ? 1: 0)
       };
+      const firstPassComplete = Object.keys(updated.answeredQuestions).length >= QUESTIONS.length;
+      const inCycleMode = firstPassComplete && updated.incorrectQuestions.length === 0;
+      if (inCycleMode) {
+        updated.cycleAnsweredQuestions = {...prev.cycleAnsweredQuestions || {}, [questionId]: isCorrect };
+        let cycleIncorrect = Array.isArray(prev.cycleIncorrectQuestions) ? [...prev.cycleIncorrectQuestions]: [];
+        if (isCorrect) {
+          cycleIncorrect = cycleIncorrect.filter((id) => id !== questionId);
+        } else if (!cycleIncorrect.includes(questionId)) {
+          cycleIncorrect.push(questionId);
+        }
+        updated.cycleIncorrectQuestions = cycleIncorrect;
+        if (Object.keys(updated.cycleAnsweredQuestions).length >= QUESTIONS.length && cycleIncorrect.length === 0) {
+          updated.cycleAnsweredQuestions = {};
+          updated.cycleIncorrectQuestions = [];
+        }
+      }
       saveProgress(updated);
       return updated;
     });
@@ -15110,14 +15137,67 @@ useEffect(() => {
       };
     }).filter(Boolean);
   };
+  const getQuizSelectionPhase = (prog) => {
+    const answeredCount = Object.keys(prog.answeredQuestions || {}).length;
+    if (answeredCount < QUESTIONS.length) return "first-unseen";
+    if ((prog.incorrectQuestions || []).length > 0) return "first-incorrect";
+    const cycleAnsweredCount = Object.keys(prog.cycleAnsweredQuestions || {}).length;
+    if (cycleAnsweredCount < QUESTIONS.length) return "cycle-unseen";
+    if ((prog.cycleIncorrectQuestions || []).length > 0) return "cycle-incorrect";
+    return "cycle-complete";
+  };
+  const withFreshCycleIfComplete = (prog) => {
+    if (getQuizSelectionPhase(prog) !== "cycle-complete") return prog;
+    return {...prog, cycleAnsweredQuestions: {}, cycleIncorrectQuestions: [] };
+  };
+  const ensureProgressForSelection = (prog) => {
+    const refreshed = withFreshCycleIfComplete(prog);
+    if (refreshed !== prog) saveProgress(refreshed);
+    return refreshed;
+  };
+  const isQuestionEligibleForSelection = (questionId, prog) => {
+    const effective = withFreshCycleIfComplete(prog);
+    const phase = getQuizSelectionPhase(effective);
+    if (phase === "first-unseen") return !(questionId in (effective.answeredQuestions || {}));
+    if (phase === "first-incorrect") return (effective.incorrectQuestions || []).includes(questionId);
+    if (phase === "cycle-unseen") return !(questionId in (effective.cycleAnsweredQuestions || {}));
+    if (phase === "cycle-incorrect") return (effective.cycleIncorrectQuestions || []).includes(questionId);
+    return true;
+  };
+  const getEligibleQuestions = (prog, { restrictTo = QUESTIONS, fallbackFullPool = false } = {}) => {
+    const effective = withFreshCycleIfComplete(prog);
+    const phase = getQuizSelectionPhase(effective);
+    let pool;
+    if (phase === "first-unseen") {
+      pool = restrictTo.filter((q) => !(q.id in (effective.answeredQuestions || {})));
+    } else if (phase === "first-incorrect") {
+      const inc = new Set(effective.incorrectQuestions || []);
+      pool = restrictTo.filter((q) => inc.has(q.id));
+    } else if (phase === "cycle-unseen") {
+      pool = restrictTo.filter((q) => !(q.id in (effective.cycleAnsweredQuestions || {})));
+    } else if (phase === "cycle-incorrect") {
+      const cInc = new Set(effective.cycleIncorrectQuestions || []);
+      pool = restrictTo.filter((q) => cInc.has(q.id));
+    } else {
+      pool = [...restrictTo];
+    }
+    if (pool.length === 0 && fallbackFullPool) pool = [...restrictTo];
+    return { pool, effectiveProgress: effective };
+  };
+  const findNextEligibleQuizIndex = (questions, fromIndex, prog) => {
+    for (let i = fromIndex + 1; i < questions.length; i++) {
+      if (isQuestionEligibleForSelection(questions[i].id, prog)) return i;
+    }
+    return -1;
+  };
   const startQuiz = (count) => {
     play("click");
-    const unanswered = QUESTIONS.filter((q) => !(q.id in progress.answeredQuestions));
-    if (unanswered.length === 0) {
-      alert("You've answered every question! Use Review Incorrect or study by category to keep practicing.");
+    const { pool } = getEligibleQuestions(ensureProgressForSelection(progress));
+    if (pool.length === 0) {
+      alert("No questions available for your current study phase. Try reviewing incorrect answers or reset progress.");
       return;
     }
-    resetQuizState(shuffleArray(unanswered).slice(0, count), "quiz");
+    resetQuizState(shuffleArray(pool).slice(0, count), "quiz");
   };
   const startCategoryReview = (categoryId) => {
     play("click");
@@ -15125,10 +15205,19 @@ useEffect(() => {
     setExpandedSubcategoryId(null);
     setCurrentView("category-questions");
   };
-  const startCategoryQuiz = (categoryId, startIndex = 0) => {
+  const startCategoryQuiz = (categoryId, startIndex = 0, explicit = false) => {
     play("click");
     const categoryQuestions = QUESTIONS.filter((q) => q.categoryId === categoryId);
-    resetQuizState(categoryQuestions, "category-review", startIndex);
+    const prog = ensureProgressForSelection(progress);
+    let idx = startIndex;
+    if (!explicit) {
+      while (idx < categoryQuestions.length && !isQuestionEligibleForSelection(categoryQuestions[idx].id, prog)) idx++;
+      if (idx >= categoryQuestions.length) {
+        alert("No eligible questions remaining in this category for your current study phase.");
+        return;
+      }
+    }
+    resetQuizState(categoryQuestions, "category-review", idx);
   };
   const handleAnswer = (answerIndex) => {
     if (selectedAnswer !== null && !gameMode) return;
@@ -15169,13 +15258,9 @@ useEffect(() => {
           setCurrentQuestionIndex((prev) => prev + 1);
           setSelectedAnswer(null);
         } else {
-          const unseen = QUESTIONS.filter((q) => !gameSeenIdsRef.current.has(q.id));
-          let moreQuestions;
-          if (unseen.length >= 20) {
-            moreQuestions = shuffleArray(unseen).slice(0, 50);
-          } else {
-            moreQuestions = shuffleArray(QUESTIONS).slice(0, 50);
-          }
+          const unseenInSession = QUESTIONS.filter((q) => !gameSeenIdsRef.current.has(q.id));
+          const { pool: eligible } = getEligibleQuestions(progress, { restrictTo: unseenInSession, fallbackFullPool: true });
+          const moreQuestions = shuffleArray(eligible.length > 0 ? eligible : QUESTIONS).slice(0, 50);
           moreQuestions.forEach((q) => gameSeenIdsRef.current.add(q.id));
           setQuizQuestions((prev) => [...prev,...moreQuestions]);
           setCurrentQuestionIndex((prev) => prev + 1);
@@ -15192,13 +15277,20 @@ useEffect(() => {
   const nextQuestion = () => {
     play("heartbeat");
     stopSpeaking();
+    let nextIdx = null;
+    if (currentQuestionIndex < quizQuestions.length - 1) {
+      if (currentView === "category-review") {
+        nextIdx = findNextEligibleQuizIndex(quizQuestions, currentQuestionIndex, progress);
+      } else {
+        nextIdx = currentQuestionIndex + 1;
+      }
+    }
     if (handsFreeRef.current.active) {
       const runToken = handsFreeRunTokenRef.current + 1;
       handsFreeRunTokenRef.current = runToken;
       handsFreeRef.current.phase = "idle";
       setHandsFreePhase("idle");
-      if (currentQuestionIndex < quizQuestions.length - 1) {
-        const nextIdx = currentQuestionIndex + 1;
+      if (nextIdx !== null) {
         const nextQ = quizQuestions[nextIdx];
         if (nextQ) {
           setTimeout(() => {
@@ -15209,9 +15301,8 @@ useEffect(() => {
         }
       }
     }
-    if (currentQuestionIndex < quizQuestions.length - 1) {
-      const nextIdx = currentQuestionIndex + 1;
-      setCurrentQuestionIndex((prev) => prev + 1);
+    if (nextIdx !== null) {
+      setCurrentQuestionIndex(nextIdx);
       setSelectedAnswer(null);
       setShowExplanation(false);
     } else {
@@ -15257,7 +15348,8 @@ useEffect(() => {
     setGameEnded(false);
     setWarningShown({ oneMin: false, tenSec: false });
     shuffledOptionsRef.current = {};
-    const initial = shuffleArray(QUESTIONS).slice(0, 100);
+    const { pool: eligible } = getEligibleQuestions(ensureProgressForSelection(progress));
+    const initial = shuffleArray(eligible.length > 0 ? eligible : QUESTIONS).slice(0, 100);
     initial.forEach((q) => gameSeenIdsRef.current.add(q.id));
     setQuizQuestions(initial);
     setCurrentQuestionIndex(0);
@@ -15371,12 +15463,16 @@ useEffect(() => {
   const startDueReview = () => {
     play("click");
     if (dueReviewQuestions.length === 0) return;
-    resetQuizState(shuffleArray(dueReviewQuestions), "quiz");
+    const { pool } = getEligibleQuestions(ensureProgressForSelection(progress), { restrictTo: dueReviewQuestions });
+    if (pool.length === 0) return;
+    resetQuizState(shuffleArray(pool), "quiz");
   };
   const startUpcomingReview = () => {
     play("click");
     if (upcomingReviewQuestions.length === 0) return;
-    resetQuizState(shuffleArray(upcomingReviewQuestions), "quiz");
+    const { pool } = getEligibleQuestions(ensureProgressForSelection(progress), { restrictTo: upcomingReviewQuestions });
+    if (pool.length === 0) return;
+    resetQuizState(shuffleArray(pool), "quiz");
   };
   const toggleBookmark = (questionId) => {
     play("click");
@@ -15402,7 +15498,12 @@ useEffect(() => {
       (q) => Array.isArray(progress.bookmarkedQuestions) && progress.bookmarkedQuestions.includes(q.id)
     );
     if (bookmarkedQs.length === 0) return;
-    resetQuizState(shuffleArray(bookmarkedQs), "quiz");
+    const { pool } = getEligibleQuestions(ensureProgressForSelection(progress), { restrictTo: bookmarkedQs });
+    if (pool.length === 0) {
+      alert("No eligible bookmarked questions for your current study phase.");
+      return;
+    }
+    resetQuizState(shuffleArray(pool), "quiz");
   };
   const startQuizFromQuestion = (questionId) => {
     play("click");
@@ -16836,7 +16937,7 @@ useEffect(() => {
   const renderQuestionRow = (q, idx, categoryQuestions) => {
     const wasAnswered = q.id in progress.answeredQuestions;
     const wasCorrect = progress.answeredQuestions[q.id];
-    return /* @__PURE__ */ React.createElement("div", { key: q.id, style: { display: "flex", alignItems: "flex-start", gap: "12px", padding: effectiveMobile ? "12px" : "14px 16px", borderRadius: "10px", border: "1px solid " + (wasAnswered ? wasCorrect ? "rgba(22, 163, 74, 0.25)" : "rgba(220, 38, 38, 0.25)" : "rgba(0,0,0,0.08)"), background: wasAnswered ? wasCorrect ? "rgba(22, 163, 74, 0.04)" : "rgba(220, 38, 38, 0.04)" : "rgba(248, 250, 252, 0.6)", cursor: "pointer", transition: "all 0.2s" }, onClick: () => startCategoryQuiz(selectedCategory, idx), onMouseEnter: (e) => { e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.08)"; e.currentTarget.style.transform = "translateY(-1px)"; }, onMouseLeave: (e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; } },
+    return /* @__PURE__ */ React.createElement("div", { key: q.id, style: { display: "flex", alignItems: "flex-start", gap: "12px", padding: effectiveMobile ? "12px" : "14px 16px", borderRadius: "10px", border: "1px solid " + (wasAnswered ? wasCorrect ? "rgba(22, 163, 74, 0.25)" : "rgba(220, 38, 38, 0.25)" : "rgba(0,0,0,0.08)"), background: wasAnswered ? wasCorrect ? "rgba(22, 163, 74, 0.04)" : "rgba(220, 38, 38, 0.04)" : "rgba(248, 250, 252, 0.6)", cursor: "pointer", transition: "all 0.2s" }, onClick: () => startCategoryQuiz(selectedCategory, idx, true), onMouseEnter: (e) => { e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.08)"; e.currentTarget.style.transform = "translateY(-1px)"; }, onMouseLeave: (e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; } },
       /* @__PURE__ */ React.createElement("div", { style: { width: "28px", height: "28px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", fontWeight: "700", flexShrink: 0, marginTop: "1px", background: wasAnswered ? wasCorrect ? "rgba(22, 163, 74, 0.15)" : "rgba(220, 38, 38, 0.15)" : "rgba(0,0,0,0.06)", color: wasAnswered ? wasCorrect ? "#16a34a" : "#dc2626" : "#94a3b8" } }, wasAnswered ? wasCorrect ? "\u2713" : "\u2717" : idx + 1),
       /* @__PURE__ */ React.createElement("div", { style: { flex: 1, fontSize: effectiveMobile ? "13px" : "14px", lineHeight: "1.5", color: "#334155" } }, q.question.length > 150 ? q.question.substring(0, 150) + "\u2026" : q.question),
       isBookmarked(q.id) && /* @__PURE__ */ React.createElement("span", { style: { fontSize: "14px", flexShrink: 0, marginTop: "2px" } }, "\u{1F516}")
@@ -16912,9 +17013,9 @@ useEffect(() => {
         onClick: () => startCategoryQuiz(selectedCategory, 0)
       },
       "\u25B6 Start from Beginning"
-    ), catAnswered.answered > 0 && catAnswered.answered < categoryQuestions.length && (() => {
-      const firstUnansweredIdx = categoryQuestions.findIndex((q) => !(q.id in progress.answeredQuestions));
-      return firstUnansweredIdx > 0 ? /* @__PURE__ */ React.createElement(
+    ), (() => {
+      const firstEligibleIdx = categoryQuestions.findIndex((q) => isQuestionEligibleForSelection(q.id, progress));
+      return firstEligibleIdx > 0 ? /* @__PURE__ */ React.createElement(
         "button",
         {
           style: {
@@ -16928,10 +17029,10 @@ useEffect(() => {
             fontWeight: "600",
             transition: "all 0.2s"
           },
-          onClick: () => startCategoryQuiz(selectedCategory, firstUnansweredIdx)
+          onClick: () => startCategoryQuiz(selectedCategory, firstEligibleIdx)
         },
         "\u23ED Continue (Q",
-        firstUnansweredIdx + 1,
+        firstEligibleIdx + 1,
         ")"
       ): null;
     })(), catAnswered.answered > 0 && /* @__PURE__ */ React.createElement("button", { style: { padding: "10px 20px", borderRadius: "10px", border: "1px solid rgba(239, 68, 68, 0.3)", background: "none", color: "#dc2626", cursor: "pointer", fontSize: "13px", fontWeight: "500", transition: "all 0.15s ease", marginLeft: "auto" }, onClick: (e) => { e.stopPropagation(); resetCategoryProgress(selectedCategory); }, onMouseEnter: (e) => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.08)"; }, onMouseLeave: (e) => { e.currentTarget.style.background = "none";     } }, "\u{1F5D1}\uFE0F Reset Category"))), renderQuestionsCard(category, categoryQuestions));

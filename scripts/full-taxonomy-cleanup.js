@@ -397,7 +397,7 @@ for (const [catId, name] of Object.entries(MAP_NAMES)) {
 const finalQs = eval(html.match(/const QUESTIONS = (\[[\s\S]*?\n\]);/)[1]);
 if (finalQs.length !== 877) throw new Error(`Final count changed: ${finalQs.length}`);
 if (Math.max(...finalQs.map((q) => q.id)) !== 885) throw new Error("Final max ID changed");
-if (!html.includes("const unanswered = QUESTIONS.filter((q) => !(q.id in progress.answeredQuestions));")) {
+if (!html.includes("const getEligibleQuestions = (prog")) {
   throw new Error("New-question-only quiz selection changed");
 }
 
