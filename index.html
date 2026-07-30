@@ -309,6 +309,8 @@ const CATEGORIES = [
     { id: "misc", name: "General / Misc" }
   ] }
 ];
+const APP_FONT_STACK = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+const DESK_CAT_NAME_SIZE = "clamp(11px, 1.7vh, 15px)";
 const MSK_SUBCAT = {
   3:"knee",
   10:"shoulder",
@@ -13161,10 +13163,11 @@ function PCPLearningApp() {
   const pearlGridRef = useRef(null);
   // Reserve two trailing cells for the Clinical Pearl so it never collapses into a single narrow column.
   const minGridCols = Math.ceil((CATEGORIES.length + 2) / 3);
-  const [pearlGridCols, setPearlGridCols] = useState(() => {
-    const gridW = Math.min(window.innerWidth - 48, 1400) - 32;
-    return Math.max(minGridCols, Math.floor((gridW + 12) / (180 + 12)));
-  });
+  const initialGridWidth = Math.min(window.innerWidth - 48, 1400) - 32;
+  const [pearlGridCols, setPearlGridCols] = useState(() =>
+    Math.max(minGridCols, Math.floor((initialGridWidth + 12) / (180 + 12)))
+  );
+  const [pearlGridWidth, setPearlGridWidth] = useState(initialGridWidth);
 
   useEffect(() => {
     return () => {
@@ -15571,6 +15574,7 @@ useEffect(() => {
       const w = pearlGridRef.current.offsetWidth;
       const cols = Math.max(minGridCols, Math.floor((w + 12) / (180 + 12)));
       setPearlGridCols(cols);
+      setPearlGridWidth(w);
     };
     measure();
     const observer = new ResizeObserver(measure);
@@ -15881,15 +15885,37 @@ useEffect(() => {
   }, []);
   const isDesktopHome = !effectiveMobile && currentView === "home";
   const deskCatIconSize = Math.max(20, Math.min(60, Math.round(deskHeight * 0.05)));
-  // Desktop home rows are all sized to the tallest card, so a label that wraps to a second line
-  // grows the whole grid. The longest labels step down a size to stay on one line instead.
-  const deskCatNameStyle = (name) => (isDesktopHome && name.length >= 17 ? { fontSize: "clamp(9px, 1.45vh, 13px)" } : null);
+  const catNameWidths = useMemo(() => {
+    const widths = {};
+    try {
+      const ctx = document.createElement("canvas").getContext("2d");
+      ctx.font = `500 100px ${APP_FONT_STACK}`;
+      CATEGORIES.forEach((cat) => {
+        widths[cat.name] = ctx.measureText(cat.name).width / 100;
+      });
+    } catch (e) {
+    }
+    return widths;
+  }, []);
+  // Every row of the desktop grid is as tall as its tallest card, so a single label wrapping to a
+  // second line grows the whole grid past the bottom of the screen. Labels that cannot fit the
+  // measured card width at the standard size step down instead of wrapping.
+  const deskCatNameStyle = (name) => {
+    const emWidth = catNameWidths[name];
+    if (!isDesktopHome || !emWidth || !pearlGridWidth) return null;
+    const gap = Math.max(8, Math.min(14, deskHeight * 0.01));
+    const cardPadding = Math.max(6, Math.min(14, deskHeight * 0.01));
+    // Card width less its padding, 1px borders and the label's own 2px gutters, kept a little
+    // under the true figure so sub-pixel rounding cannot tip a label onto a second line.
+    const textWidth = ((pearlGridWidth - (pearlGridCols - 1) * gap) / pearlGridCols - cardPadding * 2 - 6) * 0.97;
+    return { fontSize: `min(${DESK_CAT_NAME_SIZE}, ${Math.max(9, textWidth / emWidth).toFixed(1)}px)` };
+  };
   const styles = useMemo(() => ({
     app: {
       minHeight: "100dvh",
       height: isDesktopHome ? "100dvh" : undefined,
       background: effectiveMobile ? "#f1f5f9" : "linear-gradient(180deg, #f8fafc 0%, #eef2f7 55%, #e9edf4 100%)",
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+      fontFamily: APP_FONT_STACK,
       color: "#1e293b",
       padding: effectiveMobile ? "8px 8px calc(16px + env(safe-area-inset-bottom, 0px))" : isDesktopHome ? "clamp(12px, 2vh, 24px)" : "24px",
       position: "relative",
@@ -16285,7 +16311,7 @@ useEffect(() => {
       width: "100%"
     },
     categoryName: {
-      fontSize: effectiveMobile ? "12px" : isDesktopHome ? "clamp(11px, 1.7vh, 15px)" : "13px",
+      fontSize: effectiveMobile ? "12px" : isDesktopHome ? DESK_CAT_NAME_SIZE : "13px",
       fontWeight: "500",
       color: "#334155",
       minHeight: effectiveMobile ? "24px" : isDesktopHome ? "clamp(18px, 2.5vh, 32px)" : "28px",
