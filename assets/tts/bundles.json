@@ -1,0 +1,8 @@
+[
+  {
+    "id": "openai-cedar",
+    "label": "OpenAI Cedar (Offline)",
+    "manifestUrl": "assets/tts/openai-cedar/manifest.json",
+    "questionCount": 954
+  }
+]

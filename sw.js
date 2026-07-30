@@ -1,6 +1,6 @@
 // Service Worker — shell network-first; TTS audio cache-first with bulk install preload
 
-const CACHE_NAME = "pcp-learning-v18";
+const CACHE_NAME = "pcp-learning-v19";
 const TTS_PRECACHE_MANIFEST = "assets/tts/openai-cedar/precache-urls.json";
 const TTS_BATCH_SIZE = 25;
 
