@@ -124,6 +124,11 @@ async function precacheTtsAudio(cache) {
     const batch = urls.slice(i, i + TTS_BATCH_SIZE);
     const results = await Promise.allSettled(
       batch.map(async (url) => {
+        // Clips are immutable, and install re-runs on every byte change to this file.
+        // Re-fetching the whole set would be a multi-GB download for existing installs.
+        if (await cache.match(url)) {
+          return;
+        }
         const resp = await fetch(url);
         if (!resp.ok) throw new Error("HTTP " + resp.status);
         await cache.put(url, resp);
