@@ -1,6 +1,6 @@
 // Service Worker — shell network-first; TTS audio cache-first with bulk install preload
 
-const CACHE_NAME = "pcp-learning-v17";
+const CACHE_NAME = "pcp-learning-v18";
 const TTS_PRECACHE_MANIFEST = "assets/tts/openai-cedar/precache-urls.json";
 const TTS_BATCH_SIZE = 25;
 
@@ -40,6 +40,13 @@ const OFFLINE_URLS = [
   "assets/heent.png",
   "assets/geriatrics.png",
   "assets/telehealth.png",
+  "assets/tele-atopic-dermatitis.jpg",
+  "assets/tele-folliculitis.jpg",
+  "assets/tele-pityriasis-versicolor.jpg",
+  "assets/tele-impetigo.jpg",
+  "assets/tele-urticaria.jpg",
+  "assets/tele-hidradenitis-suppurativa.jpg",
+  "assets/tele-dyshidrotic-eczema.jpg",
   "assets/emergency-ambulance.png",
   "assets/achillesinsert---cropped.jpg",
   "assets/afib-ecg-comparison.png",
