@@ -299,6 +299,14 @@ const CATEGORIES = [
     { id: "polypharmacy", name: "Polypharmacy / Deprescribing" },
     { id: "palliative", name: "Palliative / Serious Illness" },
     { id: "misc", name: "General / Misc" }
+  ] },
+  { id: 20, name: "Telehealth", icon: "telehealth", color: "#2C7A8C", subcategories: [
+    { id: "triage", name: "Triage / Appropriate Use" },
+    { id: "virtualVisit", name: "Virtual Visit / Remote Exam" },
+    { id: "remoteMonitoring", name: "Remote Monitoring / Devices" },
+    { id: "regulatory", name: "Licensure / Privacy / Billing" },
+    { id: "access", name: "Access / Digital Equity" },
+    { id: "misc", name: "General / Misc" }
   ] }
 ];
 const MSK_SUBCAT = {
@@ -15597,7 +15605,8 @@ useEffect(() => {
         pancreas: 2.18,    // Endocrine (slightly larger again)
         womens: 1.47,      // Women's Health (slightly smaller)
         kidneys: 1.5,      // Urology/Nephrology
-        wizard: 1.5        // Geriatrics
+        wizard: 1.5,       // Geriatrics
+        telehealth: 2.05   // Telehealth (wide artwork, letterboxed by object-fit)
       };
       const mult = multipliers[icon];
       if (mult) size = Math.round(size * mult);
@@ -15639,6 +15648,8 @@ useEffect(() => {
         return /* @__PURE__ */ React.createElement("img", { src: "assets/pulmonology.png", style: { width: size, height: size, objectFit: "contain", borderRadius: "4px" } });
       case "wizard":
         return /* @__PURE__ */ React.createElement("img", { src: "assets/geriatrics.png", style: { width: size, height: size, objectFit: "contain", borderRadius: "4px" } });
+      case "telehealth":
+        return /* @__PURE__ */ React.createElement("img", { src: "assets/telehealth.png", style: { width: size, height: size, objectFit: "contain", borderRadius: "4px" } });
       case "womens":
         return /* @__PURE__ */ React.createElement(FemaleIcon, { size });
       default:
@@ -15666,7 +15677,8 @@ useEffect(() => {
       pancreas: 1.58,
       womens: 1.12,
       kidneys: 1.15,
-      wizard: 1.15
+      wizard: 1.15,
+      telehealth: 1.5
     };
     const scale = scaleMap[icon] || 1;
     const inner = renderCategoryIcon(icon, baseSize);

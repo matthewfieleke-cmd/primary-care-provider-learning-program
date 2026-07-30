@@ -39,6 +39,7 @@ const OFFLINE_URLS = [
   "assets/preventive-shield.png",
   "assets/heent.png",
   "assets/geriatrics.png",
+  "assets/telehealth.png",
   "assets/emergency-ambulance.png",
   "assets/achillesinsert---cropped.jpg",
   "assets/afib-ecg-comparison.png",
