@@ -16962,6 +16962,12 @@ useEffect(() => {
     );
   };
   const renderQuestionsCard = (category, categoryQuestions) => {
+    if (categoryQuestions.length === 0) {
+      return /* @__PURE__ */ React.createElement("div", { style: styles.card },
+        /* @__PURE__ */ React.createElement("h3", { style: { margin: "0 0 8px 0", fontSize: "17px", color: "#1e293b" } }, "Questions coming soon"),
+        /* @__PURE__ */ React.createElement("p", { style: { margin: 0, fontSize: "14px", lineHeight: "1.55", color: "#64748b" } }, category.name, " is set up and ready, but it does not have any questions yet. Pick another category in the meantime \u2014 this one will fill in as content is added.")
+      );
+    }
     if (category.subcategories) {
       return /* @__PURE__ */ React.createElement("div", { style: styles.card },
         /* @__PURE__ */ React.createElement("h3", { style: { margin: "0 0 16px 0", fontSize: "17px", color: "#1e293b" } }, "Subcategories"),
@@ -17013,7 +17019,7 @@ useEffect(() => {
       marginLeft: "12px",
       color: correctPercent >= 80 ? "#16a34a": correctPercent >= 60 ? "#d97706": "#dc2626",
       fontWeight: "600"
-    } }, correctPercent, "% correct")), /* @__PURE__ */ React.createElement("div", { style: {...styles.progressBar, marginTop: "8px", height: "8px" } }, /* @__PURE__ */ React.createElement("div", { style: styles.progressFill(answeredPercent, category.color) })))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: "10px", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement(
+    } }, correctPercent, "% correct")), /* @__PURE__ */ React.createElement("div", { style: {...styles.progressBar, marginTop: "8px", height: "8px" } }, /* @__PURE__ */ React.createElement("div", { style: styles.progressFill(answeredPercent, category.color) })))), categoryQuestions.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: "10px", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement(
       "button",
       {
         style: {
